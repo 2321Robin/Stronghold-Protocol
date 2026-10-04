@@ -270,7 +270,7 @@ describe('3: the temp overflow row (临时整备区)', () => {
 
 describe('8: 特质 right under the detail card\'s header', () => {
   test('the block order', () => {
-    assert.deepEqual(CHESS_SECTIONS, ['head', 'garrison', 'trait', 'stats', 'skill', 'module', 'equip', 'talents', 'actions']);
+    assert.deepEqual(CHESS_SECTIONS, ['head', 'garrison', 'trait', 'stats', 'skill', 'module', 'equip', 'talents', 'band', 'actions']);
   });
 
   test('a rendered operator card: header, then 特质 (trigger + description), then the rest in CHESS_SECTIONS order', async () => {
