@@ -72,6 +72,7 @@ import { useFieldView } from '../ui/fieldHost.js';
 import { TopBar, liveLp, ownLeaks, uniteRemaining, tempInfo, tempReadyReason } from '../ui/hud.js';
 import { BondStrip, BondPopup } from '../ui/bondStrip.js';
 import { TeamPanel } from '../ui/teamPanel.js';
+import { ScoutedBench } from '../ui/scoutedBench.js';
 import { ShopBar } from '../ui/shopBar.js';
 import { DetailPanel, resolveDetail } from '../ui/detailPanel.js';
 import { RewardOverlay } from '../ui/rewardOverlay.js';
@@ -1242,6 +1243,12 @@ function MatchScreen() {
         <${GIcon} name="eye" /><span>正在查看 <b>${watchedName}</b> 的阵地（只读）</span>
         ${spectator ? null : html`<${Button} size="sm" variant="primary" icon="back" onClick=${() => watchPlayer({ playerId: myId })}>返回自己<//>`}
       </div>` : null}
+
+      ${field?.prep && watchingOther && Array.isArray(field.bench) ? html`<${ScoutedBench} bench=${field.bench}
+        name=${(pub?.players || []).find((p) => field.fieldId === `n:${p.playerId}`)?.name || '队友'}
+        onPick=${(p) => setDetail(p.kind === 'item' ? { kind: 'item', id: p.id }
+          : p.kind === 'token' ? { kind: 'token', id: p.id }
+          : { kind: 'chess', id: p.id, items: Array.isArray(p.items) ? p.items : null })} />` : null}
 
       ${showShop ? html`<${ShopBar} priv=${priv} editable=${editable} collapsed=${collapsed} onCollapse=${setCollapsed}
         barRef=${barRef} offBonds=${offBonds}

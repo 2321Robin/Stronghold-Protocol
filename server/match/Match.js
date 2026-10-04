@@ -943,7 +943,10 @@ export class Match {
     return previewOf([...this.wave.spawns, ...bounty]);
   }
 
-  /** UnitInfo list of a player's board (prep scouting). */
+  /** UnitInfo list of a player's board (prep scouting). `bench` — the hand (整备区) — is part of the scout view for
+   *   every watcher alike: the spectator seats watch like an eliminated player, and the seat's scout meta must equal
+   *   a teammate's (test/match/spectator.test.js), so the hand is scoped to the scout surface, not to a recipient kind
+   *   (user playtest #2 item 1, suggested on GitHub #44; §23.19's "never a private view" stays the m.private rule). */
   prepFieldMeta(ps) {
     const units = [];
     for (const { r, c, piece } of boardOrder(ps.board)) {
@@ -963,19 +966,36 @@ export class Match {
         items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
       });
     }
+    // the hand (整备区): what the scouted player holds and has not deployed — ids, tier and equipped items only, no
+    // shop state. Part of the scout view for every watcher alike (players, eliminated players, spectator seats).
+    const bench = [];
+    for (const piece of ps.hand) {
+      if (!piece) continue;
+      const rec = piece.kind === 'item' ? this.gd.item(piece.id) : piece.kind === 'token' ? this.gd.token(piece.id) : this.gd.chess(piece.id);
+      bench.push({
+        uid: piece.uid, kind: piece.kind, id: piece.id,
+        tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
+        items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
+      });
+    }
     // `nextEnemies`: the scouted player's coming enemies — their preview pen shows on the scouting board too (research 09
     // §2.2 "Teammates"; render/app.js enterBattle({ prep: true, nextEnemies }))
     let nextEnemies = [];
     try { nextEnemies = this.nextEnemiesFor(ps); } catch (e) { this.reportError('nextEnemies', e); }
-    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, prep: true, nextEnemies };
+    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, bench, prep: true, nextEnemies };
   }
 
-  /** Board signature of a prep scout view (units only: a shop or funds change is not a board change). */
+  /** Board signature of a prep scout view (units and hand: a shop or funds change is not a board change). */
   _prepScoutSig(ps) {
     const parts = [];
     for (const { r, c, piece } of boardOrder(ps.board)) {
       const items = piece.kind === 'chess' && Array.isArray(piece.items) ? piece.items.map((it) => `${it.uid}:${it.id}`).join(',') : '';
       parts.push(`${piece.uid}:${piece.id}@${r},${c}:${pieceDir(piece)}:${items}`);
+    }
+    for (const piece of ps.hand) {
+      if (!piece) continue;
+      const items = piece.kind === 'chess' && Array.isArray(piece.items) ? piece.items.map((it) => `${it.uid}:${it.id}`).join(',') : '';
+      parts.push(`h${piece.uid}:${piece.id}:${items}`);
     }
     return parts.join(';');
   }
