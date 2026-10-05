@@ -368,6 +368,10 @@ export class Match {
     this.runner = null;
     /** playerId → fieldId */
     this.watchers = new Map();
+    /** watch preference: playerId → playerId — the human a viewer last watched with a manual g.watch; every phase
+     * reset starts eliminated humans and spectator seats on that player's field again (the first human still in as
+     * the fallback) instead of dropping them onto their own dead board / the first seat */
+    this.watchPref = new Map();
     this.lastResults = new Map();
     this.unitePlan = null;
     /** server-run 联防: the leakers' counts last published (_uniteTick) */
@@ -485,7 +489,17 @@ export class Match {
       if (this.clientCombat) this._resendBattle(ps);
       else {
         let fid = this.watchers.get(playerId);
-        if (!fid && ps.spectator && this.fields.length) { fid = this.fields[0].fieldId; this.watchers.set(playerId, fid); }
+        if (!fid && ps.spectator) {
+          if (this.fields.length) {
+            // a joining spectator seat follows the same chain (preference, first human still in)
+            fid = (this._watchTargetField(ps, this.fields) || this.fields[0]).fieldId;
+          } else {
+            // prep / between rounds: the same scouting chain startRound uses
+            const target = this._watchTargetOf(ps);
+            if (target) fid = `n:${target}`;
+          }
+          if (fid) this.watchers.set(playerId, fid);
+        }
         if (fid) this._sendField(playerId, fid);
       }
     } else if (this.lastResultMsg) {
@@ -1112,6 +1126,33 @@ export class Match {
     return OK;
   }
 
+  /** remember the human owner of a manually watched field (the automatic assignments never touch
+   * it, so "the player I last went to myself" is the whole state). */
+  _watchPrefSet(ps, f) {
+    const owner = Array.isArray(f?.players) ? (f.players.find((p) => p !== ps.playerId) ?? f.players[0]) : null;
+    if (owner) this.watchPref.set(ps.playerId, owner);
+  }
+
+  /** the seated human a viewer follows — the one they last watched manually while still in, else
+   * the first seated human still in (seat order), never the viewer itself; null when nobody qualifies. */
+  _watchTargetOf(ps) {
+    const tries = [];
+    const pref = this.watchPref.get(ps.playerId);
+    if (typeof pref === 'string') tries.push(pref);
+    const mate = this.order.find((q) => !q.isBot && !q.left && q.alive && q.playerId !== ps.playerId);
+    if (mate) tries.push(mate.playerId);
+    return tries.find((pid) => {
+      const t = this.players.get(pid);
+      return pid !== ps.playerId && !!t && t.alive && !t.left;
+    }) || null;
+  }
+
+  /** The field of `_watchTargetOf` among `fields` (null when the target has no field this phase). */
+  _watchTargetField(ps, fields) {
+    const pid = this._watchTargetOf(ps);
+    return pid ? fields.find((f) => f.players.includes(pid)) || null : null;
+  }
+
   watch(ps, fieldId) {
     if (typeof fieldId !== 'string') return fail(ERR.BAD_TARGET);
     if (this.clientCombat && this.fields.length && this.fields.some((x) => x.cc)) return this._watchClient(ps, fieldId);
@@ -1121,6 +1162,7 @@ export class Match {
       // boss field only (eliminated / departed players spectate freely)
       const own = this.fieldOf(ps);
       if ((f.kind === 'boss' || f.kind === 'hidden') && own && own !== f.fieldId) return fail(ERR.BAD_TARGET, 'other group hidden');
+      this._watchPrefSet(ps, f);
       this.watchers.set(ps.playerId, fieldId);
       this._sendField(ps.playerId, fieldId);
       return OK;
@@ -1133,6 +1175,7 @@ export class Match {
       if (this.fields.length) return fail(ERR.BAD_TARGET, 'no such field');
       const target = this.players.get(fieldId.slice(2));
       if (!target || !target.alive) return fail(ERR.BAD_TARGET);
+      this.watchPref.set(ps.playerId, target.playerId);
       this.watchers.set(ps.playerId, fieldId);
       this._notifyPrepScouts(target, { to: ps.playerId });
       return OK;
@@ -1520,6 +1563,15 @@ export class Match {
     }
     for (const ps of alive) ps.recompute();
     this.setDeadline(DELAYS.ROUND_START / 1000, () => this.afterRoundStart(), { silent: this.soloUntimed });
+    // an eliminated human / spectator seat starts the round scouting the player they last watched
+    // (a manual g.watch), else the first seated human still in — instead of their own dead board
+    for (const ps of this._viewers()) {
+      if (!ps.spectator && ps.alive) continue;
+      const target = this._watchTargetOf(ps);
+      if (!target) continue;
+      this.watchers.set(ps.playerId, `n:${target}`);
+      if (ps.connected) this._notifyPrepScouts(this.players.get(target), { to: ps.playerId });
+    }
     this.markPublic();
   }
 
@@ -1919,7 +1971,7 @@ export class Match {
     this.watchers.clear();
     for (const ps of this._viewers()) {
       const own = this.fields.find((f) => f.players.includes(ps.playerId));
-      const f = own || this.fields[0];
+      const f = own || this._watchTargetField(ps, this.fields) || this.fields[0];
       if (!f) continue;
       this.watchers.set(ps.playerId, f.fieldId);
       if (ps.connected) this._sendField(ps.playerId, f.fieldId);
@@ -2422,8 +2474,11 @@ export class Match {
     if (first) {
       for (const ps of this._viewers()) {
         if (ps.alive || this.watchers.has(ps.playerId)) continue;
-        this.watchers.set(ps.playerId, first.fieldId);
-        this._sendStart(ps.playerId, first, { watch: true });
+        // the field of the player they last watched manually, else the first seated human still
+        // in; `first` (research 09 §3.1 "Keep-watching auto-observes the first available field") stays the fallback
+        const t = this._watchTargetField(ps, fields) || first;
+        this.watchers.set(ps.playerId, t.fieldId);
+        this._sendStart(ps.playerId, t, { watch: true });
       }
     }
     this.markPublic();
@@ -2597,6 +2652,7 @@ export class Match {
       if ((f.kind === 'boss' || f.kind === 'hidden') && own && own !== f) return fail(ERR.BAD_TARGET, 'other group hidden');
       if (f.kind === 'normal' && own && own !== f && own.live) return fail(ERR.WRONG_PHASE, 'own battle running');
     }
+    this._watchPrefSet(ps, f);
     this.watchers.set(ps.playerId, f.fieldId);
     this.sendTo(ps.playerId, this._startMsg(f, ps.playerId, { watch: !f.players.includes(ps.playerId) }));
     return OK;
@@ -2608,7 +2664,7 @@ export class Match {
     const fid = this.watchers.get(ps.playerId);
     let f = fid ? this.fields.find((x) => x.fieldId === fid) : null;
     if (!f) f = this.fields.find((x) => x.players.includes(ps.playerId)) || (this.phase === PHASE.UNITE ? this.fields[0] : null);
-    if (!f && !ps.alive) f = this.fields[0] || null;
+    if (!f && !ps.alive) f = this._watchTargetField(ps, this.fields) || this.fields[0] || null;
     if (!f) return;
     this.watchers.set(ps.playerId, f.fieldId);
     this.sendTo(ps.playerId, this._startMsg(f, ps.playerId, { watch: !f.players.includes(ps.playerId) }));
@@ -2657,7 +2713,8 @@ export class Match {
   _watchBossFields(fields) {
     for (const ps of this._viewers()) {
       const own = fields.find((f) => f.players.includes(ps.playerId)) || null;
-      const f = own || fields[0];
+      // an eliminated human / spectator seat follows their last manually watched player
+      const f = own || this._watchTargetField(ps, fields) || fields[0];
       if (!f) continue;
       this.watchers.set(ps.playerId, f.fieldId);
       this._sendStart(ps.playerId, f, { watch: !own });

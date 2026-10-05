@@ -736,17 +736,24 @@ function MatchScreen() {
 
   const watchField = useCallback((fid) => { requestWatch(fid); }, []);
 
-  // a spectator seat has no board of its own: in 休整期 / 机变 / round start it is shown the first player still in (as a
-  // tap on that row would — g.watch 'n:<pid>', the read-only board), once per phase; a row switches to another player
-  const scoutedRef = useRef(null);
+  // the server starts every phase reset with an eliminated human / spectator seat scouting the
+  // player they last watched (Match.startRound, prep scout 'n:<pid>'). The screen adopts that board like a 前往查看
+  // tap — once per phase and board, only from home (watching nothing), so a 返回战场 this phase is not overridden.
+  const autoScoutRef = useRef(null);
   useEffect(() => {
-    if (!spectator || watching || !pub || scoutedRef.current === phaseKey) return;
-    if (phase !== PHASE.PREP && phase !== PHASE.SP_DRAFT && phase !== PHASE.ROUND_START) return;
-    const first = players.find((p) => p.alive !== false && p.status !== 'left');
-    if (!first) return;
-    scoutedRef.current = phaseKey;
-    requestWatch(ownFieldId(first.playerId), first.playerId);
-  }, [spectator, phaseKey, watching]);
+    if (!pub || watching || !field?.prep || (alive && !spectator)) return;
+    const fid = field.fieldId;
+    if (typeof fid !== 'string' || !fid.startsWith('n:') || fid === ownFieldId(myId)) return;
+    const key = `${phaseKey}:${fid}`;
+    if (autoScoutRef.current === key) return;
+    autoScoutRef.current = key;
+    // the phase reset's prep frame marked this very board stale (watching is null for that one render, so the own
+    // prep branch ran with the scout meta in `field`): un-mark it, or the re-entry below is refused and the board
+    // stays blank until the watched player acts (field report)
+    if (staleFieldRef.current === field) staleFieldRef.current = null;
+    setWatching(fid);
+    setWatchWho({ fieldId: fid, playerId: fid.slice(2) });
+  }, [field, pub, watching, alive, spectator, phaseKey, myId]);
 
   // ---- view events (drag & drop, clicks) ----------------------------------------------------------------------
   useEffect(() => {

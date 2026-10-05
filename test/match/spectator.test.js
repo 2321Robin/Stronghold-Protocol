@@ -65,8 +65,8 @@ test('a spectator seat watches a whole match (各自行动, 联防, 最终攻势
   }
   const kinds = new Set(starts.map((x) => x.kind));
   for (const k of ['normal', 'unite', 'boss']) assert.ok(kinds.has(k), `a ${k} field was shown (${[...kinds]})`);
-  // what it was shown in 各自行动 is what an eliminated player is shown: the first field of the phase
-  for (const st of starts.filter((x) => x.kind === 'normal')) assert.equal(st.fieldId, 'n:p_0');
+  // 各自行动: the spectator follows the player it picked with the prep scout (a manual watch records the preference); with no pick it would take the first field of the phase
+  for (const st of starts.filter((x) => x.kind === 'normal')) assert.equal(st.fieldId, 'n:p_1');
   // the Final Assault's end reaches the boss field it watched, like every human shown that field
   const ends = h.allTo(S, 'b.end');
   assert.ok(ends.some((e) => e.fieldId === starts.filter((x) => x.kind === 'boss').pop().fieldId), 'b.end of the watched boss field');
