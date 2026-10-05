@@ -964,13 +964,12 @@ export class Match {
         items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
       });
     }
-    // the hand (整备区) scouts exactly like the own prep bench renders it: pieces as units on the hand row
-    // (row 7, col = hand slot; no dir — bench pieces face right), items included (the client draws their floating
-    // plates). User playtest #2 item 1 (GitHub #44); part of the meta for every watcher alike — the spectator
-    // seat's copy equals a teammate's (test/match/spectator.test.js).
-    for (let i = 0; i < ps.hand.length; i++) {
-      const piece = ps.hand[i];
-      if (!piece) continue;
+    // the hand (整备区) and the 临时整备区 scout exactly like the own prep bench renders them: pieces as units on
+    // their rows (hand row 7, col = hand slot; temp row 8, cols 4..8 = temp slots; no dir — bench pieces face right),
+    // items included (the client draws their floating plates). PRTS 帮助 counts the temp area with the hand (review of
+    // PR #129). Part of the meta for every watcher alike — the spectator seat's copy equals a teammate's
+    // (test/match/spectator.test.js). User playtest #2 item 1 (GitHub #44).
+    const benchUnit = (piece, i, y) => {
       const rec = piece.kind === 'item' ? this.gd.item(piece.id) : piece.kind === 'token' ? this.gd.token(piece.id) : this.gd.chess(piece.id);
       const assets = (rec && rec.assets) || {};
       const lo = piece.kind === 'chess' && rec ? ps.loadoutFor(rec) : null;
@@ -979,11 +978,17 @@ export class Match {
         side: 'ally', ownerId: ps.playerId, defId: piece.id,
         name: rec ? rec.name : piece.id, tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
         spine: assets.spine || (rec && rec.charId) || piece.id, avatar: assets.avatar || (rec && rec.charId) || piece.id,
-        x: i, y: GEO.HAND_ROW, maxHp: rec && rec.stats && Number.isFinite(rec.stats.maxHp) ? rec.stats.maxHp : 1,
+        x: i, y, maxHp: rec && rec.stats && Number.isFinite(rec.stats.maxHp) ? rec.stats.maxHp : 1,
         skillIndex: lo && Number.isInteger(lo.skillIndex) ? lo.skillIndex : undefined,
         moduleId: lo && typeof lo.moduleId === 'string' ? lo.moduleId : undefined,
         items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
       });
+    };
+    for (let i = 0; i < ps.hand.length; i++) {
+      if (ps.hand[i]) benchUnit(ps.hand[i], i, GEO.HAND_ROW);
+    }
+    for (let i = 0; i < ps.temp.length; i++) {
+      if (ps.temp[i]) benchUnit(ps.temp[i], GEO.TEMP_C0 + i, GEO.TEMP_ROW);
     }
     // `nextEnemies`: the scouted player's coming enemies — their preview pen shows on the scouting board too (research 09
     // §2.2 "Teammates"; render/app.js enterBattle({ prep: true, nextEnemies }))
@@ -995,16 +1000,26 @@ export class Match {
   }
 
   /** Board signature of a prep scout view (units and hand: a shop or funds change is not a board change). */
+  /** Board signature of a prep scout view (board, hand and temp rows: a shop or funds change is not a board change).
+   *  Hand / temp entries carry their slot — `prepFieldMeta` draws x from it, so a piece moved to another slot is a
+   *  change (review of PR #129). */
   _prepScoutSig(ps) {
     const parts = [];
     for (const { r, c, piece } of boardOrder(ps.board)) {
       const items = piece.kind === 'chess' && Array.isArray(piece.items) ? piece.items.map((it) => `${it.uid}:${it.id}`).join(',') : '';
       parts.push(`${piece.uid}:${piece.id}@${r},${c}:${pieceDir(piece)}:${items}`);
     }
-    for (const piece of ps.hand) {
+    for (let i = 0; i < ps.hand.length; i++) {
+      const piece = ps.hand[i];
       if (!piece) continue;
       const items = piece.kind === 'chess' && Array.isArray(piece.items) ? piece.items.map((it) => `${it.uid}:${it.id}`).join(',') : '';
-      parts.push(`h${piece.uid}:${piece.id}:${items}`);
+      parts.push(`h${i}:${piece.uid}:${piece.id}:${items}`);
+    }
+    for (let i = 0; i < ps.temp.length; i++) {
+      const piece = ps.temp[i];
+      if (!piece) continue;
+      const items = piece.kind === 'chess' && Array.isArray(piece.items) ? piece.items.map((it) => `${it.uid}:${it.id}`).join(',') : '';
+      parts.push(`t${i}:${piece.uid}:${piece.id}:${items}`);
     }
     return parts.join(';');
   }

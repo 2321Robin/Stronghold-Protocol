@@ -83,6 +83,37 @@ test('#44 prep scout: a held item is a kind-item unit on the hand row; equipped 
   m.dispose();
 });
 
+test("PR #129 review: moving a hand piece to another slot is a scout change (x follows the slot), and the temp row rides along", () => {
+  const h = makeMatch({ mode: 'coop', humans: 2, seed: 47, fake: true }).start();
+  h.toPrep(1);
+  const m = h.m;
+  const b = h.ps('p_1');
+  assert.deepEqual(m.handle('p_1', { t: 'g.ready', ready: false }), { ok: true });
+  for (const p of [...b.board.values(), ...b.hand.filter(Boolean), ...b.temp.filter(Boolean)]) {
+    if (p.kind === 'chess') b.returnCopies(p);
+  }
+  b.board.clear();
+  b.hand.fill(null);
+  b.temp.fill(null);
+  b.recompute();
+  const id = chessOfTier(1, MELEE).find((x) => m.pool.has(x));
+  const a = give(m, b, id, 'hand', 0);
+  const c = give(m, b, id, 'temp', 0); // 临时整备区: PRTS 帮助把它算进手牌区,一起侦察
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_1' }), { ok: true });
+
+  const first = h.lastTo('p_0', 'm.field');
+  const tu = first.units.find((x) => x.uid === c.uid);
+  assert.deepEqual([tu.x, tu.y], [GEO.TEMP_C0, GEO.TEMP_ROW], 'the temp piece scouts on the temp row (first slot, col 4)');
+  assert.equal(first.units.find((x) => x.uid === a.uid).x, 0);
+
+  // a hand piece moved to another slot keeps uid and id — the slot must be in the signature for the push to fire
+  assert.deepEqual(m.handle('p_1', { t: 'g.move', uid: a.uid, to: { area: 'hand', idx: 3 } }), { ok: true });
+  const last = h.lastTo('p_0', 'm.field');
+  assert.ok(last, 'a new scout push arrived');
+  assert.equal(last.units.find((x) => x.uid === a.uid).x, 3, 'the piece stands on its new hand slot');
+  m.dispose();
+});
+
 test('#44 prep scout: an empty hand adds no units and never an m.private to a spectator seat', () => {
   const S = 's_spec';
   const h = makeMatch({ mode: 'coop', humans: 2, seed: 45, fake: true, spectators: [S] }).start();
