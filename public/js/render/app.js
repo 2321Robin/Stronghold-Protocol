@@ -1449,12 +1449,29 @@ export async function createFieldView(host, options = {}) {
     return info;
   }
 
+  // a hand item on a scouted prep board (UnitInfo kind 'item'): the plate's icon and colour resolve client-side,
+  // exactly like the own prep bench (pieceInfo)
+  function scoutItemInfo(info) {
+    const rec = data.item(info.defId);
+    const tier = rec?.tier || info.tier || 1;
+    return { ...info,
+      icon: assets.itemIcon ? assets.itemIcon(rec ? { trapId: rec.trapId, iconId: rec.iconId } : info.defId) : null,
+      color: (info.golden || rec?.isGolden) ? 0xffc600 : TIER_COLORS[tier] || TIER_COLORS[1] };
+  }
+
   function battleView(id) {
     let v = views.get(id);
     if (v) return v;
     const info = infos.get(id);
     if (!info || gone.has(id)) return null;
-    v = info.kind === 'device' ? new DeviceView(ctx, info) : new UnitView(ctx, info, { prep: !!battleMeta?.prep && info.side === 'ally' });
+    v = info.kind === 'device' ? new DeviceView(ctx, info)
+      : info.kind === 'item' ? new ItemView(ctx, scoutItemInfo(info))
+      : new UnitView(ctx, info, { prep: !!battleMeta?.prep && info.side === 'ally' });
+    // a teammate's operator shows its equipped items like the own prep bench does (item pips; user playtest #2:
+    // at the unit, not only in the detail card) — prep surfaces only, the battle HUD stays as it is
+    if (v.setItems && battleMeta?.prep && Array.isArray(info.items) && info.items.length) {
+      v.setItems(info.items.map((it) => { const r = data.item(it); return assets.itemIcon ? assets.itemIcon(r ? { trapId: r.trapId, iconId: r.iconId } : it) : null; }));
+    }
     v.setWorld(info.x, info.y, 0);
     v._seen = false;
     v._born = performance.now();

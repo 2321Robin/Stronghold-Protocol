@@ -1,59 +1,51 @@
-// 观战整备区的客户端(游玩记录 #2 item 1):ScoutedBench 渲染 m.field(prep:true).bench 的只读缩略图,
-// 点击打开该棋子的详情卡(chess 带装备 id,同盟约弹窗同构行的路径);game screen 只在自己观战别人
-// 整备期棋盘时渲染它。服务器侧:test/match/prep-bench.test.js。
+// 观战整备区的客户端(游玩记录 #2 item 1):被侦察玩家的手牌是 m.field(prep:true).units 里手牌行
+// (row 7)上的单位——干员站立、道具 kind 'item'(浮牌),和自己整备区同一渲染路径;观战棋盘用
+// prep 相机(收起商店形态,bench 行进画面)。battleView 为 kind 'item' 建 ItemView(图标/颜色客户端
+// 解析,同 pieceInfo),prep 面上给带装备的队友干员挂 item pips。服务器侧:test/match/prep-bench.test.js。
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ScoutedBench } from '../../public/js/ui/scoutedBench.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 
-/** Every vnode of a preact tree (htm output), depth first. */
-function* walk(v) {
-  if (Array.isArray(v)) { for (const x of v) yield* walk(x); return; }
-  if (!v || typeof v !== 'object') return;
-  yield v;
-  yield* walk(v.props?.children);
-}
-const hasClass = (v, c) => typeof v?.props?.class === 'string' && v.props.class.split(/\s+/).includes(c);
-const textOf = (v) => {
-  if (v == null || typeof v === 'boolean') return '';
-  if (typeof v === 'string' || typeof v === 'number') return String(v);
-  if (Array.isArray(v)) return v.map(textOf).join('');
-  return textOf(v.props?.children);
+globalThis.fetch = async (url) => {
+  const name = String(url).split('/').pop();
+  try {
+    const body = readFileSync(path.join(ROOT, 'data', name), 'utf8');
+    return { ok: true, status: 200, json: async () => JSON.parse(body) };
+  } catch {
+    return { ok: false, status: 404, json: async () => ({}) };
+  }
 };
+const { data } = await import('../../public/js/data.js');
+await data.loadAll('bonds', 'chess', 'items', 'assets');
+const { resolveDetail } = await import('../../public/js/ui/detailPanel.js');
 
-describe('ScoutedBench', () => {
-  const bench = [
-    { uid: 1, kind: 'chess', id: 'chess_char_1_01_a', tier: 5, golden: false },
-    { uid: 2, kind: 'chess', id: 'chess_char_1_02_a', tier: 5, golden: true, items: ['chess_item_1_01_e_a'] },
-    { uid: 3, kind: 'item', id: 'chess_item_6_09_e_a', tier: 6 },
-  ];
-
-  test('renders one read-only thumbnail per held piece and names the owner', () => {
-    const picks = [];
-    const v = ScoutedBench({ bench, name: '博士二', onPick: (p) => picks.push(p) });
-    const ones = [...walk(v)].filter((x) => hasClass(x, 'sbench__one'));
-    assert.equal(ones.length, 3);
-    const label = [...walk(v)].find((x) => hasClass(x, 'sbench__label'));
-    assert.match(textOf(label), /博士二 的整备区/);
-    assert.match(textOf(label), /3/, 'the count of held pieces');
-    ones[1].props.onClick();
-    assert.deepEqual(picks, [bench[1]], 'the tap hands the piece on (game screen builds the detail target)');
-  });
-
-  test('empty or missing bench renders nothing', () => {
-    assert.equal(ScoutedBench({ bench: [] }), null);
-    assert.equal(ScoutedBench({ bench: null }), null);
-  });
-
-  test('the game screen shows it only while scouting a prep board and opens the detail on tap (source)', () => {
+describe('the scouted prep board renders the hand like the own bench', () => {
+  test('the game screen frames it with the prep camera in its shop-folded form (source)', () => {
     const game = read('public/js/screens/game.js');
-    assert.match(game, /field\?\.prep && watchingOther && Array\.isArray\(field\.bench\)/);
-    assert.match(game, /\{ kind: 'chess', id: p\.id, items: Array\.isArray\(p\.items\) \? p\.items : null \}/);
-    assert.match(read('public/css/screens/game.css'), /\.sbench \{/);
+    assert.match(game, /field\.prep \? 'prep' : \(field\.kind === 'hidden' \? 'boss' : field\.kind \|\| 'normal'\)/);
+    assert.match(game, /field\.prep \? \{ shop: false \} : \{\}/);
+    assert.match(game, /const scoutPid = watchingOther && field\?\.prep/);
+    assert.ok(!game.includes('ScoutedBench'), 'the floating strip is gone — the hand rides the board');
+    assert.ok(!read('public/css/screens/game.css').includes('.sbench'), 'its styles too');
+  });
+
+  test('battleView builds an ItemView for a hand item and item pips for a teammate operator (source)', () => {
+    const app = read('public/js/render/app.js');
+    assert.match(app, /info\.kind === 'item' \? new ItemView\(ctx, scoutItemInfo\(info\)\)/);
+    assert.match(app, /battleMeta\?\.prep && Array\.isArray\(info\.items\) && info\.items\.length/);
+    assert.match(app, /function scoutItemInfo\(info\)/);
+  });
+
+  test('tapping a held item on the scouted board opens its card (resolveDetail unit → item)', () => {
+    const IT = 'chess_item_1_01_e_a';
+    const d = resolveDetail({ kind: 'unit', unit: { id: 3, kind: 'item', side: 'ally', ownerId: 'p2', defId: IT } }, new Map());
+    assert.equal(d.type, 'item');
+    assert.equal(d.item.itemId || d.item.id, IT);
+    assert.equal(resolveDetail({ kind: 'unit', unit: { id: 4, kind: 'item', side: 'ally', ownerId: 'p2', defId: 'nope' } }, new Map()), null);
   });
 });

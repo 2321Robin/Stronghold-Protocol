@@ -32,7 +32,7 @@
 // screen's 局内数值 section draws the same ones for the chosen skill / module, without a live entry (GitHub issue #64).
 
 import { html, Icon, TierChip, MicroLabel, Button, confirmDialog, useTicker } from './components.js';
-import { Img, RichText, UnitThumb, BondGlyph, GIcon, BandIcon } from './gameComponents.js';
+import { Img, RichText, UnitThumb, BondGlyph, GIcon } from './gameComponents.js';
 import { attackInterval, rangeGridBox, fmtNum, tileKey, chessLoadout, nextThreshold, bondTier, briefingBondTip, pieceBondIds, grantedBonds, morphPairings } from './gameLogic.js';
 import { chessPortraitUrl, skillIconUrl, skillRecordIconUrl, profIconUrl, subProfIconUrl, itemIconUrl, enemyIconUrl, tokenAvatarUrl, factionIconUrl, uiUrl, moduleTypeIconUrl } from './assetUrls.js';
 import { abilityRows } from './abilityLines.js';
@@ -284,10 +284,9 @@ export function traitText(c, golden, lo) {
 /**
  * Order of an operator card's blocks (user playtest #3 item 8): the operator's own effect (特质 — garrison: its trigger
  * such as 休整期结束时 and what it does) right under the header, visible without scrolling; the class trait (特性) and
- * the stats next; then the skill, the elite's module, the equipped items (the player's own build) and the talents. A
- * teammate's unit adds the owner's 策略 band before the actions row (user playtest #2 item 2).
+ * the stats next; then the skill, the elite's module, the equipped items (the player's own build) and the talents.
  */
-export const CHESS_SECTIONS = Object.freeze(['head', 'garrison', 'trait', 'stats', 'skill', 'module', 'equip', 'talents', 'band', 'actions']);
+export const CHESS_SECTIONS = Object.freeze(['head', 'garrison', 'trait', 'stats', 'skill', 'module', 'equip', 'talents', 'actions']);
 
 /**
  * Sprite key (ui `garrisonTypeIcon/…`, small variant) of a 特质's type chip: the garrison's own official
@@ -355,7 +354,7 @@ export function chessStatsBlock({ rec, chess, live = null }) {
     </div>`;
 }
 
-export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, ownerBandId = null }) {
+export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null }) {
   const m = data.get('assets');
   const hp = hpOf(live, snapHp);
   const lo = chessLoadout(chess, loadout, (id) => data.lookup('chess', id));
@@ -442,18 +441,6 @@ export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bond
   blocks.talents = talents.length ? html`<${Section} key="talents" title="天赋" micro="TALENT" class="dsec--talent">
       ${talents.map((t, i) => html`<div key=${i} class="dtalent"><b>${t.name}</b><${RichText} text=${t.descRaw || t.desc} class="dtext" /></div>`)}
     <//>` : null;
-  // a teammate's unit: the owner's 策略 band (name + effect), what the 本局信息 drawer only shows for one's own
-  // priv.bandId (user playtest #2 item 2); the own pieces skip it (their owner's band is on the drawer / the avatar)
-  const band = ownerBandId ? data.lookup('bands', ownerBandId) : null;
-  blocks.band = band ? html`<${Section} key="band" title="策略" micro="STRATEGY" class="dsec--band">
-    <div class="dband" data-band=${band.bandId}>
-      <${BandIcon} bandId=${band.bandId} size="md" />
-      <div>
-        <b>${band.name} <small class="t-lo">${band.effectName || ''}</small></b>
-        <${RichText} text=${band.descRaw || band.desc} class="dband__desc" />
-      </div>
-    </div>
-  <//>` : null;
   blocks.actions = piece && editable && piece.kind !== 'item' ? html`<div key="actions" class="dactions">
       <${Button} variant="amber" icon="close" class="dpanel__sell" onClick=${() => onSell(piece, c)}>出售<span class="dsell num">+${sell}</span><//>
     </div>` : null;
@@ -642,9 +629,10 @@ export function resolveDetail(target, pieces) {
     const u = target.unit || {};
     const own = Number.isInteger(u.uid) ? pieces?.get(u.uid) : null;
     if (u.side === 'enemy') { const en = data.lookup('enemies', u.defId); return en ? { type: 'enemy', enemy: en, unitId: u.id } : null; }
+    // a hand item on a scouted prep board (m.field units, kind 'item'): the item's own card
+    if (u.kind === 'item') { const it = data.lookup('items', u.defId); return it ? { type: 'item', item: it } : null; }
     const c = data.lookup('chess', u.defId);
-    // bandId: the owner's 策略 (the game screen reads it from m.public.players at the tap, user playtest #2 item 2)
-    if (c) return { type: 'chess', chess: c, piece: own?.piece || null, unitId: u.id, unitItems: Array.isArray(u.items) ? u.items : null, ...(target.bandId ? { bandId: target.bandId } : {}) };
+    if (c) return { type: 'chess', chess: c, piece: own?.piece || null, unitId: u.id, unitItems: Array.isArray(u.items) ? u.items : null };
     const t = data.lookup('tokens', u.defId);
     if (t) return { type: 'token', token: t, unitId: u.id, ownerId: tokenOwnerId(own?.piece, pieces) };
     const en = data.lookup('enemies', u.defId);
@@ -687,7 +675,7 @@ export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestr
     <button type="button" class="dpanel__close" aria-label="关闭" onClick=${onClose}><${Icon} name="close" /></button>
     <div class="dpanel__scroll">
       ${detail.type === 'chess' ? html`<${ChessDetail} chess=${detail.chess} piece=${detail.piece} snapHp=${snapHp} editable=${editable} onSell=${sellIt}
-        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null} ownerBandId=${detail.bandId || null} />` : null}
+        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null} />` : null}
       ${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} />` : null}
       ${detail.type === 'enemy' ? html`<${EnemyDetail} enemy=${detail.enemy} snapHp=${snapHp} count=${detail.count} live=${liveNow} />` : null}
       ${detail.type === 'token' ? html`<${TokenDetail} token=${detail.token} piece=${detail.piece} ownerId=${detail.ownerId ?? null} snapHp=${snapHp} live=${liveNow} />` : null}

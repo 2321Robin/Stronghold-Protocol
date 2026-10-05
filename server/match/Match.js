@@ -943,10 +943,8 @@ export class Match {
     return previewOf([...this.wave.spawns, ...bounty]);
   }
 
-  /** UnitInfo list of a player's board (prep scouting). `bench` — the hand (整备区) — is part of the scout view for
-   *   every watcher alike: the spectator seats watch like an eliminated player, and the seat's scout meta must equal
-   *   a teammate's (test/match/spectator.test.js), so the hand is scoped to the scout surface, not to a recipient kind
-   *   (user playtest #2 item 1, suggested on GitHub #44; §23.19's "never a private view" stays the m.private rule). */
+  /** UnitInfo list of a player's board and hand (prep scouting): board pieces on their tiles, held pieces on the
+   *   hand row (row 7) — the scout renders like the own prep bench. */
   prepFieldMeta(ps) {
     const units = [];
     for (const { r, c, piece } of boardOrder(ps.board)) {
@@ -966,15 +964,24 @@ export class Match {
         items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
       });
     }
-    // the hand (整备区): what the scouted player holds and has not deployed — ids, tier and equipped items only, no
-    // shop state. Part of the scout view for every watcher alike (players, eliminated players, spectator seats).
-    const bench = [];
-    for (const piece of ps.hand) {
+    // the hand (整备区) scouts exactly like the own prep bench renders it: pieces as units on the hand row
+    // (row 7, col = hand slot; no dir — bench pieces face right), items included (the client draws their floating
+    // plates). User playtest #2 item 1 (GitHub #44); part of the meta for every watcher alike — the spectator
+    // seat's copy equals a teammate's (test/match/spectator.test.js).
+    for (let i = 0; i < ps.hand.length; i++) {
+      const piece = ps.hand[i];
       if (!piece) continue;
       const rec = piece.kind === 'item' ? this.gd.item(piece.id) : piece.kind === 'token' ? this.gd.token(piece.id) : this.gd.chess(piece.id);
-      bench.push({
-        uid: piece.uid, kind: piece.kind, id: piece.id,
-        tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
+      const assets = (rec && rec.assets) || {};
+      const lo = piece.kind === 'chess' && rec ? ps.loadoutFor(rec) : null;
+      units.push({
+        id: piece.uid, uid: piece.uid, kind: piece.kind === 'token' ? 'token' : piece.kind === 'item' ? 'item' : 'op',
+        side: 'ally', ownerId: ps.playerId, defId: piece.id,
+        name: rec ? rec.name : piece.id, tier: rec && Number.isInteger(rec.tier) ? rec.tier : 1, golden: !!(rec && rec.isGolden),
+        spine: assets.spine || (rec && rec.charId) || piece.id, avatar: assets.avatar || (rec && rec.charId) || piece.id,
+        x: i, y: GEO.HAND_ROW, maxHp: rec && rec.stats && Number.isFinite(rec.stats.maxHp) ? rec.stats.maxHp : 1,
+        skillIndex: lo && Number.isInteger(lo.skillIndex) ? lo.skillIndex : undefined,
+        moduleId: lo && typeof lo.moduleId === 'string' ? lo.moduleId : undefined,
         items: piece.kind === 'chess' && Array.isArray(piece.items) && piece.items.length ? piece.items.map((it) => it.id) : undefined,
       });
     }
@@ -982,7 +989,7 @@ export class Match {
     // §2.2 "Teammates"; render/app.js enterBattle({ prep: true, nextEnemies }))
     let nextEnemies = [];
     try { nextEnemies = this.nextEnemiesFor(ps); } catch (e) { this.reportError('nextEnemies', e); }
-    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, bench, prep: true, nextEnemies };
+    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, prep: true, nextEnemies };
   }
 
   /** Board signature of a prep scout view (units and hand: a shop or funds change is not a board change). */

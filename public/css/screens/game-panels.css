@@ -198,12 +198,6 @@
 .dmodule__icon b { font-size: .2rem; font-weight: 700; line-height: 1; color: var(--gold-2); }
 .dmodule__type { font-family: var(--font-display); font-size: .12rem; letter-spacing: .1em; padding: 0 .06rem; border: 1px solid var(--line-3); color: var(--text-lo); }
 .dmodule.is-none .dmodule__name { color: var(--text-dim); font-weight: 500; }
-/* a teammate unit's 策略 band on the detail card (same reading as the 本局信息 drawer's .iband) */
-.dband { display: flex; gap: .12rem; align-items: flex-start; padding: .1rem; background: rgba(78, 216, 175, .05); border: 1px solid var(--mint-800); }
-.dband > div { display: flex; flex-direction: column; gap: .03rem; min-width: 0; }
-.dband b { font-size: .19rem; }
-.dband b small { font-size: .14rem; font-weight: 400; margin-left: .06rem; }
-.dband__desc { font-size: .14rem; }
 .ditem { display: flex; gap: .1rem; align-items: flex-start; }
 .ditem__text { display: flex; flex-direction: column; gap: .02rem; min-width: 0; }
 .ditem__text b { font-size: .15rem; }
