@@ -129,7 +129,7 @@ describe('phaseBanner names the shared-field players', () => {
 });
 
 test('the game screen passes the viewer to the banner and the team panel frames the avatar (hooks components: source)', () => {
-  assert.match(read('public/js/screens/game.js'), /phaseBanner\(phase, pub, myId\)/);
+  assert.match(read('public/js/screens/game.js'), /phaseBanner\(phase, pub, myId, alive\)/);
   const panel = read('public/js/ui/teamPanel.js');
   assert.match(panel, /import \{ sameFieldmates \} from '\.\.\/battle\/observe\.js'/);
   assert.match(panel, /const mates = new Set\(sameFieldmates\(pub, myId\)\)/);

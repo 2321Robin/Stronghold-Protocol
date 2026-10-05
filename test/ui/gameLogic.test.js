@@ -69,6 +69,11 @@ describe('phases', () => {
     assert.equal(phaseBanner(PHASE.HIDDEN_CORE, {}).title, '隐秘核心');
     assert.equal(phaseBanner(PHASE.COMBAT, {}).title, '作战开始');
     assert.match(phaseBanner(PHASE.ROUND_START, { round: 7 }).title, /7/);
+    // round income only goes to alive seats: an eliminated player / spectator seat reads 观战中, never 资金已到账
+    // (4th arg alive; 3rd is the myId of the same-field banner naming — same-field.test.js)
+    assert.equal(phaseBanner(PHASE.ROUND_START, { round: 7 }).sub, '资金已到账');
+    assert.equal(phaseBanner(PHASE.ROUND_START, { round: 7 }, null, true).sub, '资金已到账');
+    assert.equal(phaseBanner(PHASE.ROUND_START, { round: 7 }, null, false).sub, '观战中');
     assert.equal(phaseBanner(PHASE.SETTLE, {}), null);
     assert.equal(prepCapsuleLabel(PHASE.PREP), '休息一下');
   });

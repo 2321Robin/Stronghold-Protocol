@@ -159,13 +159,16 @@ export function ownerBandId(pub, ownerId) {
 }
 
 /** Banner shown when a phase starts: { title, sub?, tone } or null. `myId`: the viewer, to name the players sharing
- *   their battlefield (最终攻势 / 隐秘核心 pair, 联防 field — user playtest #5); null keeps the generic copy. */
-export function phaseBanner(phase, pub, myId = null) {
+ *   their battlefield (最终攻势 / 隐秘核心 pair, 联防 field — user playtest #5); null keeps the generic copy. `alive`
+ *   is the local viewer's seat state (game.js state; false for eliminated players and for spectator seats): round income
+ *   only goes to alive seats (Match.startRound), so their round-start banner reads 观战中 — the word the dead pill and
+ *   the combat HUD use — instead of announcing funds that never arrive. */
+export function phaseBanner(phase, pub, myId = null, alive = true) {
   const r = int(pub?.round, 0);
   const mates = () => sameFieldmates(pub, myId).map((id) => nameOf(pub, id));
   switch (phase) {
     case PHASE.BATTLE_CHECK: return { title: '协议启动', micro: 'PROTOCOL START', tone: 'mint', sub: '模拟即将开始', duration: 2600 };
-    case PHASE.ROUND_START: return { title: `第 ${r} 回合`, micro: `ROUND ${String(r).padStart(2, '0')}`, tone: 'mint', sub: '资金已到账' };
+    case PHASE.ROUND_START: return { title: `第 ${r} 回合`, micro: `ROUND ${String(r).padStart(2, '0')}`, tone: 'mint', sub: alive === false ? '观战中' : '资金已到账' };
     case PHASE.SP_DRAFT: return { title: '机变阶段', micro: 'CONTINGENCY', tone: 'gold', sub: '依次选择机变' };
     case PHASE.PREP: return { title: '休整期', micro: `ROUND ${String(r).padStart(2, '0')} // REST`, tone: 'mint', sub: '部署干员，准备迎敌' };
     case PHASE.COMBAT: return { title: '作战开始', micro: 'COMBAT', tone: 'orange', sub: '各自行动阶段' };
