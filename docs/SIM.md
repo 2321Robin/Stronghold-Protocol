@@ -183,7 +183,10 @@ bounty?:{coins, ownerPlayerId}, tag?:'boss'|'part'|'escort'|'bounty', ownerPlaye
 `RouteSpec` accepts data/waves.json routes (`{motion, start, end, checkpoints:[[r,c]…], steps:[{t:'move',p},{t:'wait',s},{t:'disappear'},{t:'appear',p}]}`)
 and research routes (`{m, s, e, cp:[['MOVE',r,c]…]}`). `spawnsFromTemplate(waveEntry, {mods})` (simdata.js) converts a
 template into `{ routes, spawns, maxPlayTime, overrides, extraRoutes }` (non-spawn `action` entries are skipped; `unharmful`
-and `tag:'part'` spawns don't count in `total`).
+and `tag:'part'` spawns don't count in `total`). The boss templates' 传送门 reads as "reappear on the far side": four
+official routes write the crossing as `disappear → wait → move` to the exit with no `appear` (their twins spell the
+`appear` out), so normalizeRoute re-inserts the exit `appear` ahead of that move — otherwise the enemy walks the rest
+of its route invisible and leaks unseen (test/sim/portal-appear.test.js).
 
 A `bounty` pays `coins` once, when the enemy really dies (not a knock-out it survives; a leak pays nothing), to
 `Battle._bountyPayee`: the player of the operator or summon that dealt the blow, if that player is in the battle; any
