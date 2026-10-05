@@ -40,6 +40,7 @@ test('#44 prep scout: held pieces are units on the hand row; deploying moves the
     assert.equal(u.kind, 'op');
     assert.equal(u.items, undefined, 'no items equipped yet');
   }
+  assert.deepEqual(h.lastTo('p_0', 'm.field').effects, h.ps('p_1').effectsView(), 'the scouted effects column rides the meta');
 
   // deploying it is a hand AND a board change: one new push with the piece on the field and off the hand row
   const [r, c] = legalTileFor(m, b, id);

@@ -989,7 +989,9 @@ export class Match {
     // §2.2 "Teammates"; render/app.js enterBattle({ prep: true, nextEnemies }))
     let nextEnemies = [];
     try { nextEnemies = this.nextEnemiesFor(ps); } catch (e) { this.reportError('nextEnemies', e); }
-    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, prep: true, nextEnemies };
+    // the scouted player's effects column (策略 / 机变 / 悬赏 …), display-ready (user playtest #2: while scouting, the
+    // right column shows the watched player's effects, not one's own)
+    return { t: 'm.field', fieldId: `n:${ps.playerId}`, kind: 'normal', rect: { ...GEO.NORMAL_RECT }, stageId: this.stageId, units, effects: ps.effectsView(), prep: true, nextEnemies };
   }
 
   /** Board signature of a prep scout view (units and hand: a shop or funds change is not a board change). */
