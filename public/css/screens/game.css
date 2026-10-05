@@ -306,6 +306,9 @@
 .team__eye .icon { width: .2rem; height: .2rem; }
 .team__row.is-self .pavatar { box-shadow: 0 0 0 2px var(--mint-500), 0 0 .18rem rgba(23, 249, 183, .35); }
 .team__row.is-watched .pavatar { box-shadow: 0 0 0 2px var(--amber), 0 0 .18rem rgba(246, 163, 41, .45); }
+/* 同战场金框（最终攻势 / 隐秘核心 / 联防 + boss 回合备战配对，游玩记录 #5）：官方协同的标法是头像带框；
+   声明在 is-watched 之后，观看该队友时金框仍在 */
+.team__row.is-same .pavatar { box-shadow: 0 0 0 2px var(--gold), 0 0 .18rem rgba(255, 198, 0, .4); }
 .team__row.is-dead .team__name { color: var(--text-dim); text-decoration: line-through; }
 .team__bubble { position: absolute; left: calc(100% + .06rem); top: 50%; transform: translateY(-50%); width: max-content; max-width: 3.2rem; }
 /* 前往查看 / 返回战场 (research 09 §3.1: tapping a teammate's avatar expands a mint button under it) */

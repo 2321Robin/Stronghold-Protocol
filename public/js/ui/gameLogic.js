@@ -29,6 +29,7 @@ import { rangeTiles, pieceDir } from './facing.js';
 import { layoutPen } from '../render/pen.js';
 import { BOSS_ROW_SHIFT, MAX_COL } from '../render/prepfield.js';
 import { bossLevelSeconds } from './matchStatus.js';
+import { sameFieldmates, nameOf } from '../battle/observe.js';
 
 // ---- small helpers -------------------------------------------------------------------------------
 
@@ -157,9 +158,11 @@ export function ownerBandId(pub, ownerId) {
   return typeof p?.bandId === 'string' && p.bandId ? p.bandId : null;
 }
 
-/** Banner shown when a phase starts: { title, sub?, tone } or null. */
-export function phaseBanner(phase, pub) {
+/** Banner shown when a phase starts: { title, sub?, tone } or null. `myId`: the viewer, to name the players sharing
+ *   their battlefield (最终攻势 / 隐秘核心 pair, 联防 field — user playtest #5); null keeps the generic copy. */
+export function phaseBanner(phase, pub, myId = null) {
   const r = int(pub?.round, 0);
+  const mates = () => sameFieldmates(pub, myId).map((id) => nameOf(pub, id));
   switch (phase) {
     case PHASE.BATTLE_CHECK: return { title: '协议启动', micro: 'PROTOCOL START', tone: 'mint', sub: '模拟即将开始', duration: 2600 };
     case PHASE.ROUND_START: return { title: `第 ${r} 回合`, micro: `ROUND ${String(r).padStart(2, '0')}`, tone: 'mint', sub: '资金已到账' };
@@ -167,12 +170,20 @@ export function phaseBanner(phase, pub) {
     case PHASE.PREP: return { title: '休整期', micro: `ROUND ${String(r).padStart(2, '0')} // REST`, tone: 'mint', sub: '部署干员，准备迎敌' };
     case PHASE.COMBAT: return { title: '作战开始', micro: 'COMBAT', tone: 'orange', sub: '各自行动阶段' };
     case PHASE.UNITE: {
+      const shared = mates();
+      if (shared.length) return { title: '联防阶段', micro: 'JOINT DEFENSE', tone: 'orange', sub: `你与【${shared.join('、')}】在同一战场，守住防线` };
       const names = new Map(sortedPlayers(pub).map((p) => [p.playerId, p.name || '博士']));
       const helpers = Array.isArray(pub?.unite?.helpers) ? pub.unite.helpers.map((id) => names.get(id)).filter(Boolean) : [];
       return { title: '联防阶段', micro: 'JOINT DEFENSE', tone: 'orange', sub: helpers.length ? `联防：${helpers.join('、')}` : '完美作战的博士迎战突破防线的敌人' };
     }
-    case PHASE.FINAL_ASSAULT: return { title: '最终攻势', micro: 'FINAL ASSAULT', tone: 'red', sub: '击败敌方领袖' };
-    case PHASE.HIDDEN_CORE: return { title: '隐秘核心', micro: 'HIDDEN CORE', tone: 'red', sub: '被源石侵蚀的假想敌' };
+    case PHASE.FINAL_ASSAULT: {
+      const shared = mates();
+      return { title: '最终攻势', micro: 'FINAL ASSAULT', tone: 'red', sub: shared.length ? `你与【${shared.join('、')}】在同一战场，击败敌方领袖` : '击败敌方领袖' };
+    }
+    case PHASE.HIDDEN_CORE: {
+      const shared = mates();
+      return { title: '隐秘核心', micro: 'HIDDEN CORE', tone: 'red', sub: shared.length ? `你与【${shared.join('、')}】在同一战场，被源石侵蚀的假想敌` : '被源石侵蚀的假想敌' };
+    }
     case PHASE.SETTLE: return null;
     default: return null;
   }

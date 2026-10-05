@@ -922,6 +922,13 @@ export class Match {
       }),
     };
     if (this.teamLp != null) v.teamLp = Math.max(0, Math.round(this.teamLp));
+    // Boss-round prep (回合开始 / 机变 / 休整期): the seat pairs are already planned (_planBossWaves) — publish them so
+    // the team panel can frame the co-field players while the fight is still being prepared (user playtest #5: nothing
+    // on screen said who you fight the boss beside until the assault banner flashed once). Gone at the next round's
+    // start with bossWaves; during the battle itself pub.fields[].players carries the same pairing.
+    if (this.bossWaves && (this.phase === PHASE.ROUND_START || this.phase === PHASE.SP_DRAFT || this.phase === PHASE.PREP)) {
+      v.bossPairing = this.bossWaves.map((w) => w.players.slice());
+    }
     // 最终攻势 / 隐秘核心: when the overtime drain starts (ms epoch; `deadline` is the level's 120 s countdown)
     if ((this.phase === PHASE.FINAL_ASSAULT || this.phase === PHASE.HIDDEN_CORE) && this.overtimeAt) v.overtimeAt = this.overtimeAt;
     if (this.bossPool) v.bossHp = { hp: Math.max(0, Math.round(this.bossPool.hp)), max: Math.round(this.bossPool.maxHp) };

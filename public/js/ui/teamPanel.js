@@ -21,6 +21,7 @@ import { PlayerAvatar, LpTower, GIcon, LocalSprite } from './gameComponents.js';
 import { EmoteBubble } from './emotes.js';
 import { STATUS_META, sortedPlayers } from './gameLogic.js';
 import { MissTag, uniteRemaining } from './hud.js';
+import { sameFieldmates } from '../battle/observe.js';
 import { localAsset } from '../data.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
@@ -77,6 +78,8 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
   useEffect(() => { setOpenPid(null); }, [phaseKey, watching, observe?.observing]);
   const players = sortedPlayers(pub);
   if (!players.length) return null;
+  // the shared-field phases (最终攻势 / 隐秘核心 / 联防): mark the rows fighting next to the viewer (user playtest #5)
+  const mates = new Set(sameFieldmates(pub, myId));
   const click = (p, self) => {
     if (!observe) { onWatch(p); return; }
     if (self) { if (observe.observing) observe.onBack(); setOpenPid(null); return; }
@@ -96,9 +99,15 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
       const back = !!observe && self && observe.observing;
       const title = observe ? (self ? (observe.observing ? '返回战场' : '你自己') : `查看 ${p.name} 的战场`) : (self ? '查看自己的阵地' : `查看 ${p.name} 的阵地`);
       const lp = rowLp(p, pub, self ? selfLive : null, { uniteLocal, cap });
-      return html`<div key=${p.playerId} class=${cx('team__row', self && 'is-self', watched && 'is-watched', p.alive === false && 'is-dead', open && 'is-open')}>
+      const same = !self && mates.has(p.playerId);
+      // the shared-field frame (最终攻势 / 隐秘核心 / 联防 + the boss-round prep pairing, user playtest #5): the official
+      // co-op style — a gold frame on the avatar, the tooltip says why; it beats the old text chip nobody noticed
+      const avatar = same
+        ? html`<${Tooltip} text="与你在同一战场" placement="right"><${PlayerAvatar} player=${p} self=${self} class="pavatar--same" /><//>`
+        : html`<${PlayerAvatar} player=${p} self=${self} />`;
+      return html`<div key=${p.playerId} class=${cx('team__row', self && 'is-self', same && 'is-same', watched && 'is-watched', p.alive === false && 'is-dead', open && 'is-open')}>
         <button type="button" class="team__btn" onClick=${() => click(p, self)} title=${title} aria-expanded=${observe && !self ? String(open) : undefined}>
-          <${PlayerAvatar} player=${p} self=${self} />
+          ${avatar}
           <span class="team__seat num">P${(p.seat ?? 0) + 1}</span>
           ${p.isBot ? html`<span class="team__ai">AI</span>` : null}
           ${self ? html`<span class="team__you"><${Icon} name="user" /></span>` : null}
