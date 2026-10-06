@@ -31,6 +31,7 @@ import { chessLoadout } from '../ui/gameLogic.js';
 import { data, useData, localAsset, DATA_FILES } from '../data.js';
 import { useStore } from '../store.js';
 import { PHASE } from '../../../shared/constants.js';
+import { extraChessOf } from '../../../shared/protocol.js';
 import {
   MODULE_NONE, PROF_ORDER, PROF_NAME, rosterOf, filterRoster, recordsOf, chessOptions, effectiveChoice, setChoice, resetChoice,
   changedCount, skillLabel, moduleBadge, attrRows, skillTags, quickSkillTags, traitLines, serializeExport, parseImport, LOADOUT_IMPORT_MAX_BYTES,
@@ -521,7 +522,8 @@ function LoadoutScreen({ st }) {
   const m = data.get('assets');
   const getChess = (id) => data.lookup('chess', id);
   const getBond = (id) => data.lookup('bonds', id);
-  const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale()]); // (names follow a language switch)
+  const extraChess = extraChessOf(useStore((s) => s.room?.extras || s.match?.public?.extras || null));
+  const roster = useMemo(() => rosterOf(data.list('chess'), extraChess), [ready, data.locale(), extraChess.join(',')]); // (names follow a language switch)
   const bonds = useMemo(() => {
     const used = new Set(roster.flatMap((c) => c.bonds || []));
     return (data.list('bonds') || []).filter((b) => b && used.has(b.bondId))
@@ -637,7 +639,11 @@ function LoadoutScreen({ st }) {
     if (!res.ok) { toast(t('导入失败：{error}', { error: res.error }), 'error'); return; }
     // 0.2.2: a payload with `ops` replaces the 潜能 / 练度 too (an older export leaves them alone)
     const opIds = res.ops ? cultivationCharIds(data.get('chess'), data.get('backups')) : null;
-    const r = applyLoadoutEntries(res.entries, getChess, res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {});
+    const r = applyLoadoutEntries(res.entries, getChess, {
+      ...(res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {}),
+      // local mod (room.setExtras 地灵): an import keeps the opted-in operator's entry
+      extraChess,
+    });
     const { applied, dropped } = r;
     const nOps = r.ops ?? 0;
     // nothing survived sanitising (unknown chess, or every choice already the default): keep the current loadout
@@ -660,7 +666,7 @@ function LoadoutScreen({ st }) {
       // (a row's quick choices: ←/→ stay with the focused group, PR #301)
       if (e.target?.closest?.('.lo-quick') && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) return;
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && loadoutStore.get().tab !== 'ownership' && loadoutStore.get().tab !== 'diy') {
-        const ids = filterRoster(rosterOf(data.list('chess')), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops).map((c) => c.chessId);
+        const ids = filterRoster(rosterOf(data.list('chess'), extraChess), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops).map((c) => c.chessId);
         if (!ids.length) return;
         const cur = Math.max(0, ids.indexOf(loadoutStore.get().sel));
         const next = ids[(cur + (e.key === 'ArrowRight' ? 1 : -1) + ids.length) % ids.length];
