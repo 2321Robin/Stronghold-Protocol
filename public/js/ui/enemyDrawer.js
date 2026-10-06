@@ -12,6 +12,7 @@ import { Img, UnitThumb, BondGlyph, BandIcon, RichText, GIcon } from './gameComp
 import { groupEnemies, factionTypes, briefingBondTip } from './gameLogic.js';
 import { matchInfoModel, DiyBannedLine } from './matchInfo.js';
 import { extraChessOf } from '../../../shared/protocol.js';
+import { bandProgress } from './bandProgress.js';
 import { factionIconUrl } from './assetUrls.js';
 import { data } from '../data.js';
 import { t, tParts, N_ } from '../../../shared/i18n.js';
@@ -61,7 +62,7 @@ function EnemiesTab({ pub, priv, onEnemy }) {
   </div>`;
 }
 
-function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {
+export function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {
   const model = matchInfoModel(pub, {
     bonds: data.list('bonds'), chess: (id) => data.lookup('chess', id), mode: data.get('config')?.modes?.[pub?.modeId],
     // the own 自选 pieces this match leaves out of the shop (m.private.diyBanned) — not while scouting a teammate
@@ -72,6 +73,9 @@ function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {
   const disabled = new Set(bonds.filter((b) => stateOf(b.bondId)).map((b) => b.bondId));
   // while scouting a teammate's prep board the drawer shows THEIR 策略 in place of one's own (user playtest #2 item 2)
   const band = (bandId || priv?.bandId) ? data.lookup('bands', bandId || priv.bandId) : null;
+  // the cumulative strategies' progress (playtest #16): one's own m.private.counters only — a scouted teammate's band
+  // shows no progress line (their counters are not in our m.private)
+  const progress = band && !bandOwner ? bandProgress(band.bandId, priv?.counters, pub?.round ?? null) : null;
   const stage = pub?.stageId ? data.lookup('stages', pub.stageId) : null;
   const withBans = bonds.filter((b) => disabled.has(b.bondId) || (perBond.get(b.bondId) || 0) > 0)
     .sort((a, b) => (disabled.has(b.bondId) - disabled.has(a.bondId)) || ((perBond.get(b.bondId) || 0) - (perBond.get(a.bondId) || 0)));
@@ -79,7 +83,8 @@ function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {
     ${band ? html`<div class="iband">
       <${BandIcon} bandId=${band.bandId} size="md" />
       <div><${MicroLabel} tone="mint">STRATEGY // ${bandOwner ? t('{bandOwner} 的策略', { bandOwner }) : t('我的策略')}</${MicroLabel}><b>${band.name} <small class="t-lo">${band.effectName}</small></b>
-        <${RichText} text=${band.descRaw || band.desc} class="iband__desc" /></div>
+        <${RichText} text=${band.descRaw || band.desc} class="iband__desc" />
+        ${progress ? html`<div class="iband__progress">${progress.lines.map((l, i) => html`<span key=${i}>${l}</span>`)}</div>` : null}</div>
     </div>` : null}
     ${stage ? html`<p class="istage"><${Icon} name="rook" />${t('战场：')}<b>${stage.name || stage.id}</b></p>` : null}
     <h4 class="ihead">${t('本局禁用干员情况')} <small class="num">${banned.length}</small></h4>
