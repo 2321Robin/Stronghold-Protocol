@@ -24,6 +24,8 @@ import { OWNERSHIP_PREF, parseStoredOwnership, toStoredOwnership, cleanIds, sani
 import { DIY_PREF, parseStoredDiy, toStoredDiy, cleanPicks, sanitizeDiyPicks } from './diyModel.js';
 import { toast } from './toasts.js';
 import { t, N_ } from '../../../shared/i18n.js';
+import { store } from '../store.js';
+import { extraChessOf } from '../../../shared/protocol.js';
 
 export const SYNC_DEBOUNCE_MS = 500;
 export const RETRY_MS = 1500;
@@ -85,9 +87,9 @@ export function setOpsMap(ops) {
  * @returns {{ applied: number, dropped: number, ops?: number }} entries kept / entries (and settings) not imported / settings
  *   kept (only with `ops`)
  */
-export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null } = {}) {
+export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null, extraChess = null } = {}) {
   const asked = Object.keys(entries || {}).length;
-  const clean = sanitizeEntries(entries, lookup);
+  const clean = sanitizeEntries(entries, lookup, extraChess);
   const applied = Object.keys(clean).length;
   const cleanOps = ops && isOperator ? sanitizeOps(ops, isOperator) : null;
   const nOps = cleanOps ? Object.keys(cleanOps).length : 0;
@@ -274,7 +276,9 @@ export function installLoadoutSync({ net, getChessReady, getBackupsReady, lookup
       if ((!current || Object.keys(current).length === 0) && !hasOps) return { entries: {}, ops: {} };
       const loaded = await ready();
       if (loaded == null) return null;
-      const entries = sanitizeEntries(target.get().entries, lookup);
+      // local mod (room.setExtras 地灵): keep the opted-in operator's entry when the room/match option is on
+      const extras = extraChessOf(store.get().room?.extras || store.get().match?.public?.extras || null);
+      const entries = sanitizeEntries(target.get().entries, lookup, extras);
       if (!hasOps) return { entries, ops: {} };
       if ((await readyBackups()) == null) return null;
       const ids = opIds();

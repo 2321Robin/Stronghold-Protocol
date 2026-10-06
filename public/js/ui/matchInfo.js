@@ -43,7 +43,7 @@ const cx = (...p) => p.flat().filter(Boolean).join(' ');
  *   stateOf: 'off' = the mode never activates the bond (本局禁用), 'drawn' = in the drawn set D (阵容不完整), null = normal;
  *   banned: the banned chess ids the data knows, by tier (ties keep the server's order); perBond: bondId → banned members
  */
-export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = null, priv = null, diyData = null } = {}) {
+export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = null, priv = null, diyData = null, extraChess = [] } = {}) {
   const sets = disabledBondSets(pub, mode?.inactiveBondIds);
   const stateOf = (id) => (sets.off.has(id) ? 'off' : sets.drawn.has(id) ? 'drawn' : null);
   const list = (Array.isArray(bonds) ? bonds : []).filter((b) => !!b && typeof b === 'object' && typeof b.bondId === 'string')
@@ -53,7 +53,7 @@ export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = nul
     .sort((a, b) => tierOf(a) - tierOf(b));
   return {
     sets, stateOf, bonds: list, core: list.filter((b) => b.isCore), addon: list.filter((b) => !b.isCore),
-    banned, perBond: bannedPerBond(list, banned),
+    banned, perBond: bannedPerBond(list, banned, extraChess),
     diyBanned: priv && diyData ? diyBannedPieces(priv, chess, diyData) : [],
   };
 }

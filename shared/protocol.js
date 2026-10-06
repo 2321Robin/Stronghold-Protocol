@@ -139,13 +139,20 @@ export function loadoutOptions(base, golden = null) {
  * @param {(id: string) => any} getChess chess record lookup (normal and golden ids)
  * @returns {{ ok: true, loadout: Record<string, { skill: number, module: string|null }> } | { error: 'BAD_MSG'|'BAD_TARGET', detail: string }}
  */
-export function checkLoadout(entries, getChess) {
+/** Local mod (room.setExtras 地灵, never for upstream): hidden base chess the room option opts into the pool. */
+export const EXTRA_CHESS = ['chess_char_1_11_a'];
+/** Hidden base chess ids a match option makes pool-visible (`extras` = room.extras / m.public.extras). */
+export const extraChessOf = (extras) => (extras && extras.earthspirit ? EXTRA_CHESS : []);
+
+export function checkLoadout(entries, getChess, extraChess = []) {
   if (!isLoadoutEntries(entries)) return { error: 'BAD_MSG', detail: 'bad loadout entries' };
+  const allow = Array.isArray(extraChess) && extraChess.length ? new Set(extraChess) : null;
   const out = {};
   for (const id of Object.keys(entries)) {
     const e = entries[id];
     const base = typeof getChess === 'function' ? getChess(id) : null;
-    if (!base || base.isGolden || base.visible === false || base.isHidden || base.isDiy || (base.baseId && base.baseId !== id)) {
+    const hidden = !allow || !allow.has(id) ? (base?.visible === false || base?.isHidden) : false;
+    if (!base || base.isGolden || hidden || base.isDiy || (base.baseId && base.baseId !== id)) {
       return { error: 'BAD_TARGET', detail: `unknown chess ${id}` };
     }
     const golden = base.goldenId ? getChess(base.goldenId) || null : null;

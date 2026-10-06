@@ -9,7 +9,7 @@
 
 import { PHASE } from '../../../shared/constants.js';
 import { msg, dn } from '../../../shared/i18n.js';
-import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, resolveLoadout } from '../../../shared/protocol.js';
+import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, resolveLoadout, extraChessOf } from '../../../shared/protocol.js';
 import { cultivationOf } from '../../../shared/potential.js';
 import { tileKey, boardOrder } from '../board.js';
 
@@ -95,7 +95,7 @@ export class PlayerBasics {
         if (Object.keys(x).length) entries[id] = x;
       }
     }
-    const res = checkLoadout(entries, (id) => this.gd.chess(id));
+    const res = checkLoadout(entries, (id) => this.gd.chess(id), extraChessOf(this.m.extras));
     if (!res || !res.ok) {
       this.m.log?.warn?.(`[match ${this.m.roomCode}] loadout of ${this.playerId} ignored: ${res && res.detail}`);
       return false;

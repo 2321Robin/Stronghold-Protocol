@@ -172,6 +172,7 @@
 //   common.js        what the modules share (FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS — re-exported here, OK,
 //                    fail, BOSS_CLOCK_MS)
 
+import { extraChessOf } from '../../shared/protocol.js';
 import { PHASE, modeIdFor } from '../../shared/constants.js';
 import { Battle } from '../sim/Battle.js';
 import { DataSource } from '../sim/simdata.js';
@@ -225,7 +226,6 @@ function dataSourceFor(data) {
 }
 
 /** Hidden base chess a match option may add to the shared pool (local mod: 地灵, officially unlisted this season). */
-const EXTRA_POOL_CHESS = ['chess_char_1_11_a'];
 
 export class Match {
   /** @param {object} opts see MATCH INTERFACE above */
@@ -247,7 +247,7 @@ export class Match {
     this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};
     // per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool
     this.extras = { earthspirit: !!(opts.extras && opts.extras.earthspirit) };
-    this.extraChess = this.extras.earthspirit ? EXTRA_POOL_CHESS : [];
+    this.extraChess = extraChessOf(this.extras);
     this.gd = new GameData(this.data, this.modeId);
     if (!this.difficulty) this.difficulty = this.gd.difficulty;
     this.isSolo = this.mode === 'solo' || this.gd.isSolo;
