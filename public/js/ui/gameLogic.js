@@ -171,7 +171,10 @@ export function phaseBanner(phase, pub, myId = null) {
     case PHASE.COMBAT: return { title: '作战开始', micro: 'COMBAT', tone: 'orange', sub: '各自行动阶段' };
     case PHASE.UNITE: {
       const shared = mates();
-      if (shared.length) return { title: '联防阶段', micro: 'JOINT DEFENSE', tone: 'orange', sub: `你与【${shared.join('、')}】在同一战场，守住防线` };
+      // 「你与【X】在同一战场」is only true for a helper — a leaker's enemies walk the unite field, the leaker does
+      // not stand on it: they read the neutral helpers roster instead (playtest #5 clarification)
+      const iAmHelper = Array.isArray(pub?.unite?.helpers) && pub.unite.helpers.includes(myId);
+      if (shared.length && iAmHelper) return { title: '联防阶段', micro: 'JOINT DEFENSE', tone: 'orange', sub: `你与【${shared.join('、')}】在同一战场，守住防线` };
       const names = new Map(sortedPlayers(pub).map((p) => [p.playerId, p.name || '博士']));
       const helpers = Array.isArray(pub?.unite?.helpers) ? pub.unite.helpers.map((id) => names.get(id)).filter(Boolean) : [];
       return { title: '联防阶段', micro: 'JOINT DEFENSE', tone: 'orange', sub: helpers.length ? `联防：${helpers.join('、')}` : '完美作战的博士迎战突破防线的敌人' };

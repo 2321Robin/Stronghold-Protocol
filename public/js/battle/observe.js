@@ -30,32 +30,32 @@ export function nameOf(pub, playerId) {
   return players(pub).find((p) => p.playerId === playerId)?.name || '队友';
 }
 
-const SHARED_FIELD = new Set([PHASE.UNITE, PHASE.FINAL_ASSAULT, PHASE.HIDDEN_CORE]);
+const SHARED_FIELD = new Set([PHASE.FINAL_ASSAULT, PHASE.HIDDEN_CORE]);
 
 /**
  * The player ids fighting on the viewer's battlefield in the shared-field phases — 最终攻势 / 隐秘核心: the seat pair
- * (finalAssault.js pairPlayers, the field's `players`); 联防: the unite field's own leakers + helpers (the unite field's
- * `players` carries only the helpers, `pub.unite.leakers` the rest). Boss-round prep (回合开始 / 机变 / 休整期): the
- * pairing is planned before the fight (Match._planBossWaves) and published as `pub.bossPairing` — the frames show while
- * the board is still being prepared. The viewer must be a seated player still in (`pub.players`, `alive !== false`) and,
- * in 联防, one of the unite field's own participants — an eliminated player and a spectator seat may watch any field, so
- * nobody is beside them (upstream review of the frame patch: without the check they would see every row framed and a
- * "你与全员" banner). Empty in the solo phases (各自行动: one field per player), outside these phases, and without a
- * viewer (`myId`). User playtest #5: nothing on screen said who shares your field — the phase banner names them and the
- * team panel frames their avatar.
+ * (finalAssault.js pairPlayers, the field's `players`); 联防: the unite field's helpers only (≤ 2) — the leakers'
+ * enemies walk the unite field but the leakers are not on it, so the frames mark its defenders (playtest #5
+ * clarification: 2 leakers + 2 helpers used to frame the whole team). The unite frames describe the field, not the
+ * viewer, so every viewer sees them — a leaker, a perfect player not chosen to help, an eliminated player and a
+ * spectator seat included; the team panel's tooltip says 正在驻守联防战场 there (only a helper really shares the
+ * field, and `gameLogic.js phaseBanner` keeps 「你与【X】在同一战场」 for them alone). Boss-round prep (回合开始 /
+ * 机变 / 休整期): the pairing is planned before the fight (Match._planBossWaves) and published as `pub.bossPairing`
+ * — the frames show while the board is still being prepared. Outside 联防 the viewer must be a seated player still
+ * in (`pub.players`, `alive !== false`) — an eliminated player and a spectator seat may watch any field, so nobody is
+ * beside them, and an outsider is beside nobody either (upstream review of the frame patch: without the check they
+ * would see every row framed and a "你与全员" banner). Empty in the solo phases (各自行动: one field per player),
+ * outside these phases, and without a viewer (`myId`). User playtest #5: nothing on screen said who shares your field
+ * — the phase banner names them and the team panel frames their avatar.
  */
 export function sameFieldmates(pub, myId) {
   if (!myId || !isObj(pub)) return [];
+  if (pub.phase === PHASE.UNITE) {
+    const helpers = Array.isArray(pub.unite?.helpers) ? pub.unite.helpers : [];
+    return [...new Set(helpers.filter((pid) => typeof pid === 'string' && pid))].filter((pid) => pid !== myId);
+  }
   const me = Array.isArray(pub.players) ? pub.players.find((p) => isObj(p) && p.playerId === myId) : null;
   if (!me || me.alive === false) return [];
-  if (pub.phase === PHASE.UNITE) {
-    const ids = [
-      ...(Array.isArray(pub.unite?.leakers) ? pub.unite.leakers : []),
-      ...(Array.isArray(pub.unite?.helpers) ? pub.unite.helpers : []),
-    ];
-    if (!ids.includes(myId)) return [];
-    return [...new Set(ids.filter((pid) => typeof pid === 'string' && pid))].filter((pid) => pid !== myId);
-  }
   if (SHARED_FIELD.has(pub.phase)) {
     const f = fieldOf(pub, myId);
     if (f && Array.isArray(f.players)) return f.players.filter((pid) => pid !== myId);

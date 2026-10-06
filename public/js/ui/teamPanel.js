@@ -101,9 +101,12 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
       const lp = rowLp(p, pub, self ? selfLive : null, { uniteLocal, cap });
       const same = !self && mates.has(p.playerId);
       // the shared-field frame (最终攻势 / 隐秘核心 / 联防 + the boss-round prep pairing, user playtest #5): the official
-      // co-op style — a gold frame on the avatar, the tooltip says why; it beats the old text chip nobody noticed
+      // co-op style — a gold frame on the avatar, the tooltip says why; it beats the old text chip nobody noticed.
+      // 联防 frames describe the field (visible to every viewer, eliminated and spectator seats included), so the
+      // tooltip states who defends it instead of claiming the viewer shares it
+      const sameTip = pub?.phase === PHASE.UNITE ? '正在驻守联防战场' : '与你在同一战场';
       const avatar = same
-        ? html`<${Tooltip} text="与你在同一战场" placement="right"><${PlayerAvatar} player=${p} self=${self} class="pavatar--same" /><//>`
+        ? html`<${Tooltip} text=${sameTip} placement="right"><${PlayerAvatar} player=${p} self=${self} class="pavatar--same" /><//>`
         : html`<${PlayerAvatar} player=${p} self=${self} />`;
       return html`<div key=${p.playerId} class=${cx('team__row', self && 'is-self', same && 'is-same', watched && 'is-watched', p.alive === false && 'is-dead', open && 'is-open')}>
         <button type="button" class="team__btn" onClick=${() => click(p, self)} title=${title} aria-expanded=${observe && !self ? String(open) : undefined}>
