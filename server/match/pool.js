@@ -22,9 +22,10 @@
  * bonds is in D ∪ mode.inactiveBondIds.
  * @param {import('./gamedata.js').GameData} gd
  * @param {Function} rng seeded rng (createRng)
+ * @param {string[]} [extraChess] hidden base chess a match option adds to the pool — ban-checked with the visible ones
  * @returns {{ drawn: string[], staticOff: string[], banned: string[] }}
  */
-export function drawDisabledBonds(gd, rng) {
+export function drawDisabledBonds(gd, rng, extraChess = []) {
   const { core: nCore, addon: nAddon } = gd.bans(gd.difficulty);
   const staticOff = [...gd.modeInactiveBonds].filter((b) => gd.bond(b)).sort();
   const eligible = gd.bondIds.filter((b) => {
@@ -36,7 +37,7 @@ export function drawDisabledBonds(gd, rng) {
   const drawn = [...sample(core, nCore, rng), ...sample(addon, nAddon, rng)].sort();
   const off = new Set([...drawn, ...staticOff]);
   const banned = [];
-  for (const id of gd.visibleChess) {
+  for (const id of [...gd.visibleChess, ...extraChess]) {
     const c = gd.chess(id);
     const bonds = Array.isArray(c.bonds) ? c.bonds : [];
     if (bonds.length > 0 && bonds.every((b) => off.has(b))) banned.push(id);
@@ -53,14 +54,18 @@ function sample(arr, n, rng) {
 export class SharedPool {
   /**
    * @param {import('./gamedata.js').GameData} gd
-   * @param {{ banned?: Iterable<string> }} [opts]
+   * @param {{ banned?: Iterable<string>, extraChess?: Iterable<string> }} [opts] extraChess: hidden base chess a
+   *   match option adds to the pool (local mod: 地灵 via room.setExtras) — ban-checked like visible chess.
    */
-  constructor(gd, { banned = [] } = {}) {
+  constructor(gd, { banned = [], extraChess = [] } = {}) {
     this.gd = gd;
     const ban = new Set(banned);
     /** @type {Map<string, { cap: number, left: number, tier: number }>} */
     this.entries = new Map();
-    for (const id of gd.visibleChess) {
+    const seen = new Set();
+    for (const id of [...gd.visibleChess, ...extraChess]) {
+      if (seen.has(id)) continue;
+      seen.add(id);
       if (ban.has(id)) continue;
       const cap = gd.poolCopies(id);
       if (cap <= 0) continue;
