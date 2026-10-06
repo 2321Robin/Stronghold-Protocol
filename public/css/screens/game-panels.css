@@ -210,6 +210,8 @@
 .ditem__text { display: flex; flex-direction: column; gap: .02rem; min-width: 0; }
 .ditem__text b { font-size: .15rem; }
 .ditem__desc { font-size: .13rem; line-height: 1.55; color: var(--text-lo); }
+/* an item copy's own rolling counter (商业包装方案 已售 X/N, playtest #16): the effect text's progress line */
+.dpack { margin-top: .02rem; font-size: .14rem; font-weight: 500; color: var(--gold-2); }
 .dempty { font-size: .14rem; }
 .dhint { display: flex; align-items: flex-start; gap: .06rem; font-size: .14rem; color: var(--text-lo); line-height: 1.6; }
 .dhint .icon { width: .16rem; height: .16rem; margin-top: .03rem; flex: none; }
@@ -357,6 +359,8 @@ button.bpop__harmony:hover { border-style: solid; color: #fff; }
 .iband b { font-size: .19rem; }
 .iband b small { font-size: .14rem; font-weight: 400; margin-left: .06rem; }
 .iband__desc { font-size: .14rem; line-height: 1.6; color: var(--text-md); }
+/* the cumulative strategies' progress lines (playtest #16): 累计花费 X/55 · 距下次 X/6 · 本回合已得 Y/2 */
+.iband__progress { display: flex; flex-direction: column; gap: .02rem; margin-top: .02rem; font-size: .14rem; font-weight: 500; color: var(--mint-500); }
 .istage { display: flex; align-items: center; gap: .06rem; font-size: .15rem; color: var(--text-lo); }
 .istage .icon { width: .18rem; height: .18rem; color: var(--mint-500); }
 .istage b { color: var(--text-hi); }
