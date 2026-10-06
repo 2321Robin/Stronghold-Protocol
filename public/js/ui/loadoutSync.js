@@ -23,6 +23,8 @@ import { OWNERSHIP_PREF, parseStoredOwnership, toStoredOwnership, cleanIds, sani
 import { DIY_PREF, parseStoredDiy, toStoredDiy, cleanPicks, sanitizeDiyPicks } from './diyModel.js';
 import { toast } from './toasts.js';
 import { t, N_ } from '../../../shared/i18n.js';
+import { store } from '../store.js';
+import { extraChessOf } from '../../../shared/protocol.js';
 
 export const SYNC_DEBOUNCE_MS = 500;
 export const RETRY_MS = 1500;
@@ -69,9 +71,9 @@ export function setEntries(entries) {
  * @param {(id: string) => any} lookup chess lookup
  * @returns {{ applied: number, dropped: number }} entries kept / entries that were not imported
  */
-export function applyLoadoutEntries(entries, lookup) {
+export function applyLoadoutEntries(entries, lookup, extraChess = null) {
   const asked = Object.keys(entries || {}).length;
-  const clean = sanitizeEntries(entries, lookup);
+  const clean = sanitizeEntries(entries, lookup, extraChess);
   const applied = Object.keys(clean).length;
   if (applied) setEntries(clean);
   return { applied, dropped: Math.max(0, asked - applied) };
@@ -242,7 +244,9 @@ export function installLoadoutSync({ net, getChessReady, lookupChess, timers, ta
       if (!current || Object.keys(current).length === 0) return {};
       const loaded = await ready();
       if (loaded == null) return null;
-      return sanitizeEntries(target.get().entries, lookup);
+      // local mod (room.setExtras 地灵): keep the opted-in operator's entry when the room/match option is on
+      const extras = extraChessOf(store.get().room?.extras || store.get().match?.public?.extras || null);
+      return sanitizeEntries(target.get().entries, lookup, extras);
     },
   });
 }

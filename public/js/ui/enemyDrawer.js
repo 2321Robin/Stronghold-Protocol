@@ -11,6 +11,7 @@ import { html, Icon, Tabs, MicroLabel } from './components.js';
 import { Img, UnitThumb, BondGlyph, BandIcon, RichText, GIcon } from './gameComponents.js';
 import { groupEnemies, factionTypes, briefingBondTip } from './gameLogic.js';
 import { matchInfoModel, DiyBannedLine } from './matchInfo.js';
+import { extraChessOf } from '../../../shared/protocol.js';
 import { factionIconUrl } from './assetUrls.js';
 import { data } from '../data.js';
 import { t, tParts, N_ } from '../../../shared/i18n.js';
@@ -65,6 +66,7 @@ function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {
     bonds: data.list('bonds'), chess: (id) => data.lookup('chess', id), mode: data.get('config')?.modes?.[pub?.modeId],
     // the own 自选 pieces this match leaves out of the shop (m.private.diyBanned) — not while scouting a teammate
     priv: bandOwner ? null : priv, diyData: { chess: data.get('chess'), backups: data.get('backups') },
+    extraChess: extraChessOf(pub?.extras),
   });
   const { bonds, banned, perBond, stateOf } = model;
   const disabled = new Set(bonds.filter((b) => stateOf(b.bondId)).map((b) => b.bondId));

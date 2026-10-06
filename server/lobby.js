@@ -96,7 +96,7 @@
 
 import { randomBytes, randomInt } from 'node:crypto';
 import { ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor } from '../shared/constants.js';
-import { checkLoadout, checkNotOwned, checkDiyPicks } from '../shared/protocol.js';
+import { checkLoadout, checkNotOwned, checkDiyPicks, extraChessOf } from '../shared/protocol.js';
 import { encode, isDroppable, isErrCode, sendRaw, sendSession } from './net.js';
 import { getData as defaultGetData, lookup } from './data.js';
 import { Match as DefaultMatch } from './match/Match.js';
@@ -602,11 +602,12 @@ export class Lobby {
    */
   loadout(session, { entries }) {
     const data = this.safeData();
-    const res = checkLoadout(entries, (id) => lookup('chess', id, data));
+    const room = this.roomOf(session);
+    // local mod (room.setExtras 地灵): a room with the option on accepts a loadout for the hidden operator too
+    const res = checkLoadout(entries, (id) => lookup('chess', id, data), extraChessOf(room?.extras));
     if (!res || res.error) return fail(res && isErrCode(res.error) ? res.error : ERR.BAD_MSG, res && res.detail);
     const loadout = freezeLoadout(res.loadout);
     session.loadout = loadout;
-    const room = this.roomOf(session);
     if (!room) return OK;
     const seat = room.seatOf(session.playerId);
     if (seat) seat.loadout = loadout;

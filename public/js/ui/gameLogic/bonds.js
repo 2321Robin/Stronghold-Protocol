@@ -166,10 +166,13 @@ export function harmonyMembers(priv, getChess = () => null) {
  * @param {(id:string)=>any} [getChess]
  * @param {(id:string)=>any} [getItem] items.json lookup (the 变形同构体 pairings)
  * @param {((p: any) => any)|null} [pieceRecord] the record of one of the pieces (default: getChess(p.id))
+ * @param {string[]} [extraMembers] hidden members a match option made pool-visible (local mod 地灵, shared/protocol.js
+ *   extraChessOf) — unioned with the record's member list
  */
-export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null) {
+export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, extraMembers = []) {
   const bannedSet = banned instanceof Set ? banned : new Set(Array.isArray(banned) ? banned : []);
-  const members = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);
+  const visible = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);
+  const members = [...visible, ...(Array.isArray(extraMembers) ? extraMembers : []).filter((id) => !visible.includes(id))];
   const baseOf = (id) => getChess(id)?.baseId || (typeof id === 'string' ? id.replace(/_b$/, '_a') : id);
   const onBoard = new Set();
   const owned = new Set();
@@ -239,14 +242,16 @@ export function memberHeadCount(rows, countsHand = false) {
  * Banned-member count per bond (briefing / info drawer red badge).
  * @param {any[]} bonds bonds.json records
  * @param {string[]} bannedChess
+ * @param {string[]} [extraChess] hidden chess a match option made pool-visible (local mod 地灵)
  * @returns {Map<string, number>}
  */
-export function bannedPerBond(bonds, bannedChess) {
+export function bannedPerBond(bonds, bannedChess, extraChess = []) {
   const banned = new Set(Array.isArray(bannedChess) ? bannedChess : []);
+  const extra = new Set(Array.isArray(extraChess) ? extraChess : []);
   const out = new Map();
   for (const b of Array.isArray(bonds) ? bonds : []) {
     if (!isObj(b)) continue;
-    const members = Array.isArray(b.visibleMembers) ? b.visibleMembers : [];
+    const members = [...(Array.isArray(b.visibleMembers) ? b.visibleMembers : []), ...(b.members || []).filter((id) => extra.has(id))];
     out.set(b.bondId, members.filter((id) => banned.has(id)).length);
   }
   return out;
