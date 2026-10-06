@@ -223,6 +223,9 @@ function dataSourceFor(data) {
   return ds;
 }
 
+/** Hidden base chess a match option may add to the shared pool (local mod: 地灵, officially unlisted this season). */
+const EXTRA_POOL_CHESS = ['chess_char_1_11_a'];
+
 export class Match {
   /** @param {object} opts see MATCH INTERFACE above */
   constructor(opts) {
@@ -241,6 +244,9 @@ export class Match {
     this.broadcastFn = opts.broadcast;
     this.onEndFn = opts.onEnd;
     this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};
+    // per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool
+    this.extras = { earthspirit: !!(opts.extras && opts.extras.earthspirit) };
+    this.extraChess = this.extras.earthspirit ? EXTRA_POOL_CHESS : [];
     this.gd = new GameData(this.data, this.modeId);
     if (!this.difficulty) this.difficulty = this.gd.difficulty;
     this.isSolo = this.mode === 'solo' || this.gd.isSolo;
@@ -326,11 +332,11 @@ export class Match {
     this.factions = setup.factions;
     this.bossId = setup.bossId;
     this.hiddenBossId = setup.hiddenBossId;
-    const bans = drawDisabledBonds(this.gd, this.rngSetup);
+    const bans = drawDisabledBonds(this.gd, this.rngSetup, this.extraChess);
     this.disabledBonds = bans.drawn;
     this.staticInactiveBonds = bans.staticOff;
     this.bannedChess = bans.banned;
-    this.pool = new SharedPool(this.gd, { banned: bans.banned });
+    this.pool = new SharedPool(this.gd, { banned: bans.banned, extraChess: this.extraChess });
     // 自选编队 (0.2.0): each human's slotted DIY pieces get their own stock — none for one whose bonds are all off this
     // match (player/diy.js initDiyStock); no randomness is drawn here
     const off = new Set([...bans.drawn, ...bans.staticOff]);
