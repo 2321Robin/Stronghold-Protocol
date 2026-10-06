@@ -180,7 +180,9 @@ export function harmonyMembers(priv, getChess = () => null) {
 export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, extraMembers = []) {
   const bannedSet = banned instanceof Set ? banned : new Set(Array.isArray(banned) ? banned : []);
   const visible = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);
-  const members = [...visible, ...(Array.isArray(extraMembers) ? extraMembers : []).filter((id) => !visible.includes(id))];
+  // an extra member joins THIS bond only when the record's full member list has them (地灵: 奇迹 / 远见 alone)
+  const extra = (Array.isArray(extraMembers) ? extraMembers : []).filter((id) => Array.isArray(bond?.members) && bond.members.includes(id) && !visible.includes(id));
+  const members = [...visible, ...extra];
   const baseOf = (id) => getChess(id)?.baseId || (typeof id === 'string' ? id.replace(/_b$/, '_a') : id);
   const onBoard = new Set();
   const owned = new Set();

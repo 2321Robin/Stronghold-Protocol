@@ -54,6 +54,14 @@ describe('地灵 room option: client pure helpers', () => {
       assert.ok(!bondMembers(bond, null, [], (id) => DATA.chess[id]).some((r) => r.id === ES), `${bondId}: absent without extras`);
     }
   });
+  test('bondMembers does NOT leak 地灵 into bonds she does not belong to (every other bond)', () => {
+    const extras = [ES];
+    for (const bond of Object.values(DATA.bonds)) {
+      if (!bond || bond.bondId === 'miraShip' || bond.bondId === 'visiShip') continue;
+      const rows = bondMembers(bond, null, [], (id) => DATA.chess[id], () => null, extras);
+      assert.ok(!rows.some((r) => r.id === ES), `${bond.bondId}: 地灵 must not appear`);
+    }
+  });
   test('bannedPerBond counts 地灵 per bond only with extras (she is in bannedChess when both her bonds are off)', () => {
     assert.equal(bannedPerBond([MIRA], [ES]).get('miraShip'), 0, 'without extras the badge ignores her');
     assert.equal(bannedPerBond([MIRA], [ES], [ES]).get('miraShip'), 1, 'with extras the badge counts her');
