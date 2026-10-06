@@ -342,22 +342,19 @@ export function RoomScreen() {
     <footer class="room-bar">
       <div class="room-bar__left">
         <span class="room-bar__label">${t('模拟难度')}<${MicroLabel}>DIFFICULTY<//></span>
-        <div class="room-bar__opts">
-          <${DifficultyPicker} room=${room} isHost=${facts.isHost} busy=${busy} onPick=${setDifficulty} />
-          <${AiLastToggle} option=${aiLastOption(room, me.playerId)} busy=${busy} onToggle=${setAiLast} />
-          ${(() => {
-            const on = !!room.extras?.earthspirit;
-            return html`<${Tooltip} text=${facts.isHost
-              ? (on ? '自用：本局招募池已加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见），点击移除' : '自用：点击后本局招募池加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见）')
-              : `创建者${on ? '已' : '未'}将隐藏干员「地灵」加入本局招募池（仅创建者可改）`} placement="top">
-              <button type="button" class="dpick__opt${on ? ' is-active' : ''}" aria-pressed=${on ? 'true' : 'false'}
-                style=${`--d-color: var(--mint-500); margin-left: .12rem; border-right: 0; border: 1px solid var(--${on ? 'mint-700' : 'line'}); border-radius: .04rem;`}
-                disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras(!on)}>
-                ${on ? '✓ 本局加地灵' : '+ 本局加地灵'}
-              </button>
-            <//>`;
-          })()}
-        </div>
+        <${DifficultyPicker} room=${room} isHost=${facts.isHost} busy=${busy} onPick=${setDifficulty} />
+        ${(() => {
+          const on = !!room.extras?.earthspirit;
+          return html`<${Tooltip} text=${facts.isHost
+            ? (on ? t('自用：本局招募池已加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见），点击移除') : t('自用：点击后本局招募池加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见）'))
+            : t('创建者{state}将隐藏干员「地灵」加入本局招募池（仅创建者可改）', { state: on ? t('已') : t('未') })} placement="top">
+            <button type="button" class="dpick__opt${on ? ' is-active' : ''}" aria-pressed=${on ? 'true' : 'false'}
+              style=${`--d-color: var(--mint-500); margin-left: .12rem; border-right: 0; border: 1px solid var(--${on ? 'mint-700' : 'line'}); border-radius: .04rem;`}
+              disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras(!on)}>
+              ${on ? t('✓ 本局加地灵') : t('+ 本局加地灵')}
+            </button>
+          <//>`;
+        })()}
       </div>
       <div class="room-bar__center">
         <div class="ready-count" hidden=${!coop}>
