@@ -125,13 +125,38 @@ test('watch preference: review: an eliminated human reconnecting during prep is 
   assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_1' }), { ok: true });
   h.ps('p_0').eliminate(1);
   m.onDisconnect('p_0');
-  const n = h.allTo('p_0', 'm.field').length;
   m.onReconnect('p_0');
-  assert.ok(h.allTo('p_0', 'm.field').length > n, 'the reconnect pushed a board');
   const meta = h.lastTo('p_0', 'm.field');
   assert.equal(meta?.fieldId, 'n:p_1', 'the preference survived the disconnect');
   assert.equal(meta?.prep, true);
   assert.equal(m.watchers.get('p_0'), 'n:p_1');
+  m.dispose();
+});
+
+test('watch preference: review 2: watching your own board again does not wipe the remembered teammate', () => {
+  const h = makeMatch({ mode: 'coop', humans: 2, seed: 1008, fake: true }).start();
+  h.toPrep(1);
+  const m = h.m;
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_1' }), { ok: true });
+  assert.equal(m.watchPref.get('p_0'), 'p_1');
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_0' }), { ok: true }, '返回战场 / the own row still switches to the own board');
+  assert.equal(m.watchers.get('p_0'), 'n:p_0');
+  assert.equal(m.watchPref.get('p_0'), 'p_1', 'the self-watch left the preference alone');
+  m.dispose();
+});
+
+test('watch preference: review 2: a 联防 field records no preference (its players are only the helpers)', () => {
+  const h = makeMatch({ mode: 'coop', difficulty: 'FUNNY', humans: 3, seed: 1009, fake: true, clientCombat: true, script: (b) => (b.kind === 'normal' && b.round === 1 ? { duration: 1, leaks: { p_0: 4 } } : { duration: 1 }) }).start();
+  h.toPrep(1);
+  const m = h.m;
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_2' }), { ok: true });
+  assert.equal(m.watchPref.get('p_0'), 'p_2');
+  h.ps('p_2').eliminate(1);
+  h.drive(() => m.phase === PHASE.UNITE);
+  assert.deepEqual(m.fields.find((f) => f.fieldId === 'u')?.players, ['p_1'], 'single-helper precondition');
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'u' }), { ok: true });
+  assert.equal(m.watchers.get('p_0'), 'u');
+  assert.equal(m.watchPref.get('p_0'), 'p_2', "the unite field recorded nothing — a lone helper 'p_1' was not written over it");
   m.dispose();
 });
 

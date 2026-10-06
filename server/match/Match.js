@@ -1127,11 +1127,12 @@ export class Match {
   }
 
   /** remember the human owner of a manually watched field (the automatic assignments never touch
-   * it, so "the player I last went to myself" is the whole state). Only a single-player field names who was
-   * watched: a shared field's id (联防 'u', a boss pair field) does not say which of its players the viewer
-   * tapped, so it records nothing — and neither does the viewer's own field (nothing to remember). */
+   * it, so "the player I last went to myself" is the whole state). Only an unambiguous single-player field
+   * records: a 联防 field's players hold only the helpers (a lone helper would be recorded wrong), a boss pair
+   * field's id does not say which of its two players was tapped, and the viewer's own field has nothing to
+   * remember. */
   _watchPrefSet(ps, f) {
-    if (!Array.isArray(f?.players) || f.players.length !== 1 || f.players[0] === ps.playerId) return;
+    if (f?.kind === 'unite' || !Array.isArray(f?.players) || f.players.length !== 1 || f.players[0] === ps.playerId) return;
     this.watchPref.set(ps.playerId, f.players[0]);
   }
 
@@ -1177,7 +1178,8 @@ export class Match {
       if (this.fields.length) return fail(ERR.BAD_TARGET, 'no such field');
       const target = this.players.get(fieldId.slice(2));
       if (!target || !target.alive) return fail(ERR.BAD_TARGET);
-      this.watchPref.set(ps.playerId, target.playerId);
+      // watching your own board again (返回战场 / the own row) must not wipe the remembered teammate
+      if (target.playerId !== ps.playerId) this.watchPref.set(ps.playerId, target.playerId);
       this.watchers.set(ps.playerId, fieldId);
       this._notifyPrepScouts(target, { to: ps.playerId });
       return OK;
