@@ -1127,10 +1127,12 @@ export class Match {
   }
 
   /** remember the human owner of a manually watched field (the automatic assignments never touch
-   * it, so "the player I last went to myself" is the whole state). */
+   * it, so "the player I last went to myself" is the whole state). Only a single-player field names who was
+   * watched: a shared field's id (联防 'u', a boss pair field) does not say which of its players the viewer
+   * tapped, so it records nothing — and neither does the viewer's own field (nothing to remember). */
   _watchPrefSet(ps, f) {
-    const owner = Array.isArray(f?.players) ? (f.players.find((p) => p !== ps.playerId) ?? f.players[0]) : null;
-    if (owner) this.watchPref.set(ps.playerId, owner);
+    if (!Array.isArray(f?.players) || f.players.length !== 1 || f.players[0] === ps.playerId) return;
+    this.watchPref.set(ps.playerId, f.players[0]);
   }
 
   /** the seated human a viewer follows — the one they last watched manually while still in, else
@@ -2660,7 +2662,19 @@ export class Match {
 
   /** Reconnect / resync: the spec of the field the player is on (fast-forwarded by the client). */
   _resendBattle(ps) {
-    if (!this.fields.some((f) => f.cc)) return;
+    if (!this.fields.some((f) => f.cc)) {
+      // no live client field: during the prep-ish phases an eliminated human / spectator seat (re)connecting
+      // mid-phase still gets the prep scout of the player they follow — the same assignment a phase reset makes
+      const prepish = this.phase === PHASE.ROUND_START || this.phase === PHASE.SP_DRAFT || this.phase === PHASE.PREP;
+      if (prepish && (!ps.alive || ps.spectator)) {
+        const target = this._watchTargetOf(ps);
+        if (target) {
+          this.watchers.set(ps.playerId, `n:${target}`);
+          this._notifyPrepScouts(this.players.get(target), { to: ps.playerId });
+        }
+      }
+      return;
+    }
     const fid = this.watchers.get(ps.playerId);
     let f = fid ? this.fields.find((x) => x.fieldId === fid) : null;
     if (!f) f = this.fields.find((x) => x.players.includes(ps.playerId)) || (this.phase === PHASE.UNITE ? this.fields[0] : null);

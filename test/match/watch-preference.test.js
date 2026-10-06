@@ -98,6 +98,40 @@ test('watch preference: Final Assault: an eliminated viewer is started on the bo
   assert.deepEqual(m.fields.map((f) => [f.fieldId, f.players]), [['b1', ['p_0', 'p_1']], ['b2', ['p_2']]]);
   assert.equal(m.watchers.get('p_3'), 'b2', 'follows p_2 into b2 without a manual tap');
   assert.equal(m.watchers.get('p_0'), 'b1', 'a fighting player stays on their own boss field');
+  // review: a shared field's g.watch records nothing — its id does not say which of its players was tapped
+  assert.deepEqual(m.handle('p_3', { t: 'g.watch', fieldId: 'b1' }), { ok: true });
+  assert.equal(m.watchPref.get('p_3'), 'p_2', 'the shared b1 left the preference alone (it would name p_0 or p_1)');
+  assert.deepEqual(m.handle('p_3', { t: 'g.watch', fieldId: 'b2' }), { ok: true });
+  assert.equal(m.watchPref.get('p_3'), 'p_2', 'the single-player b2 records it');
+  m.dispose();
+});
+
+test('watch preference: review: a spectator seat joining during prep is sent the scouted board (client combat)', () => {
+  const h = makeMatch({ mode: 'coop', humans: 2, seed: 1006, fake: true, clientCombat: true }).start();
+  h.toPrep(1);
+  const m = h.m;
+  m.addSpectator(S);
+  const meta = h.lastTo(S, 'm.field');
+  assert.equal(meta?.fieldId, 'n:p_0', 'no preference → the first seated human still in');
+  assert.equal(meta?.prep, true);
+  assert.equal(m.watchers.get(S), 'n:p_0', 'registered as a scout, so later board changes push again');
+  m.dispose();
+});
+
+test('watch preference: review: an eliminated human reconnecting during prep is sent the scouted board (client combat)', () => {
+  const h = makeMatch({ mode: 'coop', humans: 2, seed: 1007, fake: true, clientCombat: true }).start();
+  h.toPrep(1);
+  const m = h.m;
+  assert.deepEqual(m.handle('p_0', { t: 'g.watch', fieldId: 'n:p_1' }), { ok: true });
+  h.ps('p_0').eliminate(1);
+  m.onDisconnect('p_0');
+  const n = h.allTo('p_0', 'm.field').length;
+  m.onReconnect('p_0');
+  assert.ok(h.allTo('p_0', 'm.field').length > n, 'the reconnect pushed a board');
+  const meta = h.lastTo('p_0', 'm.field');
+  assert.equal(meta?.fieldId, 'n:p_1', 'the preference survived the disconnect');
+  assert.equal(meta?.prep, true);
+  assert.equal(m.watchers.get('p_0'), 'n:p_1');
   m.dispose();
 });
 
