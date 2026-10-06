@@ -41,7 +41,19 @@ describe('sameFieldmates — who fights beside the viewer', () => {
     ] };
     assert.deepEqual(sameFieldmates(pub, 'p1'), ['p2', 'p3'], 'the leaker sees the helpers');
     assert.deepEqual(sameFieldmates(pub, 'p2'), ['p1', 'p3'], 'a helper sees the leaker too');
-    assert.deepEqual(sameFieldmates(pub, 'p4'), ['p1', 'p2', 'p3'], 'an eliminated viewer still reads the field');
+    assert.deepEqual(sameFieldmates(pub, 'p4'), [], 'a seated player in neither group is beside nobody');
+  });
+
+  test('review: only a seated player still in sees their side — an eliminated player and a spectator seat get nobody', () => {
+    const dead4 = { ...PUB, players: PUB.players.map((p) => (p.playerId === 'p4' ? { ...p, alive: false } : p)) };
+    const unite = { leakers: ['p1'], helpers: ['p2', 'p3'] };
+    assert.deepEqual(sameFieldmates({ ...dead4, phase: PHASE.UNITE, unite }, 'p4'), [], 'eliminated in 联防: no frames, no 「你与全员」banner');
+    assert.deepEqual(
+      sameFieldmates({ ...dead4, phase: PHASE.FINAL_ASSAULT, fields: [{ fieldId: 'b1', kind: 'boss', players: ['p1', 'p2'] }] }, 'p4'),
+      [], 'eliminated in the boss fight: no field of their own → nobody',
+    );
+    assert.deepEqual(sameFieldmates({ ...PUB, phase: PHASE.UNITE, unite }, 's_spec'), [], 'a spectator seat has no pub.players row → nobody');
+    assert.deepEqual(sameFieldmates({ ...PUB, phase: PHASE.PREP, round: 14, bossPairing: [['p1', 'p2']] }, 'p4'), [], 'boss prep: an outsider is in no pair');
   });
 
   test('boss-round prep: the pairing is planned before the fight and rides pub.bossPairing', () => {

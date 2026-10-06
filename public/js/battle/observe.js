@@ -34,20 +34,26 @@ const SHARED_FIELD = new Set([PHASE.UNITE, PHASE.FINAL_ASSAULT, PHASE.HIDDEN_COR
 
 /**
  * The player ids fighting on the viewer's battlefield in the shared-field phases — 最终攻势 / 隐秘核心: the seat pair
- * (finalAssault.js pairPlayers, the field's `players`); 联防: everyone on the unite field, the helpers it lists plus
- * the leakers it covers (the unite field's `players` carries only the helpers, `pub.unite.leakers` the rest). Boss-round
- * prep (回合开始 / 机变 / 休整期): the pairing is planned before the fight (Match._planBossWaves) and published as
- * `pub.bossPairing` — the frames show while the board is still being prepared. Empty in the solo phases (各自行动: one
- * field per player), outside these phases, and without a viewer (`myId`). User playtest #5: nothing on screen said who
- * shares your field — the phase banner names them and the team panel frames their avatar.
+ * (finalAssault.js pairPlayers, the field's `players`); 联防: the unite field's own leakers + helpers (the unite field's
+ * `players` carries only the helpers, `pub.unite.leakers` the rest). Boss-round prep (回合开始 / 机变 / 休整期): the
+ * pairing is planned before the fight (Match._planBossWaves) and published as `pub.bossPairing` — the frames show while
+ * the board is still being prepared. The viewer must be a seated player still in (`pub.players`, `alive !== false`) and,
+ * in 联防, one of the unite field's own participants — an eliminated player and a spectator seat may watch any field, so
+ * nobody is beside them (upstream review of the frame patch: without the check they would see every row framed and a
+ * "你与全员" banner). Empty in the solo phases (各自行动: one field per player), outside these phases, and without a
+ * viewer (`myId`). User playtest #5: nothing on screen said who shares your field — the phase banner names them and the
+ * team panel frames their avatar.
  */
 export function sameFieldmates(pub, myId) {
   if (!myId || !isObj(pub)) return [];
+  const me = Array.isArray(pub.players) ? pub.players.find((p) => isObj(p) && p.playerId === myId) : null;
+  if (!me || me.alive === false) return [];
   if (pub.phase === PHASE.UNITE) {
     const ids = [
       ...(Array.isArray(pub.unite?.leakers) ? pub.unite.leakers : []),
       ...(Array.isArray(pub.unite?.helpers) ? pub.unite.helpers : []),
     ];
+    if (!ids.includes(myId)) return [];
     return [...new Set(ids.filter((pid) => typeof pid === 'string' && pid))].filter((pid) => pid !== myId);
   }
   if (SHARED_FIELD.has(pub.phase)) {
