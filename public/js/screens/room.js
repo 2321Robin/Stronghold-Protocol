@@ -260,6 +260,8 @@ export function RoomScreen() {
   };
   const setDifficulty = (difficulty) => run('diff', () => net.request('room.setDifficulty', { difficulty }));
   const setAiLast = (on) => run('ailast', () => net.request('room.setAiPicksLast', { on }));
+  // local mod: the host opts 地灵 into the next match's pool (room.setExtras; default off, personal use only)
+  const setExtras = (earthspirit) => run('extras', () => net.request('room.setExtras', { earthspirit }));
   // spectator seats: the host frees one; a spectator takes a free player seat with room.join of this room
   const removeSpectator = (playerId) => run(`rs${playerId}`, () => net.request('room.removeSpectator', { playerId }));
   const sit = () => run('sit', () => net.request('room.join', { code: room.code }));
@@ -343,6 +345,13 @@ export function RoomScreen() {
         <div class="room-bar__opts">
           <${DifficultyPicker} room=${room} isHost=${facts.isHost} busy=${busy} onPick=${setDifficulty} />
           <${AiLastToggle} option=${aiLastOption(room, me.playerId)} busy=${busy} onToggle=${setAiLast} />
+          ${facts.isHost ? html`<${Tooltip} text="自用：本局招募池加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见）" placement="top">
+            <button type="button" class="dpick__opt${room.extras?.earthspirit ? ' is-active' : ''}" aria-pressed=${room.extras?.earthspirit ? 'true' : 'false'}
+              style=${`--d-color: var(--mint-500); margin-left: .12rem; border-right: 0; border: 1px solid var(--${room.extras?.earthspirit ? 'mint-700' : 'line'}); border-radius: .04rem;`}
+              disabled=${!!busy || room.inMatch} onClick=${() => setExtras(!room.extras?.earthspirit)}>
+              ${room.extras?.earthspirit ? '✓ 本局加地灵' : '+ 本局加地灵'}
+            </button>
+          <//>` : null}
         </div>
       </div>
       <div class="room-bar__center">
