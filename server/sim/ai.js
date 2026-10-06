@@ -632,7 +632,10 @@ function advanceRoute(b, e, dt, R, standing = false) {
   let guard = 16;
   while (budget > 1e-9 && guard-- > 0 && e.alive) {
     const leg = R.legs[R.legIdx];
-    if (!leg) { b.leak(e); return; }
+    if (!leg) {
+      if (!portalPickup(b, e)) { b.leak(e); return; }
+      continue;
+    }
     if (leg.t === 'wait') {
       if (R.waitLeft == null) R.waitLeft = leg.time;
       const use = Math.min(budget, R.waitLeft);
@@ -681,11 +684,42 @@ function advanceRoute(b, e, dt, R, standing = false) {
     }
     budget = dist / speed;
     if (R.pts && R.ptIdx >= R.pts.length) {
-      if (leg.final) { b.leak(e); return; }
+      if (leg.final) {
+        if (!portalPickup(b, e)) { b.leak(e); return; }
+      }
       R.legIdx++;
       R.pts = null;
     }
   }
+}
+
+/**
+ * 界园 portal pickup (tile_telin / tile_telout): stepping into a portal entrance teleports the enemy out of the
+ * paired exit — it is not a leak. The official circuits END on an entrance tile ([1,3] / [1,17] of the boss fields);
+ * their mid-route transits are the routes' own DISAPPEAR / APPEAR steps, but the final one is not spelled out, so
+ * taken literally the enemy leaked the moment it stepped into the portal (user report: 打 boss 小怪第一次进传送门就
+ * 被判定进蓝门,官方是传送后走向蓝门). Appends vanish → reappear → walk-to-door legs to the live route and returns
+ * true. The exit is the telout farthest from the entrance and the door the one nearest to it — the same way every
+ * explicit DISAPPEAR / APPEAR pair in data/waves.json reads (71 of them, all [1,3] / [1,17] → [5,10], doors
+ * [2,2] / [2,18] one step beside the entrances). [ASSUMED] the pairing, the stage data carries no explicit link.
+ */
+function portalPickup(b, e) {
+  const r = Math.round(e.y), c = Math.round(e.x);
+  if (!b.grid.inBounds(r, c) || b.grid.tile(r, c).special !== 'telin') return false;
+  const outs = b.grid.specialTiles('telout');
+  if (!outs.length) return false;
+  const dist = (p) => Math.hypot(p[0] - r, p[1] - c);
+  const out = outs.reduce((a, x) => (dist(x) > dist(a) ? x : a));
+  const R = e.route;
+  R.legs.splice(R.legIdx + 1, 0, { t: 'disappear' }, { t: 'appear', r: out[0], c: out[1] });
+  const ends = b.grid.specialTiles('end');
+  if (ends.length) {
+    const door = ends.reduce((a, x) => (dist(x) < dist(a) ? x : a));
+    R.legs.push({ t: 'move', r: door[0], c: door[1], final: true });
+  }
+  R.pts = null;
+  R.tailVersion = -1;   // the appended tail invalidates the cached remaining-distance suffixes
+  return true;
 }
 
 /**

@@ -73,3 +73,37 @@ for (const [tplId, routeIdx, motion] of CASES) {
     assert.equal(leak.enemy.hidden, false, 'the leak is visible');
   });
 }
+
+// A route that ENDS on a portal entrance does not leak there: the entrance teleports the enemy out of the far exit
+// ([5,10] — the same pairing every explicit DISAPPEAR / APPEAR pair in the data reads) and it walks on to the blue
+// door on that side of the field, where the leak happens (user report: 打 boss 小怪第一次进传送门就被判定进蓝门,
+// 官方是传送后走向蓝门). The solo boss routes are exactly this shape: straight from the centre into the corner portal.
+test('solo boss: a route ending on the left portal entrance leaks at the left blue door, not the portal', REAL, () => {
+  const h = makeBattle({
+    kind: 'boss', stageId: 'act1autochess_m01', rect: { r0: 0, r1: 5, c0: 0, c1: 20 },
+    waveTemplate: 'act1autochess_h07_02_s', content: 'none',
+    defs: { enemies: { enemy_test_portal: enemyRec({ key: 'enemy_test_portal', hp: 1e6, speed: 3 }) } },
+    enemies: [{ key: 'enemy_test_portal', route: 0 }],
+    autoFinish: true, timeLimit: 300, hooks: ['enemyLeak'],
+  });
+  const e = () => h.enemy('enemy_test_portal');
+  assert.ok(h.runUntil(() => e() && Math.round(e().y) === 1 && Math.round(e().x) === 3, 300), 'reaches the portal entrance [1,3]');
+  assert.ok(h.runUntil(() => e() && Math.round(e().y) === 5 && Math.round(e().x) === 10, 300), 'teleports out of the exit [5,10]');
+  h.runToEnd(400);
+  const leak = h.hooksOf('enemyLeak')[0];
+  assert.ok(leak, 'leaks eventually');
+  assert.deepEqual([Math.round(leak.enemy.y), Math.round(leak.enemy.x)], [2, 2], 'the leak is at the left blue door [2,2]');
+});
+
+test('a route ending on the right portal entrance mirrors: leak at the right blue door', REAL, () => {
+  const h = makeBattle({
+    kind: 'boss', stageId: 'act1autochess_m01', rect: { r0: 0, r1: 5, c0: 0, c1: 20 }, content: 'none',
+    defs: { enemies: { enemy_test_portal: enemyRec({ key: 'enemy_test_portal', hp: 1e6, speed: 3 }) } },
+    enemies: [{ key: 'enemy_test_portal', route: { motion: 'WALK', start: [2, 10], end: [1, 17], checkpoints: [] } }],
+    autoFinish: true, timeLimit: 300, hooks: ['enemyLeak'],
+  });
+  h.runToEnd(400);
+  const leak = h.hooksOf('enemyLeak')[0];
+  assert.ok(leak, 'leaks eventually');
+  assert.deepEqual([Math.round(leak.enemy.y), Math.round(leak.enemy.x)], [2, 18], 'the leak is at the right blue door [2,18]');
+});
