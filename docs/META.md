@@ -409,7 +409,9 @@ counters `counter(k) setCounter(k, v) incCounter(k, n)` (player scope, persisten
 bought, granted, transformed, or an elite merged this round (GitHub #169, the owner's decision of 2026-10-06) —; a move
 keeps it; `PlayerState.pieceRoundCount`; prefix keys with your module too) — 拉普兰德's "本回合首次主动刷新" is the
 first manual refresh that copy witnesses (player feedback after 0.1.0: "获得该干员后该回合的首次刷新" also stacks; a copy
-bought after selling one this round is a new copy and fires on its own first refresh [ASSUMED]).
+bought after selling one this round is a new copy and fires on its own first refresh [ASSUMED]). `band:*` counters (the
+per-round ones' `:<key>:r` round stamp included) and `pack:<item uid>` counters reach the client on `m.private.counters`
+for the strategies' progress display (DESIGN §10) — anything else stays server-side.
 
 Writes (all validated, never throw on bad input, never make funds / pools negative):
 

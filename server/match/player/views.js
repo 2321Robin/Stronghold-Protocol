@@ -49,6 +49,21 @@ export class PlayerViews {
     return out;
   }
 
+  /**
+   * The content progress counters the client's UI shows (user playtest #16: the cumulative strategies' "已累计多少 /
+   * 本回合用了几次"): a band's counters (`band:*`, its lazy per-round counter's `band:<key>:r` round stamp included —
+   * ui/bandProgress.js reads it to tell this round's count from the last round's) and the per-item-copy counters of
+   * equipment like the 商业包装方案 (`pack:<piece uid>`, builtinMeta onSold, reset on each grant). Everything else
+   * (choices:refSeq, …) stays server-side.
+   */
+  progressCounters() {
+    const out = {};
+    for (const [k, v] of Object.entries(this.counters)) {
+      if ((k.startsWith('band:') || k.startsWith('pack:')) && Number.isFinite(v)) out[k] = v;
+    }
+    return out;
+  }
+
   privateView() {
     const slots = this.shop.slots.map((s) => (s ? { kind: s.kind, id: s.id, price: this.priceOf(s), basePrice: s.basePrice, sold: !!s.sold, frozen: !!s.frozen } : null));
     const offer = this.offers[0] || null;
@@ -93,6 +108,8 @@ export class PlayerViews {
       // + the mode-off bonds it has members of (`off: true`, the strip's grey 本局禁用 discs — bondsMeta.offBondCounts)
       bonds: bondList(this.gd, this.bondsView(), { full: true, off: offBondCounts(this.gd, this) }),
       effects: this.effectsView(),
+      // the band's strategy progress and per-item counters (progressCounters; ui/bandProgress.js + ItemDetail show them)
+      counters: this.progressCounters(),
       nextEnemies: this.m.nextEnemiesFor(this),
       // DESIGN §16: the effective operator loadout ({ [baseChessId]: { skill, module } }; chess not listed use defaults)
       loadout: this.loadout,
