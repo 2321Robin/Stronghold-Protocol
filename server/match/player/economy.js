@@ -8,6 +8,15 @@ import { ERR, layerGainRoom } from '../../../shared/constants.js';
 import { freeSlot } from '../board.js';
 import { OK, fail } from './common.js';
 
+// LOCAL RULING (playtest #23, 2026-10-08): a 调度中心 upgrade opens the new level's extra slots EMPTY — the official
+// game shows the new slot right away but draws no card into it until the next roll (a refresh or the round start).
+// Official footage 2026-10-08 (bilibili BV1AXwuzdEys 1:39): a 1→2 upgrade, the new slot appears and stays empty;
+// every official text only ever says 「升级后将出现更多的商品栏位」(the tutorial's 休整期 page) /「增加刷新栏位」
+// (PRTS 帮助), never that a card comes with it. Upstream 0.2.0 fills each new slot with a fresh card at the new
+// level (464a823, one uncorroborated community remark of 2026-10-06 item 19「用新卡补上,而不是空着」, its
+// follow-on details [ASSUMED]); flip UPGRADE_FILLS_NEW_SLOTS to follow that again.
+const UPGRADE_FILLS_NEW_SLOTS = false;
+
 export class PlayerEconomy {
   addFunds(n, { reason = '' } = {}) {
     if (!Number.isFinite(n) || n === 0) return 0;
@@ -93,11 +102,10 @@ export class PlayerEconomy {
   }
 
   /**
-   * The 调度中心's upgrade opens the new level's extra slots at once, each with a new card drawn at the new level; the
-   * cards already shown stay where they are (chess slots keep their index, the item slot stays after them). Official: the
-   * tutorial's 休整期 page 「升级：…升级后将出现更多的商品栏位、可调度干员以及新装备」; the community report of 2026-10-06
-   * (item 19) 「升级商店获得新的商店位时用新卡补上，而不是空着」. Until 0.2.0 the extra slots waited for the next roll (a
-   * refresh or the round start). [ASSUMED] the new card follows the freeze toggle, as a manual refresh's cards do.
+   * The 调度中心's upgrade opens the new level's extra slots at once — EMPTY while UPGRADE_FILLS_NEW_SLOTS is false
+   * (the local ruling: the official slot appears with no card, filled by the next refresh / round start; playtest #23),
+   * or each with a new card drawn at the new level (upstream 0.2.0's 464a823). The cards already shown stay where they
+   * are either way (chess slots keep their index, the item slot stays after them).
    */
   _openLevelSlots() {
     const { chess: nChess, item: nItem } = this.gd.shopSlots(this.shop.level);
@@ -107,8 +115,8 @@ export class PlayerEconomy {
     const chess = old.slice(0, layout.chess);
     const items = old.slice(layout.chess);
     const fresh = (s) => { if (s) s.frozen = this.shop.frozen; return s; };
-    while (chess.length < nChess) chess.push(fresh(this._rollChessSlot()));
-    while (items.length < nItem) items.push(fresh(this._rollItemSlot()));
+    while (chess.length < nChess) chess.push(UPGRADE_FILLS_NEW_SLOTS ? fresh(this._rollChessSlot()) : null);
+    while (items.length < nItem) items.push(UPGRADE_FILLS_NEW_SLOTS ? fresh(this._rollItemSlot()) : null);
     this.shop.slots = [...chess, ...items];
     this.shop.layout = { chess: chess.length, item: items.length };
   }
