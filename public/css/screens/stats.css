@@ -102,6 +102,16 @@
 .stit__text span { font-size: .15rem; color: var(--text-md); white-space: nowrap; }
 .stit__text b { font-size: .22rem; font-weight: 900; color: #f6a329; line-height: 1.1; }
 
+/* a replayed settlement replaces the whole panel: the real <ResultScreen/> fills the overlay */
+.stats__replay { position: absolute; inset: 0; }
+
+/* recent rows click through to the match's settlement screen (openRecordResult) */
+.stats-table tbody tr.is-clickable { cursor: pointer; }
+.stats-table tbody tr.is-clickable:hover td { background: rgba(78, 216, 175, .1); color: var(--text-hi); }
+.stats-table .stats-go { width: .24rem; color: var(--text-lo); }
+.stats-table tr.is-clickable:hover .stats-go { color: var(--mint-400); }
+.stats-hint { margin: .06rem 0 0; font-size: .13rem; color: var(--text-lo); letter-spacing: .04em; }
+
 @media (max-height: 560px) {
   .stats__box { padding: .08rem .12rem; max-height: calc(100vh - .3rem); }
   .stats__title { font-size: .22rem; }

@@ -280,6 +280,37 @@ export function buildRecord(res, ctx = {}) {
 }
 
 /**
+ * The m.result-shaped payload behind a record — the inverse of buildRecord. The stats page's 最近对局
+ * rows hand this to the settlement screen (screens/result.js reads store.match.result through
+ * normalizeResult): a finished match can be RE-VIEWED because the record kept every field the payload
+ * had. Whatever a record never stored (older / hand-made rows) is simply absent and normalizeResult
+ * defaults it, exactly like a tolerant live payload.
+ * @param {any} rec
+ * @returns {any|null} null when the row is not a usable record
+ */
+export function recordToResult(rec) {
+  const r = normalizeRecord(rec);
+  if (!r) return null;
+  const res = {
+    victory: r.victory,
+    roundsPassed: r.roundsPassed,
+    hiddenReached: r.hiddenReached,
+    hiddenCleared: r.hiddenCleared,
+    reason: r.reason,
+    modeId: r.modeId,
+    difficulty: r.difficulty,
+    bossId: r.bossId,
+    hiddenBossId: r.hiddenBossId,
+    seed: r.seed,
+    durationMs: r.durationMs,
+    teamLp: r.teamLp,
+    players: r.players,
+  };
+  if (Number.isFinite(r.lastRound)) res.lastRound = r.lastRound;
+  return res;
+}
+
+/**
  * Append one record: replays (same content id) are dropped, newest first, capped at MAX_RECORDS.
  * @param {{ v: number, records: any[] }} stats
  * @param {any} record

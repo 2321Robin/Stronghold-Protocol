@@ -6,21 +6,23 @@
 //   策略    – per band: games used / passed (self alive on a winning team) / pass rate   (the user's ask)
 //   称号    – each of config.titles' six 评语 with its count
 //   战斗累计– the self player's summed combat bookkeeping
-//   最近对局– the newest RECENT_SHOW records as rows
+//   最近对局– the newest RECENT_SHOW records as rows; a row click re-views that match as its settlement
+//             screen (the record is inverted into an m.result payload for <ResultScreen/>)
 // Everything is 本机数据 (localStorage, `sp.pref.stats`): the note under the title says so, and 导出/导入
 // (JSON file, merge-by-record-id on the way in) moves it between devices; 清空 resets after a confirm press.
 
 import { useEffect, useRef, useState } from '../../vendor/hooks.module.js';
-import { DIFFICULTY_NAMES } from '../../../shared/constants.js';
+import { DIFFICULTY_NAMES, PHASE } from '../../../shared/constants.js';
 import { html, Icon, MicroLabel, Spinner, Button } from '../ui/components.js';
 import { useGameData, BandIcon, Img } from '../ui/gameComponents.js';
 import { data, useData } from '../data.js';
 import { fmtNum } from '../ui/gameLogic.js';
 import { titleIconUrl } from '../ui/assetUrls.js';
-import { createStore, useStore } from '../store.js';
+import { createStore, useStore, store, emptyMatch } from '../store.js';
+import { ResultScreen } from './result.js';
 import { toast, toastError } from '../ui/toasts.js';
 import {
-  loadStats, saveStats, emptyStats, importStats, exportStats, aggregateStats, RECENT_SHOW,
+  loadStats, saveStats, emptyStats, importStats, exportStats, aggregateStats, recordToResult, RECENT_SHOW,
 } from '../ui/stats.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
@@ -34,7 +36,30 @@ export function openStats() {
   data.load('assets');
   statsStore.set({ open: true });
 }
-export const closeStats = () => statsStore.set({ open: false });
+export const closeStats = () => {
+  // a replayed settlement is synthetic store state — take it away with the viewer
+  if (store.get().match.result) store.set({ match: emptyMatch() });
+  statsStore.set({ open: false });
+};
+
+/**
+ * 最近对局行点击: one stored match re-viewed as its settlement screen, INSIDE the stats viewer — the
+ * record is inverted into an m.result payload (ui/stats.js recordToResult) into store.match.result, and
+ * StatsHost swaps its panel for the real <ResultScreen/> while a result exists (the settlement's
+ * 返回大厅 empties match again → back to the list, ready to view the next row). Refused while a match
+ * is actually live: the overlay is global and clobbering a running match's state would be destructive.
+ * @param {any} rec
+ */
+export function openRecordResult(rec) {
+  const s = store.get();
+  if ((s.match.public && s.match.public.phase !== PHASE.LOBBY) || s.room?.inMatch) {
+    toast('对局进行中，暂不能回看历史结算', 'warn');
+    return;
+  }
+  const res = recordToResult(rec);
+  if (!res) return;
+  store.set({ match: { ...emptyMatch(), public: { phase: PHASE.RESULT }, result: res } });
+}
 
 const pct = (n, d) => (d > 0 ? `${Math.round((n / d) * 100)}%` : '—');
 const dateTime = (t) => {
@@ -144,29 +169,33 @@ function CombatSums({ agg }) {
   <//>`;
 }
 
-/** 最近对局: newest RECENT_SHOW records (records are stored newest first). */
+/** 最近对局: newest RECENT_SHOW records (records are stored newest first). A row click re-views that
+    match as its settlement screen (openRecordResult → match.result → <ResultScreen/>). */
 function Recent({ records, gd }) {
   const rows = records.slice(0, RECENT_SHOW);
   if (!rows.length) return null;
   return html`<${Section} title="最近对局" micro=${`RECENT · ${records.length}`}>
     <table class="stats-table">
-      <thead><tr><th>时间</th><th>难度</th><th>模式</th><th>策略</th><th>结果</th><th class="num">回合</th></tr></thead>
+      <thead><tr><th>时间</th><th>难度</th><th>模式</th><th>策略</th><th>结果</th><th class="num">回合</th><th aria-hidden="true"></th></tr></thead>
       <tbody>
         ${rows.map((r) => {
           const self = r.players.find((p) => p.playerId === r.selfId) || r.players[0] || null;
           const won = self ? !!self.victory : !!r.victory;
           const band = self?.bandId ? gd.band(self.bandId) : null;
-          return html`<tr key=${r.id} class=${won ? 'is-win' : 'is-lose'}>
+          return html`<tr key=${r.id} class=${cx('is-clickable', won ? 'is-win' : 'is-lose')} title="点击查看该局结算"
+            onClick=${() => openRecordResult(r)}>
             <td class="stats-t">${dateTime(r.t)}</td>
             <td>${DIFFICULTY_NAMES[r.difficulty] || r.difficulty || '—'}</td>
             <td>${r.roomMode === 'solo' ? '单人' : r.roomMode === 'coop' ? '同盟' : '—'}</td>
             <td>${band ? band.name : self?.bandId || '—'}</td>
             <td class=${won ? 't-win' : 't-lose'}>${won ? '胜' : '负'}</td>
             <td class="num">${fmtNum(r.roundsPassed)}</td>
+            <td class="stats-go"><${Icon} name="chevronRight" /></td>
           </tr>`;
         })}
       </tbody>
     </table>
+    <p class="stats-hint">点击任意一行，回看该局结算。</p>
   <//>`;
 }
 
@@ -235,6 +264,7 @@ function DataActions({ stats, onReload }) {
  */
 export function StatsHost() {
   const { open } = useStore((s) => s, Object.is, statsStore);
+  const replaying = useStore((s) => !!s.match.result); // a replayed settlement replaces the whole panel
   const ready = useData('config', 'bands', 'assets');
   const gd = useGameData();
   const [stats, setStats] = useState(() => emptyStats());
@@ -253,6 +283,11 @@ export function StatsHost() {
   }, [open]);
 
   if (!open) return null;
+  if (replaying) {
+    // the record re-viewed as its settlement (openRecordResult): the real <ResultScreen/>, full-bleed;
+    // its 返回大厅 empties match.result and lands back on the list
+    return html`<div class="stats"><div class="stats__replay"><${ResultScreen} /></div></div>`;
+  }
   const agg = aggregateStats(stats.records);
   return html`<div class="stats" role="presentation" onMouseDown=${(e) => { if (e.target === e.currentTarget) closeStats(); }}>
     <div class="stats__box brackets" role="dialog" aria-modal="true" aria-label="统计数据" tabindex="-1" ref=${boxRef}>
