@@ -56,7 +56,9 @@ test('matches: the 补位 match\'s human seat fields stand-ins (listed per round
   assert.ok(dg, 'scenario present');
   assert.deepEqual(dg.errors, { engine: 0, logged: 0, sim: 0, dispatcher: 0 });
   const fielded = dg.standIns.rounds.filter(([, s]) => s).flatMap(([, s]) => s.split(' '));
-  assert.ok(new Set(fielded).size >= 3, `stand-ins fielded: ${[...new Set(fielded)].join(', ')}`);
+  // (≥ 2 since the local shop-upgrade ruling, playtest #23: the level-up's new slot stays empty, so this match's
+  // shop rolls — and with them which stand-ins the human seat fields — part from the pre-ruling stream)
+  assert.ok(new Set(fielded).size >= 2, `stand-ins fielded: ${[...new Set(fielded)].join(', ')}`);
   for (const f of fielded) {
     const [id, charId] = f.split('→');
     const c = CHESS[`chess_char_${id}`];
