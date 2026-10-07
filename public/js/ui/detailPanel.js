@@ -374,7 +374,6 @@ export function chessStatsBlock({ rec, chess, live = null }) {
     </div>`;
 }
 
-<<<<<<< HEAD
 /** A skill's tags (SP type, trigger, initial SP · cost, duration, charges): the operator card's and a map character's. */
 function skillTags(sk) {
   return html`

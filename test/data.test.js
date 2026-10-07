@@ -824,7 +824,9 @@ test('independent re-derivation of every chess and enemy stat from the raw offic
 test('offline rebuild reproduces data/ byte-for-byte (data/ is not stale)', { skip: (!HAS_CACHE && 'no .cache/gamedata') || (process.env.DATA_DIR && 'DATA_DIR set') }, (t) => {
   const out = mkdtempSync(join(tmpdir(), 'sp-data-'));
   try {
-    const r = spawnSync(process.execPath, [join(ROOT, 'tools', 'build-data.mjs'), '--offline', '--quiet', '--out', out, '--report', join(out, 'report.json')], { encoding: 'utf8', timeout: 120_000 });
+    // the committed data was built with the local SP_DIY_COLLAB re-include (playtest #21, tools/build-data.mjs) —
+    // the rebuild passes the same recipe, or the pool differs by the collab pick
+    const r = spawnSync(process.execPath, [join(ROOT, 'tools', 'build-data.mjs'), '--offline', '--quiet', '--out', out, '--report', join(out, 'report.json')], { encoding: 'utf8', timeout: 120_000, env: { ...process.env, SP_DIY_COLLAB: 'char_4182_oblvns' } });
     if (r.status !== 0 && /missing cached file/.test(r.stderr)) { t.skip('partial .cache/gamedata (run node tools/build-data.mjs once online)'); return; }
     assert.equal(r.status, 0, `build failed: ${r.stderr}`);
     for (const f of FILES) {

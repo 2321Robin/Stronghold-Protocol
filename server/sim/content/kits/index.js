@@ -150,6 +150,8 @@ export const OPERATOR_KIT_FILES = Object.freeze([
   'op-necras.js',
   'op-kalts2.js',
   'op-monstr.js',
+  // local-preview (playtest #21): the collab 6★ re-included by the SP_DIY_COLLAB build ride here, after the upstream picks
+  'op-oblvns.js',
 ]);
 
 /**
