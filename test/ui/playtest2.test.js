@@ -46,7 +46,9 @@ describe('6: the enemy pen only with the pen camera', () => {
 
   test('the field areas are the official ones minus the pen block', () => {
     assert.deepEqual(boardArea('normal'), AREAS.normal.filter((a) => a.r1 <= 13));
-    assert.deepEqual(boardArea('unite'), AREAS.unite.filter((a) => a.r1 <= 13));
+    // LOCAL RULING (playtest #22 follow-up): the 联防 view builds the field alone (rows 9–13) — the round map's
+    // bench band (rows 7–8) must not show there (upstream's dedicated maps are void in those rows)
+    assert.deepEqual(boardArea('unite'), [{ r0: 9, r1: 13, c0: 0, c1: 20 }]);
     assert.ok(boardArea('normal').some((a) => a.r0 <= 6 && a.r1 >= 12 && a.c0 === 0 && a.c1 >= 10), 'own field + bench');
   });
 
