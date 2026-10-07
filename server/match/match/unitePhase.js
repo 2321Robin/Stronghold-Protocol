@@ -11,6 +11,13 @@ import { uniteLeft } from '../../sim/spec.js';
 import { FLOW_TICKER_PRIORITY, DELAYS } from './common.js';
 import { msg } from '../../../shared/i18n.js';
 
+// 本地裁定(2026-10-07,用户要求「提前回到 0.1.x 的旧联防玩法」):联防沿用本回合的战场(0.1.3–0.1.4 语义,
+// 箱子/高台/水/装置照旧,障碍只限制部署、不改敌人路线——「opened to both halves」),不用上游 0.2.0 起的
+// 专用逃脱图(level_act1autochess_escaped_single / _multi,8a43624,GitHub #244「有意修改」;#282 仍开放、
+// 社区对官方语义有争议)。敌人路线/出怪节奏本就是 escaped 模板的(waves.json 两版逐字节相同),只换地图。
+// 上游若在 #282 改回或给专用图加障碍:把下面的开关改回 false 跟随上游即可。
+const UNITE_ON_ROUND_STAGE = true;
+
 export class MatchUnite {
   startUnite(plan) {
     if (this.clientCombat) { this._startUniteClient(plan); return; }
@@ -40,9 +47,10 @@ export class MatchUnite {
   }
 
   /**
-   * Battle options of the 联防 field (helpers' carried end state, the leakers' enemies) on its own map — the escaped
-   * template's (unite.js uniteStageId; GitHub #41), the round's stage only when the data lacks it. The field meta and the
-   * client-run spec carry that stageId, so every viewer draws the 联防 map.
+   * Battle options of the 联防 field (helpers' carried end state, the leakers' enemies). Map: the round's stage while
+   * UNITE_ON_ROUND_STAGE holds (local ruling, 0.1.x semantics — see the constant), else the escaped template's own map
+   * (unite.js uniteStageId; GitHub #41/#244), the round's stage only when the data lacks it. The field meta and the
+   * client-run spec carry that stageId, so every viewer draws the same map.
    */
   _uniteOpts(plan, limit) {
     const { wave, players } = uniteBattleOpts(this, plan, limit);
@@ -51,7 +59,7 @@ export class MatchUnite {
       kind: 'unite',
       modeId: this.modeId,
       round: this.round,
-      stageId: uniteStageId(this.gd, plan.helpers.length) ?? this.stageId,
+      stageId: UNITE_ON_ROUND_STAGE ? this.stageId : (uniteStageId(this.gd, plan.helpers.length) ?? this.stageId),
       rect: { ...GEO.UNITE_RECT },
       timeLimit: limit,
       players,
