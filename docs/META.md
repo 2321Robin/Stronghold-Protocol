@@ -826,9 +826,10 @@ round was over. The official 1 s `broadcastBeginDelay` is not modelled.
   units > active bond > Σ active layers > standing > seat; the ranks marked 存疑 in PRTS). Unite enemies re-enter with
   their original stats on the official 联防 spawn timing (waves.js `buildUniteWave`, DATA.md §15 #22).
 * A manual refresh while frozen keeps the new slots frozen until the next round start.
-* A level-up opens the new level's extra slots at once, each with a new card drawn at the new level, and keeps the
-  cards shown (0.2.0, community report item 19; the official tutorial's 「升级后将出现更多的商品栏位」); the new card
-  follows the freeze toggle like a manual refresh's cards.
+* A level-up opens the new level's extra slots at once — empty, with no card drawn into them (official footage
+  2026-10-08, bilibili BV1AXwuzdEys 1:39: a 1→2 upgrade with the new slot visible and empty; the official texts only
+  ever say 「升级后将出现更多的商品栏位」/「增加刷新栏位」) — and keeps the cards shown. The empty slots fill on the
+  next roll (a manual refresh or the round start), like every unfrozen slot.
 * Buying a second copy of an equipped normal item merges into the golden item in the hand (not equipped).
 * Promotions by effects (升华, 博士投影) keep the equipment; merges return it; 突变细胞's transformation returns it (the
   cell included) before its new operator is gained into the 整备区 — the carrier's tile is left empty (official footage,
