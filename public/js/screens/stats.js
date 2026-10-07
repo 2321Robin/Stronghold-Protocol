@@ -24,6 +24,7 @@ import { toast, toastError } from '../ui/toasts.js';
 import {
   loadStats, saveStats, emptyStats, importStats, exportStats, aggregateStats, recordToResult, RECENT_SHOW,
 } from '../ui/stats.js';
+import { t, N_ } from '../../../shared/i18n.js';
 
 const cx = (...p) => p.flat().filter(Boolean).join(' ');
 
@@ -53,7 +54,7 @@ export const closeStats = () => {
 export function openRecordResult(rec) {
   const s = store.get();
   if ((s.match.public && s.match.public.phase !== PHASE.LOBBY) || s.room?.inMatch) {
-    toast('对局进行中，暂不能回看历史结算', 'warn');
+    toast(t('对局进行中，暂不能回看历史结算'), 'warn');
     return;
   }
   const res = recordToResult(rec);
@@ -90,18 +91,18 @@ function Section({ title, micro, children }) {
 function Overview({ agg }) {
   const rows = Object.entries(agg.byDifficulty).sort((a, b) => b[1].games - a[1].games);
   const playedMins = minsOf(agg.duration.totalMs);
-  return html`<${Section} title="总览" micro="OVERVIEW">
+  return html`<${Section} title=${t('总览')} micro="OVERVIEW">
     <div class="stats-cards">
-      <${StatCard} micro="GAMES" value=${fmtNum(agg.count)} label="总局数" />
-      <${StatCard} micro="WINS" value=${fmtNum(agg.wins)} label="胜场" tone="mint" />
-      <${StatCard} micro="WIN RATE" value=${pct(agg.wins, agg.count)} label="胜率" tone="gold" />
-      <${StatCard} micro="HIDDEN CORE" value=${fmtNum(agg.hidden.reached)} label="到达隐秘核心" />
-      <${StatCard} micro="HIDDEN CLEAR" value=${fmtNum(agg.hidden.cleared)} label="通关隐秘核心" />
-      <${StatCard} micro="BEST ROUND" value=${fmtNum(agg.rounds.max)} label="最远回合" />
-      ${playedMins != null ? html`<${StatCard} micro="TIME PLAYED" value=${`${fmtNum(playedMins)} 分`} label="累计时长" />` : null}
+      <${StatCard} micro="GAMES" value=${fmtNum(agg.count)} label=${t('总局数')} />
+      <${StatCard} micro="WINS" value=${fmtNum(agg.wins)} label=${t('胜场')} tone="mint" />
+      <${StatCard} micro="WIN RATE" value=${pct(agg.wins, agg.count)} label=${t('胜率')} tone="gold" />
+      <${StatCard} micro="HIDDEN CORE" value=${fmtNum(agg.hidden.reached)} label=${t('到达隐秘核心')} />
+      <${StatCard} micro="HIDDEN CLEAR" value=${fmtNum(agg.hidden.cleared)} label=${t('通关隐秘核心')} />
+      <${StatCard} micro="BEST ROUND" value=${fmtNum(agg.rounds.max)} label=${t('最远回合')} />
+      ${playedMins != null ? html`<${StatCard} micro="TIME PLAYED" value=${t('{n} 分', { n: fmtNum(playedMins) })} label=${t('累计时长')} />` : null}
     </div>
     ${rows.length ? html`<table class="stats-table">
-      <thead><tr><th>难度</th><th class="num">局数</th><th class="num">胜场</th><th class="num">胜率</th><th class="num">隐秘核心通关</th></tr></thead>
+      <thead><tr><th>${t('难度')}</th><th class="num">${t('局数')}</th><th class="num">${t('胜场')}</th><th class="num">${t('胜率')}</th><th class="num">${t('隐秘核心通关')}</th></tr></thead>
       <tbody>
         ${rows.map(([d, v]) => html`<tr key=${d}>
           <td>${DIFFICULTY_NAMES[d] || d}</td>
@@ -119,9 +120,9 @@ function Overview({ agg }) {
 function Bands({ agg, gd }) {
   const rows = Object.entries(agg.bands).sort((a, b) => b[1].games - a[1].games);
   if (!rows.length) return null;
-  return html`<${Section} title="策略" micro="BANDS">
+  return html`<${Section} title=${t('策略')} micro="BANDS">
     <table class="stats-table">
-      <thead><tr><th>策略</th><th class="num">使用局数</th><th class="num">通过局数</th><th class="num">通过率</th></tr></thead>
+      <thead><tr><th>${t('策略')}</th><th class="num">${t('使用局数')}</th><th class="num">${t('通过局数')}</th><th class="num">${t('通过率')}</th></tr></thead>
       <tbody>
         ${rows.map(([bandId, v]) => {
           const band = gd.band(bandId);
@@ -142,7 +143,7 @@ function Titles({ agg, gd }) {
   const list = (Array.isArray(gd.config?.titles) ? gd.config.titles : [])
     .map((t) => ({ ...t, count: agg.titles[t.id]?.count || 0 }));
   if (!list.length) return null;
-  return html`<${Section} title="称号" micro="TITLES">
+  return html`<${Section} title=${t('称号')} micro="TITLES">
     <div class="stats-titles">
       ${list.map((t) => html`<div key=${t.id} class=${cx('stit', !t.count && 'stit--none')} title=${t.text || ''}>
         <${Img} src=${titleIconUrl(gd.m, t.picId)} class="stit__icon" fallback=${html`<${Icon} name="crown" />`} />
@@ -153,18 +154,18 @@ function Titles({ agg, gd }) {
 }
 
 const SUM_ROWS = [
-  ['kills', '击倒敌人'], ['bossDamage', '领袖伤害'], ['dmgDealt', '造成伤害'], ['activatedLayers', '盟约层数'],
-  ['merges', '晋升次数'], ['itemsEquipped', '配发装备'], ['gold', '消耗资金'], ['perfectRounds', '完美作战'],
-  ['refreshes', '刷新次数'], ['leaks', '未击倒'], ['lpLost', '损失生命'],
+  ['kills', N_('击倒敌人')], ['bossDamage', N_('领袖伤害')], ['dmgDealt', N_('造成伤害')], ['activatedLayers', N_('盟约层数')],
+  ['merges', N_('晋升次数')], ['itemsEquipped', N_('配发装备')], ['gold', N_('消耗资金')], ['perfectRounds', N_('完美作战')],
+  ['refreshes', N_('刷新次数')], ['leaks', N_('未击倒')], ['lpLost', N_('损失生命')],
 ];
 
 /** 战斗累计: the self player's sums. */
 function CombatSums({ agg }) {
   const rows = SUM_ROWS.filter(([k]) => Number.isFinite(agg.sums[k]));
   if (!rows.length) return null;
-  return html`<${Section} title="战斗累计" micro="COMBAT TOTALS">
+  return html`<${Section} title=${t('战斗累计')} micro="COMBAT TOTALS">
     <div class="stats-cards stats-cards--sums">
-      ${rows.map(([k, label]) => html`<div key=${k} class="ssum"><span>${label}</span><b class="num">${fmtNum(agg.sums[k])}</b></div>`)}
+      ${rows.map(([k, label]) => html`<div key=${k} class="ssum"><span>${t(label)}</span><b class="num">${fmtNum(agg.sums[k])}</b></div>`)}
     </div>
   <//>`;
 }
@@ -174,28 +175,28 @@ function CombatSums({ agg }) {
 function Recent({ records, gd }) {
   const rows = records.slice(0, RECENT_SHOW);
   if (!rows.length) return null;
-  return html`<${Section} title="最近对局" micro=${`RECENT · ${records.length}`}>
+  return html`<${Section} title=${t('最近对局')} micro=${`RECENT · ${records.length}`}>
     <table class="stats-table">
-      <thead><tr><th>时间</th><th>难度</th><th>模式</th><th>策略</th><th>结果</th><th class="num">回合</th><th aria-hidden="true"></th></tr></thead>
+      <thead><tr><th>${t('时间')}</th><th>${t('难度')}</th><th>${t('模式')}</th><th>${t('策略')}</th><th>${t('结果')}</th><th class="num">${t('回合')}</th><th aria-hidden="true"></th></tr></thead>
       <tbody>
         ${rows.map((r) => {
           const self = r.players.find((p) => p.playerId === r.selfId) || r.players[0] || null;
           const won = self ? !!self.victory : !!r.victory;
           const band = self?.bandId ? gd.band(self.bandId) : null;
-          return html`<tr key=${r.id} class=${cx('is-clickable', won ? 'is-win' : 'is-lose')} title="点击查看该局结算"
+          return html`<tr key=${r.id} class=${cx('is-clickable', won ? 'is-win' : 'is-lose')} title=${t('点击查看该局结算')}
             onClick=${() => openRecordResult(r)}>
             <td class="stats-t">${dateTime(r.t)}</td>
             <td>${DIFFICULTY_NAMES[r.difficulty] || r.difficulty || '—'}</td>
-            <td>${r.roomMode === 'solo' ? '单人' : r.roomMode === 'coop' ? '同盟' : '—'}</td>
+            <td>${r.roomMode === 'solo' ? t('单人') : r.roomMode === 'coop' ? t('同盟') : '—'}</td>
             <td>${band ? band.name : self?.bandId || '—'}</td>
-            <td class=${won ? 't-win' : 't-lose'}>${won ? '胜' : '负'}</td>
+            <td class=${won ? 't-win' : 't-lose'}>${won ? t('胜') : t('负')}</td>
             <td class="num">${fmtNum(r.roundsPassed)}</td>
             <td class="stats-go"><${Icon} name="chevronRight" /></td>
           </tr>`;
         })}
       </tbody>
     </table>
-    <p class="stats-hint">点击任意一行，回看该局结算。</p>
+    <p class="stats-hint">${t('点击任意一行，回看该局结算。')}</p>
   <//>`;
 }
 
@@ -220,7 +221,7 @@ function DataActions({ stats, onReload }) {
       a.download = `stronghold-stats-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast(`已导出 ${payload.records.length} 条对局记录`, 'success');
+      toast(t('已导出 {n} 条对局记录', { n: payload.records.length }), 'success');
     } catch (err) {
       toastError(err);
     }
@@ -235,9 +236,9 @@ function DataActions({ stats, onReload }) {
       const { stats: merged, added, skipped } = importStats(raw, stats);
       saveStats(merged);
       onReload();
-      toast(added ? `已导入 ${added} 条记录${skipped ? `（跳过重复 ${skipped} 条）` : ''}` : '没有新记录（全部与现有数据重复）', 'success');
+      toast(added ? t('已导入 {added} 条记录{tail}', { added, tail: skipped ? t('（跳过重复 {skipped} 条）', { skipped }) : '' }) : t('没有新记录（全部与现有数据重复）'), 'success');
     } catch (err) {
-      toastError(err.code === 'stats-newer-version' ? err : new Error('导入失败：不是有效的统计导出文件'));
+      toastError(err.code === 'stats-newer-version' ? err : new Error(t('导入失败：不是有效的统计导出文件')));
     }
   };
 
@@ -246,15 +247,15 @@ function DataActions({ stats, onReload }) {
     saveStats(emptyStats());
     setConfirming(false);
     onReload();
-    toast('已清空本机统计数据', 'success');
+    toast(t('已清空本机统计数据'), 'success');
   };
 
   return html`<div class="stats-actions">
-    <${Button} size="sm" icon="exit" onClick=${doExport}>导出<//>
-    <${Button} size="sm" icon="plus" onClick=${() => fileRef.current?.click()}>导入<//>
+    <${Button} size="sm" icon="exit" onClick=${doExport}>${t('导出')}<//>
+    <${Button} size="sm" icon="plus" onClick=${() => fileRef.current?.click()}>${t('导入')}<//>
     <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${doFile} />
     <${Button} size="sm" variant="danger" icon=${confirming ? 'warn' : 'close'} class=${cx(confirming && 'stats-actions__confirm')}
-      onClick=${doClear}>${confirming ? '确认清空？' : '清空'}<//>
+      onClick=${doClear}>${confirming ? t('确认清空？') : t('清空')}<//>
   </div>`;
 }
 
@@ -290,20 +291,20 @@ export function StatsHost() {
   }
   const agg = aggregateStats(stats.records);
   return html`<div class="stats" role="presentation" onMouseDown=${(e) => { if (e.target === e.currentTarget) closeStats(); }}>
-    <div class="stats__box brackets" role="dialog" aria-modal="true" aria-label="统计数据" tabindex="-1" ref=${boxRef}>
+    <div class="stats__box brackets" role="dialog" aria-modal="true" aria-label=${t('统计数据')} tabindex="-1" ref=${boxRef}>
       <header class="stats__head">
         <div class="stats__titles">
           <${MicroLabel} tone="mint">STATISTICS // LOCAL DATA<//>
-          <h2 class="stats__title">统计数据</h2>
-          <span class="stats__note">本机数据 · 仅记录本浏览器中你参与的对局</span>
+          <h2 class="stats__title">${t('统计数据')}</h2>
+          <span class="stats__note">${t('本机数据 · 仅记录本浏览器中你参与的对局')}</span>
         </div>
         ${ready ? html`<${DataActions} stats=${stats} onReload=${reload} />` : null}
-        <button type="button" class="stats__close" aria-label="关闭" title="关闭 (Esc)" onClick=${closeStats}><${Icon} name="close" /></button>
+        <button type="button" class="stats__close" aria-label=${t('关闭')} title=${t('关闭 (Esc)')} onClick=${closeStats}><${Icon} name="close" /></button>
       </header>
       <div class="stats__body">
         ${!ready ? html`<div class="stats__loading"><${Spinner} size="md" /></div>`
-          : stats.newer ? html`<p class="stats-empty">检测到更新版本的统计数据，请先升级客户端再查看，以免覆盖数据。</p>`
-            : !stats.records.length ? html`<p class="stats-empty">还没有记录 —— 完成一局对局后，这里会开始积累。</p>`
+          : stats.newer ? html`<p class="stats-empty">${t('检测到更新版本的统计数据，请先升级客户端再查看，以免覆盖数据。')}</p>`
+            : !stats.records.length ? html`<p class="stats-empty">${t('还没有记录 —— 完成一局对局后，这里会开始积累。')}</p>`
               : html`<${Overview} agg=${agg} />
                 <${Bands} agg=${agg} gd=${gd} />
                 <${Titles} agg=${agg} gd=${gd} />

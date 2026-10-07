@@ -18,6 +18,7 @@
 // loadStats / saveStats.
 
 import { loadPref } from '../store.js';
+import { t } from '../../../shared/i18n.js';
 
 /** Current record-envelope version (bump + add a MIGRATIONS step when the record shape changes). */
 export const STATS_VERSION = 1;
@@ -102,7 +103,7 @@ function normalizePlayerRow(raw) {
     ...p, // unknown / future fields pass through untouched
     playerId: str(p.playerId) || '',
     seat: int(p.seat, 0),
-    name: str(p.name) || '博士',
+    name: str(p.name) || t('博士'),
     isBot: bool(p.isBot),
     left: bool(p.left),
     alive: bool(p.alive, true),
@@ -436,7 +437,7 @@ export function aggregateStats(records) {
     if (rec.hiddenReached) out.hidden.reached++;
     if (rec.hiddenCleared) out.hidden.cleared++;
 
-    const d = rec.difficulty || '未知';
+    const d = rec.difficulty || t('未知');
     const bd = (out.byDifficulty[d] ||= { games: 0, wins: 0, hiddenCleared: 0 });
     bd.games++;
     if (won) bd.wins++;
