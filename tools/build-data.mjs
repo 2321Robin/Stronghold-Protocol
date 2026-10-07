@@ -1117,6 +1117,15 @@ const DIY_EXCLUDED_TEAMS = Object.freeze(['rainbow', 'action4', 'mujica', 'sees'
 const DIY_EXCLUDED_NUMBER_PREFIXES = Object.freeze(['MH', 'RS', 'AM', 'PS', 'DD']);
 
 /**
+ * local-preview only (playtest #21, never upstreamed): the exclusion above is the upstream owner's copyright decision
+ * for the public releases; this server re-includes the collab 6★ it names at build time —
+ *   SP_DIY_COLLAB=char_4182_oblvns[,char_…] node tools/build-data.mjs
+ * (unset ⇒ byte-identical to the upstream behaviour, verified 2026-10-07). Who is actually offered still needs a kit
+ * file (server/sim/content/kits/ops/op-<codename>.js, kits/index.js KITTED_CHARS) and its art rides data/assets.json.
+ */
+const DIY_COLLAB_INCLUDE = Object.freeze(new Set(String(process.env.SP_DIY_COLLAB || '').split(',').map((s) => s.trim()).filter(Boolean)));
+
+/**
  * The skill a prototype carries in a 自选 slot when no 补位 row of the slot's tier names it (only 预备干员-医疗 at tier 5:
  * it stands in at tier 3 only). PRTS 卫戍协议 says the prototypes' "技能携带规则与系统补位时一致"; [ASSUMED] (the owner's
  * decision of 2026-10-05) the selection of its 补位 rows at that tier, and for this one S3 — every other 4★ reserve's
@@ -1305,8 +1314,11 @@ function buildBackups(ctx, chess) {
       && !ch.isNotObtainable && !roster.has(id);
   }).sort(naturalCmp);
   const collabNumber = (ch) => DIY_EXCLUDED_NUMBER_PREFIXES.some((p) => new RegExp(`^${p}\\d`).test(ch.displayNumber || ''));
-  const excluded = legal6.filter((id) => teamsOf(charTable[id]).some((t) => excludedTeams.has(t)) || collabNumber(charTable[id]));
-  for (const t of DIY_EXCLUDED_TEAMS) if (!excluded.some((id) => teamsOf(charTable[id]).includes(t))) warn(`DIY_EXCLUDED_TEAMS: no owned-6★ pick of team ${t}`);
+  const collab = legal6.filter((id) => teamsOf(charTable[id]).some((t) => excludedTeams.has(t)) || collabNumber(charTable[id]));
+  for (const id of DIY_COLLAB_INCLUDE) if (!collab.includes(id)) warn(`SP_DIY_COLLAB: ${id} is not a collab 6★ of the pool (no effect)`);
+  const excluded = collab.filter((id) => !DIY_COLLAB_INCLUDE.has(id));
+  const includeTeams = new Set([...DIY_COLLAB_INCLUDE].flatMap((id) => charTable[id] ? teamsOf(charTable[id]) : []));
+  for (const t of DIY_EXCLUDED_TEAMS) if (!includeTeams.has(t) && !excluded.some((id) => teamsOf(charTable[id]).includes(t))) warn(`DIY_EXCLUDED_TEAMS: no owned-6★ pick of team ${t}`);
   const ownedPool = legal6.filter((id) => !excluded.includes(id));
   for (const id of ownedPool) for (const st of diyStatuses.values()) addNeed(id, st);
 
