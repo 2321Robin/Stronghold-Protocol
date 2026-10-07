@@ -111,10 +111,10 @@ test('the committed data/assets.json lists every 自选 operator\'s avatar, port
   assert.equal(m.stats.modules, Object.keys(m.modules).length);
 });
 
-test('an operator left out of 自选 (data/backups.json diy.excluded: the collab picks, 焰狐龙梓兰 MH05 among them) keeps no art in data/assets.json, so the full release zip (tools/package.mjs) never ships it', () => {
+test('an operator left out of 自选 (data/backups.json diy.excluded) keeps no art in data/assets.json, so the full release zip (tools/package.mjs) never ships it (locally the SP_DIY_COLLAB build re-includes all 7 — the excluded list is empty and every collab pick carries its art)', () => {
   const m = load('assets');
   const text = JSON.stringify(m);
-  assert.ok(BACKUPS.diy.excluded.includes('char_1048_orchd2'), '焰狐龙梓兰 is excluded');
+  assert.ok(Array.isArray(BACKUPS.diy.excluded), 'the excluded list');
   for (const id of BACKUPS.diy.excluded) {
     const code = id.split('_').slice(2).join('_');
     assert.equal(m.chars[id], undefined, `${id}: chars`);

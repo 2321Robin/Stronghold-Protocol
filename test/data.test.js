@@ -825,8 +825,8 @@ test('offline rebuild reproduces data/ byte-for-byte (data/ is not stale)', { sk
   const out = mkdtempSync(join(tmpdir(), 'sp-data-'));
   try {
     // the committed data was built with the local SP_DIY_COLLAB re-include (playtest #21, tools/build-data.mjs) —
-    // the rebuild passes the same recipe, or the pool differs by the collab pick
-    const r = spawnSync(process.execPath, [join(ROOT, 'tools', 'build-data.mjs'), '--offline', '--quiet', '--out', out, '--report', join(out, 'report.json')], { encoding: 'utf8', timeout: 120_000, env: { ...process.env, SP_DIY_COLLAB: 'char_4182_oblvns' } });
+    // the rebuild passes the same recipe, or the pool differs by the collab picks
+    const r = spawnSync(process.execPath, [join(ROOT, 'tools', 'build-data.mjs'), '--offline', '--quiet', '--out', out, '--report', join(out, 'report.json')], { encoding: 'utf8', timeout: 120_000, env: { ...process.env, SP_DIY_COLLAB: 'char_4182_oblvns,char_456_ash,char_1029_yato2,char_4123_ela,char_4141_marcil,char_1048_orchd2,char_4217_makoto' } });
     if (r.status !== 0 && /missing cached file/.test(r.stderr)) { t.skip('partial .cache/gamedata (run node tools/build-data.mjs once online)'); return; }
     assert.equal(r.status, 0, `build failed: ${r.stderr}`);
     for (const f of FILES) {
