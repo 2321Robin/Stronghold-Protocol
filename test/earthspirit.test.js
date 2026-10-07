@@ -134,7 +134,7 @@ describe('地灵 room option: lobby over WebSocket (stub match)', () => {
     const seatLoadout = stub.opts.seats[0].loadout[ES];
     assert.equal(seatLoadout.skill, 1, 'the 地灵 loadout (skill 流沙化) reaches the match');
     assert.equal(seatLoadout.module, 'uniequip_002_skgoat', 'pinned to her default module alongside the non-default skill');
-    assert.deepEqual(stub.opts.extras, { earthspirit: true }, 'the match gets the extras option');
+    assert.deepEqual(stub.opts.extras, { earthspirit: true, devMode: false }, 'the match gets the extras option');
   });
 
   test('a guest cannot toggle; toggling back off re-gates the loadout', async () => {

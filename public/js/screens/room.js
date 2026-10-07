@@ -230,8 +230,10 @@ export function RoomScreen() {
     if (ok) run(`kick${seat}`, () => net.request('room.kick', { seat, playerId }));
   };
   const setDifficulty = (difficulty) => run('diff', () => net.request('room.setDifficulty', { difficulty }));
-  // local mod: the host opts 地灵 into the next match's pool (room.setExtras; default off, personal use only)
-  const setExtras = (earthspirit) => run('extras', () => net.request('room.setExtras', { earthspirit }));
+  // local mod: per-match host options (room.setExtras) — 地灵 (the hidden operator, playtest #17) and devMode (the
+  // in-match developer switches, playtest #24). The request always carries the full current set with one key patched:
+  // on the server an absent key means "unchanged", so toggling one option never resets the other.
+  const setExtras = (patch) => run('extras', () => net.request('room.setExtras', { earthspirit: room.extras?.earthspirit, devMode: room.extras?.devMode, ...patch }));
   // spectator seats: the host frees one; a spectator takes a free player seat with room.join of this room
   const removeSpectator = (playerId) => run(`rs${playerId}`, () => net.request('room.removeSpectator', { playerId }));
   const sit = () => run('sit', () => net.request('room.join', { code: room.code }));
@@ -319,8 +321,23 @@ export function RoomScreen() {
             : t('创建者{state}将隐藏干员「地灵」加入本局招募池（仅创建者可改）', { state: on ? t('已') : t('未') })} placement="top">
             <button type="button" class="dpick__opt${on ? ' is-active' : ''}" aria-pressed=${on ? 'true' : 'false'}
               style=${`--d-color: var(--mint-500); margin-left: .12rem; border-right: 0; border: 1px solid var(--${on ? 'mint-700' : 'line'}); border-radius: .04rem;`}
-              disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras(!on)}>
+              disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras({ earthspirit: !on })}>
               ${on ? t('✓ 本局加地灵') : t('+ 本局加地灵')}
+            </button>
+          <//>`;
+        })()}
+        ${(() => {
+          // playtest #24 (local dev tool, never upstream): per-match developer-mode switches — during the match's
+          // 整备期 a DEV panel (ui/devPanel.js) offers shortcuts like 金币 999, so a fix can be verified without
+          // playing the whole match. Host toggle, default off, everyone sees the state (the 地灵 option's shape).
+          const on = !!room.extras?.devMode;
+          return html`<${Tooltip} text=${facts.isHost
+            ? (on ? t('自用：本局已开启开发者模式（整备期左侧 DEV 面板，如金币 999），点击关闭') : t('自用：开启后本局整备期出现开发者快捷开关（如金币 999），便于快速验证改动效果'))
+            : t('创建者{state}本局的开发者模式（对局内测试快捷开关，仅创建者可改）', { state: on ? t('已开启') : t('未开启') })} placement="top">
+            <button type="button" class="dpick__opt${on ? ' is-active' : ''}" aria-pressed=${on ? 'true' : 'false'}
+              style=${`--d-color: var(--amber); margin-left: .12rem; border-right: 0; border: 1px solid var(--${on ? 'amber' : 'line'}); border-radius: .04rem;`}
+              disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras({ devMode: !on })}>
+              ${on ? t('✓ 本局开发者模式') : t('+ 本局开发者模式')}
             </button>
           <//>`;
         })()}
