@@ -126,3 +126,29 @@ test('co-op trophies / victory follow each player\'s OWN rounds passed: a teamma
   assert.equal(res.victory, true, 'the team result is still a win');
   m.dispose();
 });
+
+test('an eliminated player\'s result row keeps their last deployed lineup (snapshotted at eliminate; the board is cleared there)', async () => {
+  const { buildResult } = await import('../../server/match/results.js');
+  const { give, legalTileFor } = await import('./harness.js');
+  const h = makeMatch({ mode: 'coop', difficulty: 'HARD', humans: 2, seed: 5, fake: true }).start();
+  h.toPrep(3);
+  const m = h.m;
+  const out = h.ps('p_1');
+  const a = give(m, out, 'chess_char_1_01_a', 'board', legalTileFor(m, out, 'chess_char_1_01_a'));
+  const b = give(m, out, 'chess_char_1_01_b', 'board', legalTileFor(m, out, 'chess_char_1_01_b', new Set([Object.keys(out.board)[0]])));
+  out.eliminate(3); // the board is cleared here — the snapshot must carry the two chess into the result
+  assert.equal(out.board.size, 0, 'the board itself is cleared');
+  const res = buildResult(m, { victory: false, hiddenReached: false, hiddenCleared: false, reason: 'eliminated' });
+  const row = res.players.find((p) => p.playerId === 'p_1');
+  const ids = row.lineup.map((u) => u.id);
+  assert.ok(ids.includes(a.id) && ids.includes(b.id), `both chess kept: ${ids.join(', ')}`);
+  for (const u of row.lineup) {
+    assert.equal(typeof u.golden, 'boolean');
+    assert.ok(Number.isFinite(u.tier));
+    assert.ok(Array.isArray(u.items));
+  }
+  // a survivor with pieces on the board still reads the live board; an empty-board survivor keeps NO INFO
+  const keeper = h.ps('p_0');
+  assert.equal(res.players.find((p) => p.playerId === 'p_0').lineup.length, keeper.board.size ? keeper.board.size : 0);
+  m.dispose();
+});

@@ -54,6 +54,12 @@ export class PlayerRound {
     this.alive = false;
     this.ready = false;
     this.eliminatedRound = round;
+    // snapshot the deployed lineup BEFORE the clear (results.js buildResult reads it: the board is emptied
+    // right after, and the result row would otherwise lose its 阵容 entirely — the #18 stats replay serves these rows)
+    this.lastLineup = boardOrder(this.board).filter((x) => x.piece.kind === 'chess').map(({ r, c, piece }) => ({
+      id: piece.id, golden: this.gd.isGolden(piece.id), tier: this.gd.tierOf(piece.id), row: r, col: c,
+      items: (piece.items || []).map((i) => i.id),
+    }));
     const all = [];
     for (const p of this.board.values()) all.push(p);
     for (const p of this.hand) if (p) all.push(p);
