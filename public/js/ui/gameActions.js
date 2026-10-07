@@ -72,4 +72,7 @@ export const actions = {
   autoplay: (on) => act('g.autoplay', { on }),
   // solo battles only (ui/matchStatus.js pauseAvailable): m.public.paused follows
   pause: (on) => act('g.pause', { on: !!on }, { sfx: on ? 'click' : 'confirm' }),
+  // playtest #24 (local dev tool, room.setExtras devMode): a developer-mode quick switch (ui/devPanel.js buttons ↔
+  // server match/match/dev.js DEV_ACTIONS); the server refuses it outside an opted-in match's PREP
+  dev: (action, v) => act('g.dev', Number.isFinite(v) ? { action, v } : { action }, { sfx: 'click' }),
 };

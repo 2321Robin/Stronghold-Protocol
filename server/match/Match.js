@@ -182,6 +182,7 @@ import { MatchMessaging } from './match/messaging.js';
 import { MatchViews } from './match/views.js';
 import { MatchWatch } from './match/watch.js';
 import { MatchIntents } from './match/intents.js';
+import { MatchDev } from './match/dev.js';
 import { MatchPause } from './match/pause.js';
 import { MatchPhases } from './match/phases.js';
 import { MatchSpDraft } from './match/spDraft.js';
@@ -236,8 +237,12 @@ export class Match {
     this.broadcastFn = opts.broadcast;
     this.onEndFn = opts.onEnd;
     this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};
-    // per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool
-    this.extras = { earthspirit: !!(opts.extras && opts.extras.earthspirit) };
+    // per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool,
+    // extras.devMode turns on the developer-mode quick switches (match/match/dev.js g.dev)
+    this.extras = {
+      earthspirit: !!(opts.extras && opts.extras.earthspirit),
+      devMode: !!(opts.extras && opts.extras.devMode),
+    };
     this.extraChess = extraChessOf(this.extras);
     this.gd = new GameData(this.data, this.modeId);
     if (!this.difficulty) this.difficulty = this.gd.difficulty;
@@ -390,7 +395,7 @@ export class Match {
 }
 
 // the method modules, in this order (a name defined twice is an error, never a silent override)
-for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchPause, MatchPhases, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchReports, MatchUnite, MatchBoss, MatchSettle]) {
+for (const part of [MatchPlatform, MatchInfra, MatchMessaging, MatchViews, MatchWatch, MatchIntents, MatchDev, MatchPause, MatchPhases, MatchSpDraft, MatchPrep, MatchCombat, MatchClientCombat, MatchReports, MatchUnite, MatchBoss, MatchSettle]) {
   for (const key of Reflect.ownKeys(part.prototype)) {
     if (key === 'constructor') continue;
     if (Object.prototype.hasOwnProperty.call(Match.prototype, key)) throw new Error(`Match.${String(key)} is defined twice`);

@@ -154,7 +154,7 @@ export class Room {
     this.mode = mode;
     this.difficulty = difficulty;
     /** per-match opt-in extras (local mod: room.setExtras), the host decides before room.start */
-    this.extras = { earthspirit: false };
+    this.extras = { earthspirit: false, devMode: false };
     /** @type {string | null} */
     this.hostId = null;
     /** @type {(Seat | null)[]} */
@@ -504,16 +504,21 @@ export class Lobby {
     return OK;
   }
 
-  /** Local mod: host-only per-match extras (room.setExtras) — opts 地灵 into the next match's shared pool. */
-  setExtras(session, { earthspirit }) {
+  /**
+   * Local mod: host-only per-match extras (room.setExtras) — each field is an independent opt-in for the next match:
+   * earthspirit puts 地灵 into the shared pool (pool.js), devMode turns on the in-match g.dev quick switches
+   * (match/match/dev.js). Absent = unchanged, so a toggle for one option never resets the others.
+   */
+  setExtras(session, { earthspirit, devMode }) {
     const room = this.roomOf(session);
     if (!room) return fail(ERR.NOT_IN_ROOM);
     if (room.hostId !== session.playerId) return fail(ERR.NOT_HOST);
     if (room.match) return fail(ERR.ROOM_STARTED);
     this.dropReplay(room, session.playerId);
-    const on = !!earthspirit;
-    if (room.extras.earthspirit !== on) {
-      room.extras.earthspirit = on;
+    let changed = false;
+    if (earthspirit !== undefined && room.extras.earthspirit !== !!earthspirit) { room.extras.earthspirit = !!earthspirit; changed = true; }
+    if (devMode !== undefined && room.extras.devMode !== !!devMode) { room.extras.devMode = !!devMode; changed = true; }
+    if (changed) {
       for (const s of room.seats) if (s && !s.isBot && s.playerId !== room.hostId) s.ready = false;
       this.broadcastState(room);
     }

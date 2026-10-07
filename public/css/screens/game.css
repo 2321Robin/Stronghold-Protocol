@@ -666,3 +666,26 @@
 .pauseov__plate h2 { font-size: .5rem; font-weight: 900; letter-spacing: .3em; color: #fff; text-shadow: 0 0 .2rem rgba(0, 0, 0, .8); }
 .pauseov__note { font-size: .17rem; color: var(--text-md); text-shadow: 0 1px 2px #000; }
 .pauseov__btns { display: flex; gap: .2rem; }
+
+/* ---- developer-mode quick switches (local playtest #24, never upstream) -------------------------------------------
+   The DEV tab floats on the left edge during the PREP phase of a match whose room opted in (room.setExtras devMode);
+   the panel is pure intent buttons (ui/devPanel.js → g.dev), so it styles itself after the bonds-toggle chip. ---- */
+.gm__dev { position: absolute; left: .12rem; top: 52%; z-index: 4; display: flex; align-items: flex-start; }
+.gm__dev-tab {
+  min-width: 44px; min-height: 44px; padding: .05rem .07rem; pointer-events: auto;
+  font-family: var(--font-num); font-size: .14rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--amber); background: var(--bg-1); border: 1px solid var(--line-2); cursor: pointer;
+}
+.gm__dev-tab:hover { border-color: var(--amber); }
+.gm__dev-tab.is-open { background: var(--amber-a20); border-color: var(--amber); color: #fff; }
+.gm__dev-panel {
+  display: flex; flex-direction: column; gap: .06rem; min-width: 1.5rem; padding: .1rem; pointer-events: auto;
+  background: rgba(8, 11, 10, .92); border: 1px solid var(--line-2); box-shadow: 0 .06rem .2rem rgba(0, 0, 0, .5);
+}
+.gm__dev-head { display: flex; flex-direction: column; gap: .02rem; padding-bottom: .04rem; border-bottom: 1px solid var(--line-2); font-size: .16rem; font-weight: 700; color: var(--amber); }
+.gm__dev-sub { font-size: .12rem; font-weight: 400; color: var(--text-lo); }
+.gm__dev-btn {
+  min-height: 36px; padding: .05rem .1rem; text-align: left; cursor: pointer;
+  font-size: .15rem; color: var(--text-hi); background: rgba(255, 255, 255, .04); border: 1px solid var(--line-2);
+}
+.gm__dev-btn:hover { background: var(--amber-a20); border-color: var(--amber); }

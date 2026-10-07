@@ -36,6 +36,9 @@ function randomIntent(rng, m, ps) {
     case 'g.watch': return { t, fieldId: rng.pick(['n:p_0', 'n:p_1', 'n:ai_0', 'u', 'b1', 'b2', 'zz', '']) };
     case 'g.autoplay': return { t, on: rng() < 0.05 };
     case 'g.pause': return { t, on: rng() < 0.5 };
+    // playtest #24 (local dev tool): mostly the known 'funds' action, sometimes a bogus one; dev mode is off in
+    // these matches, so the handler's gate answers BAD_MSG
+    case 'g.dev': return { t, action: rng() < 0.9 ? 'funds' : rng.pick(['funds', 'teleport', '__proto__', 'x'.repeat(40)]), ...(rng() < 0.5 ? { v: rng.int(1200) } : {}) };
     default: return { t };
   }
 }

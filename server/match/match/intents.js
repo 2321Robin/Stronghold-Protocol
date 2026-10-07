@@ -38,6 +38,8 @@ export class MatchIntents {
       case 'g.watch': return this.watch(ps, msg.fieldId, msg.playerId ?? null);
       case 'g.autoplay': return this.setAutoplay(ps, !!msg.on);
       case 'g.pause': return this.setPause(ps, !!msg.on);
+      // playtest #24 (local dev tool): the developer-mode quick switches (room.setExtras devMode; match/match/dev.js)
+      case 'g.dev': return this.dev(ps, msg.action, msg.v);
       // the stats the board's units start their next battle with (the detail card in prep, user playtest #4 item 7)
       case 'g.unitStats': return this.unitStats(ps, msg.seq ?? null);
       case 'g.leave': this.onLeave(ps.playerId); return OK;

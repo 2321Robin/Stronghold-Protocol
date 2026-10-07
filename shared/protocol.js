@@ -332,8 +332,10 @@ export const C2S = {
   'room.leave': {},
   'room.ready': { ready: isBool },
   'room.setDifficulty': { difficulty: (v) => DIFFICULTIES.includes(v) },
-  // local mod (room option 地灵, never for upstream): the host opts a hidden operator into the next match's pool
-  'room.setExtras': { earthspirit: isBool },
+  // local mod (room option 地灵, never for upstream): the host opts a hidden operator into the next match's pool;
+  // devMode (playtest #24, local dev tool) turns on the in-match g.dev quick switches for that match. Each field is
+  // independent and absent = unchanged (server/lobby.js setExtras); the client always sends the full current set
+  'room.setExtras': { earthspirit: isBool, devMode: isBool, $optional: ['earthspirit', 'devMode'] },
   'room.addBot': {},
   'room.removeBot': { seat: (v) => isInt(v, 0, MAX_SEATS - 1) },
   // the host removes another human before the match (server/lobby.js kick; community report #17); playerId = the one the
@@ -377,6 +379,10 @@ export const C2S = {
   'g.choice': { idx: (v) => isInt(v, 0, 5) },
   'g.ready': { ready: isBool },
   'g.emote': { id: (v) => EMOTES.includes(v) },
+  // playtest #24 (local dev tool, never for upstream): a developer-mode quick switch (room.setExtras devMode),
+  // e.g. action 'funds' sets the sender's own funds to `v`. The action allowlist lives in server/match/match/dev.js
+  // (DEV_ACTIONS — add a row there and one button in public/js/ui/devPanel.js); unknown / disabled ⇒ BAD_MSG
+  'g.dev': { action: (v) => isStr(v, 32), v: (v) => isNum(v, 0, 1e6), $optional: ['v'] },
   // playerId: the player tapped in the team panel (a 联防 / boss pair field shows two) — what an eliminated viewer or a
   // spectator seat follows from then on (Match.watchPref; community report of 2026-10-06, item 56)
   'g.watch': { fieldId: (v) => isStr(v, 32), playerId: isId, $optional: ['playerId'] },
