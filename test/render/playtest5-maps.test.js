@@ -67,9 +67,11 @@ describe('#6 act2 m01 blowers in every view', () => {
     for (const vk of ['prep', 'normal']) assert.deepEqual(blowersIn3d(M01, vk), ['13,5', '13,9', '6,5', '6,9'], vk);
   });
 
-  test('联防 builds both halves\' row-13 blowers; the Final Assault builds the four row-6 blowers', () => {
-    // (the partner's row-6 machines (6,11) / (6,15) stand off the island: row 7–8 are '#' right of col 9 in 联防)
-    assert.deepEqual(blowersIn3d(M01, 'unite'), ['13,13', '13,17', '13,5', '13,9', '6,5', '6,9']);
+  test('联防 builds both halves\' row-13 blowers (field rows 9–13 only, the local ruling — no row-6 wall); the Final Assault builds the four row-6 blowers', () => {
+    // LOCAL RULING (playtest #22 follow-up): the 联防 view builds rows 9–13 only (the round map's bench band and the
+    // row-6 wall under it must not show — upstream's dedicated maps are void there). The row-6 machines under the
+    // bench stay a prep / normal-view thing ((6,11) / (6,15) stand off the island anyway).
+    assert.deepEqual(blowersIn3d(M01, 'unite'), ['13,13', '13,17', '13,5', '13,9']);
     for (const vk of ['boss', 'bossPrep', viewKind('hidden'), viewKind('prep', { rect: { r0: 0, r1: 5, c0: 0, c1: 10 } })]) {
       assert.deepEqual(blowersIn3d(M01, vk), ['6,11', '6,15', '6,5', '6,9'], vk);
     }
@@ -113,8 +115,9 @@ describe('#6 audit: every device of every stage is drawn in the views of the fie
   test('every active device standing on the built island of a view is drawn — every field device and every device acting on the field among them', () => {
     const KINDS = new Set(['crate', 'platform', 'mound', 'blower', 'turret', 'waterPlatform', 'bush', 'sealedFloor']);
     const inRect = (r, c, R) => r >= R.r0 && r <= R.r1 && c >= R.c0 && c <= R.c1;
-    // the fields inside their separator walls (normal / 联防: rows 7–12; boss: rows 0–5)
-    const INNER = { prep: { r0: 7, r1: 12, c0: 0, c1: 10 }, unite: { r0: 7, r1: 12, c0: 0, c1: 20 }, boss: { r0: 0, r1: 5, c0: 0, c1: 20 } };
+    // the fields inside their separator walls (normal / prep: rows 7–12; 联防: rows 9–12, the local ruling —
+    // the bench band 7–8 is not part of the 联防 view; boss: rows 0–5)
+    const INNER = { prep: { r0: 7, r1: 12, c0: 0, c1: 10 }, unite: { r0: 9, r1: 12, c0: 0, c1: 20 }, boss: { r0: 0, r1: 5, c0: 0, c1: 20 } };
     for (const [id, st] of Object.entries(stages)) {
       for (const [vk, F] of Object.entries(INNER)) {
         const b = buildBoard(st, { area: boardArea(vk) });
