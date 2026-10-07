@@ -213,6 +213,10 @@ export class PlayerState {
       bossDamage: 0, lpLost: 0, buys: 0, sells: 0, perfectRounds: 0, fundsGained: 0, healing: 0,
     };
     this.eliminatedRound = null;
+    /** the last deployed lineup, snapshotted at elimination (results.js buildResult reads it: the board is
+     *  cleared right after, and the result row would otherwise lose its 阵容 entirely — user request via the
+     *  #18 stats replay, which serves these same rows) */
+    this.lastLineup = [];
     this.lpAtFinal = null;
     /** last combat result for this player (unite carry state, bounties) */
     this.lastResult = null;
