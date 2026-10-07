@@ -10,8 +10,9 @@ import assert from 'node:assert/strict';
 import {
   STATS_VERSION, MAX_RECORDS, emptyStats, buildRecord, recordId, appendRecord, recordResult,
   loadStats, saveStats, migrateStats, normalizeRecord, mergeStats, importStats, exportStats,
-  aggregateStats, selfRowOf, roomModeOf, MIGRATIONS,
+  aggregateStats, selfRowOf, roomModeOf, recordToResult, MIGRATIONS,
 } from '../../public/js/ui/stats.js';
+import { normalizeResult } from '../../public/js/ui/gameLogic.js';
 
 /** A realistic m.result in the shape server/match/results.js buildResult emits (replayed byte-identically). */
 function baseResult(over = {}) {
@@ -279,5 +280,39 @@ describe('#18 stats: aggregation (what the page renders)', () => {
     const noSelf = normalizeRecord({ players: [{ playerId: 'a', isBot: true }, { playerId: 'b', isBot: false }] });
     assert.equal(selfRowOf(noSelf).playerId, 'b');
     assert.equal(selfRowOf({ players: [] }), null);
+  });
+});
+
+describe('#18 stats: recordToResult (最近对局行 → 结算页回看)', () => {
+  test('record → m.result payload → normalizeResult renders the same settlement the live push did', () => {
+    const rec = buildRecord(baseResult(), { myId: 'p1', roomMode: 'solo', now: 1000 });
+    const res = recordToResult(rec);
+    assert.ok(res);
+    const view = normalizeResult(res, null);
+    assert.equal(view.victory, true);
+    assert.equal(view.difficulty, 'HARD');
+    assert.equal(view.modeId, 'mode_single_hard');
+    assert.equal(view.roundsPassed, 15);
+    assert.equal(view.hiddenReached, true);
+    assert.equal(view.hiddenCleared, true);
+    assert.equal(view.durationMs, 952123);
+    assert.equal(view.players.length, 2);
+    const self = view.players.find((p) => p.playerId === 'p1');
+    assert.equal(self.bandId, 'band_amiya');
+    assert.equal(self.title.id, 'comment_1');
+    assert.equal(self.stats.kills, 41);
+    assert.equal(self.stats.bossDamage, 5000.5);
+    assert.equal(self.lineup[0].id, 'char_290_vigna');
+    assert.equal(self.lineup[0].golden, false);
+    const mate = view.players.find((p) => p.playerId === 'p2');
+    assert.equal(mate.alive, false);
+    assert.equal(mate.roundsPassed, 9);
+  });
+
+  test('a null lastRound is passed through as absent (normalizeResult defaults it); garbage → null', () => {
+    const rec = buildRecord(baseResult({ lastRound: undefined }), { myId: 'p1', now: 1 });
+    assert.equal('lastRound' in recordToResult(rec), false);
+    assert.equal(recordToResult(null), null);
+    assert.equal(recordToResult({ players: [] }), null);
   });
 });
