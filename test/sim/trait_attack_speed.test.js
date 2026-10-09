@@ -411,6 +411,13 @@ test('覆盖锁定（补位 / 自选）: 每个补位干员和每个自选组合
   }
   assert.ok(tally.standIn > 100, `every stand-in was scanned (${tally.standIn})`);
   assert.ok(tally.diy > 1000, `every 自选 combination was scanned (${tally.diy})`);
-  assert.deepEqual(applied, [], 'no stand-in or 自选 pick gains the engine rule');
-  assert.deepEqual(Object.keys(reasons).sort(), ['kit'], 'every line they carry is a kit-owned shape (no unknown, no other mode)');
+  // local (playtest #21, never upstreamed): 丰川祥子's LOR-Y module (uniequip_002_oblvns) carries the same
+  // 攻击范围内存在2名及以上敌人时攻击速度+12 shape the engine rule applies for 圣约送葬人 / 隐德来希 REA-Y, and
+  // since the 0.2.2 port her kit does NOT re-implement it (ops/op-oblvns.js) — the takeover reaches exactly her
+  // 4 golden 自选 slots × 3 skills; every other stand-in / pick stays kit-owned or lineless
+  const local = applied.filter((t) => t.endsWith('|uniequip_002_oblvns'));
+  assert.deepEqual(applied.filter((t) => !t.endsWith('|uniequip_002_oblvns')), [], 'no other stand-in or 自选 pick gains the engine rule');
+  assert.equal(local.length, 12, `丰川祥子's module trait part, engine-applied on the golden slots × skills (${local.length})`);
+  assert.ok(local.every((t) => t.includes('|char_4182_oblvns|')), 'the takeover entries are all hers');
+  assert.deepEqual(Object.keys(reasons).sort(), ['kit', 'ok'], 'every other line they carry is a kit-owned shape (no unknown, no other mode)');
 });

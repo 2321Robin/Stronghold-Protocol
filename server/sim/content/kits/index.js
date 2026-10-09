@@ -151,6 +151,14 @@ export const OPERATOR_KIT_FILES = Object.freeze([
   'op-kalts2.js',
   'op-monstr.js',
   'op-clemnt.js',
+  // local-preview (playtest #21): the collab 6★ re-included by the SP_DIY_COLLAB build ride here, after the upstream picks
+  'op-oblvns.js',
+  'op-ash.js',
+  'op-yato2.js',
+  'op-orchd2.js',
+  'op-marcil.js',
+  'op-ela.js',
+  'op-makoto.js',
 ]);
 
 /**
