@@ -93,7 +93,8 @@ test('every chess, 自选 form and stand-in form: the raw keyframes plus every p
   for (const [charId, u] of Object.entries(backups.units)) {
     for (const f of Object.values(u.forms)) { check(`${charId}@${f.status.phase}/${f.status.level}`, charId, f.status, f.stats); forms++; }
   }
-  assert.equal(forms, 256);
+  // 277 = upstream's 256 + the seven collab 6★ × 3 forms (the local SP_DIY_COLLAB build, playtest #21) — all checked above
+  assert.equal(forms, 277);
   // the 原型干员 stand-ins have no potential ranks: their numbers are the plain keyframes
   for (const id of ['char_600_cpione', 'char_602_cdfend', 'char_608_acpion', 'char_617_sharp2']) assert.equal((CT[id].potentialRanks || []).length, 0, id);
 });

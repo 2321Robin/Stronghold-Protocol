@@ -441,7 +441,7 @@
           "trophies": 0,
           "reward": 298,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":2209660,"gold":122,"itemsEquipped":14,"kills":354,"leaks":45,"lpLost":34,"merges":3,"perfectRounds":7,"refreshes":7},
-          "lineup": [],
+          "lineup": ["2_14_a@11,7","4_10_a@10,3[5_02_e_b+4_03_e_a]","6_18_a@10,4","5_10_a@10,5[4_08_e_b]","3_19_a@10,6[3_08_e_a]","3_20_a@10,7[3_03_e_a+1_05_e_a]","2_16_b@9,3","1_08_a@9,6[1_01_e_a+4_05_e_a]"],
           "bonds": ["arcaneShip 0/18","deputShip 0/16","emptyShip 0/12","kazimierzShip 0/8","kjeragShip 0/37","miraShip 0/5","preciShip 0/33","sargonShip 0/8","siracusaShip 0/171","soloShip 0/17","steadShip 0/17","swiftShip 0/8"]
         }
       }
@@ -512,7 +512,7 @@
           "trophies": 0,
           "reward": 255,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":2255318,"gold":114,"itemsEquipped":6,"kills":208,"leaks":46,"lpLost":35,"merges":3,"perfectRounds":6,"refreshes":14},
-          "lineup": [],
+          "lineup": ["2_18_a@12,5[4_11_e_a+1_05_e_b]","3_17_a@10,3","4_20_a@10,4","3_11_a@10,5","1_17_b@10,7","5_12_a@10,8","5_14_a@9,4","1_02_b@9,5[4_02_e_a]"],
           "bonds": ["arcaneShip 0/30","kazimierzShip 0/16","kjeragShip 0/18","lateranoShip 0/3","preciShip 0/30","sargonShip 0/2","steadShip 0/8","swiftShip 0/10"]
         }
       }
@@ -720,7 +720,7 @@
           "trophies": 3,
           "reward": 298,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":3318154,"gold":127,"itemsEquipped":9,"kills":242,"leaks":44,"lpLost":32,"merges":4,"perfectRounds":9,"refreshes":12},
-          "lineup": [],
+          "lineup": ["2_18_b@10,3[1_02_e_b+1_02_e_a]","3_05_a@10,4[4_10_e_a]","1_08_b@10,5","6_19_a@10,6[4_07_e_a]","4_01_a@10,7","1_19_b@9,3[2_01_e_a+1_01_e_a]","1_18_b@9,4","5_15_a@9,8"],
           "bonds": ["kazimierzShip 0/55","kjeragShip 0/10","miraShip 0/7","raidShip 0/35","skillfulShip 0/9","soloShip 0/3","steadShip 0/22","swiftShip 0/46","yanShip 0/6"]
         },
         "ai_1": {
@@ -734,7 +734,7 @@
           "trophies": 3,
           "reward": 298,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":2364451,"gold":126,"itemsEquipped":11,"kills":206,"leaks":76,"lpLost":35,"merges":3,"perfectRounds":7,"refreshes":23},
-          "lineup": [],
+          "lineup": ["3_10_a@11,3","5_10_a@11,4","3_13_b@11,5","6_16_a@11,6","4_14_a@10,3[2_01_e_b]","4_16_a@10,4[4_11_e_a]","1_08_b@9,4[4_02_e_b+4_02_e_a]","6_18_a@9,8"],
           "bonds": ["arcaneShip 0/2","kazimierzShip 0/2","preciShip 0/59","sargonShip 0/4","siracusaShip 0/30","skillfulShip 0/14","swiftShip 0/28"]
         }
       }
@@ -838,7 +838,7 @@
           "trophies": 2,
           "reward": 191,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":1446967,"gold":87,"itemsEquipped":4,"kills":241,"leaks":32,"lpLost":30,"merges":1,"perfectRounds":7,"refreshes":17},
-          "lineup": [],
+          "lineup": ["4_10_a@12,4","4_21_a@11,4","3_19_a@11,5","1_13_b@11,8","3_21_a@10,3[2_01_e_a+3_08_e_a]","1_01_a@10,5[1_02_e_a]","3_18_a@9,3","4_01_a@9,4[4_02_e_a]"],
           "bonds": ["deputShip 0/30","kazimierzShip 0/4","lateranoShip 0/16","miraShip 0/9","siracusaShip 0/16","skillfulShip 0/42","soloShip 0/12","swiftShip 0/28"]
         },
         "ai_1": {
@@ -852,7 +852,7 @@
           "trophies": 2,
           "reward": 255,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":2530599,"gold":107,"itemsEquipped":9,"kills":246,"leaks":104,"lpLost":47,"merges":4,"perfectRounds":5,"refreshes":18},
-          "lineup": [],
+          "lineup": ["1_07_b@11,5[3_06_e_b+3_08_e_a]","4_10_a@11,6[4_07_e_b+1_05_e_a]","1_06_b@10,3","4_21_a@10,5","3_05_a@9,3","4_16_a@9,4[2_01_e_b+4_08_e_a]","6_07_a@9,5","2_17_a@9,6"],
           "bonds": ["deputShip 0/33","kazimierzShip 0/7","raidShip 0/10","siracusaShip 0/38","skillfulShip 0/28","soloShip 0/16","steadShip 0/26","suntShip 0/20","swiftShip 0/37"]
         },
         "ai_2": {
@@ -866,7 +866,7 @@
           "trophies": 2,
           "reward": 191,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":1381444,"gold":83,"itemsEquipped":7,"kills":162,"leaks":60,"lpLost":28,"merges":2,"perfectRounds":2,"refreshes":14},
-          "lineup": [],
+          "lineup": ["3_16_a@12,6","1_20_b@11,4","1_13_b@11,5","2_16_a@10,3[3_08_e_b+3_11_e_a]","4_18_a@10,4","4_10_a@10,5","5_17_a@9,3","3_18_a@9,4[4_02_e_a+1_02_e_a]"],
           "bonds": ["indomShip 0/2","siracusaShip 0/70","soloShip 0/4","swiftShip 0/6","yanShip 0/1"]
         }
       }
@@ -1154,7 +1154,7 @@
           "trophies": 3,
           "reward": 298,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":4362626,"gold":125,"itemsEquipped":15,"kills":138,"leaks":109,"lpLost":50,"merges":4,"perfectRounds":5,"refreshes":14},
-          "lineup": [],
+          "lineup": ["4_14_b@12,4[1_05_e_b+3_08_e_b]","4_02_a@12,5[6_02_e_a]","2_17_a@12,6","1_17_b@11,4","6_16_a@11,5","4_20_a@10,4[3_01_e_a+2_04_e_a]","1_19_b@10,5[4_05_e_a]","2_18_a@9,5"],
           "bonds": ["arcaneShip 0/34","deputShip 0/2","kazimierzShip 0/46","kjeragShip 0/5","preciShip 0/109","steadShip 0/12","suntShip 0/2","swiftShip 0/72"]
         },
         "ai_1": {
@@ -1168,7 +1168,7 @@
           "trophies": 1,
           "reward": 170,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":1091323,"gold":72,"itemsEquipped":4,"kills":72,"leaks":45,"lpLost":27,"merges":1,"perfectRounds":4,"refreshes":8},
-          "lineup": [],
+          "lineup": ["4_14_a@12,4","1_19_a@12,5[2_03_e_a]","1_13_a@12,6","2_14_a@12,7","3_17_a@11,4","3_12_a@11,5","3_20_a@11,7","5_10_a@10,4[5_02_e_a+3_02_e_a]"],
           "bonds": ["arcaneShip 0/4","deputShip 0/12","emptyShip 0/8","kazimierzShip 0/49","kjeragShip 0/2","preciShip 0/2","sargonShip 0/8","siracusaShip 0/6","soloShip 0/10","steadShip 0/2","swiftShip 0/31"]
         },
         "ai_2": {
@@ -1182,7 +1182,7 @@
           "trophies": 2,
           "reward": 255,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":4722302,"gold":111,"itemsEquipped":11,"kills":190,"leaks":66,"lpLost":34,"merges":2,"perfectRounds":6,"refreshes":11},
-          "lineup": [],
+          "lineup": ["1_06_b@12,4[1_02_e_b+2_04_e_a]","2_17_a@12,5","6_14_a@12,7","3_21_a@11,4","1_13_b@11,5","2_10_a@11,7[4_09_e_a+4_08_e_a]","4_02_a@10,4[4_07_e_a+2_01_e_a]","4_01_a@10,5[3_11_e_a+6_01_e_a]"],
           "bonds": ["arcaneShip 0/37","deputShip 0/46","egirShip 0/8","kazimierzShip 0/4","kjeragShip 0/14","lateranoShip 0/54","raidShip 0/4","siracusaShip 0/4","skillfulShip 0/8","soloShip 0/38","steadShip 0/100","suntShip 0/8","swiftShip 0/18","victoriaShip 0/22","yanShip 0/2"]
         },
         "ai_3": {
@@ -1196,7 +1196,7 @@
           "trophies": 1,
           "reward": 149,
           "stats": {"activatedLayers":0,"bossDamage":0,"dmgDealt":658143,"gold":63,"itemsEquipped":9,"kills":52,"leaks":44,"lpLost":29,"merges":1,"perfectRounds":3,"refreshes":6},
-          "lineup": [],
+          "lineup": ["2_04_a@12,4","3_13_a@12,5[3_02_e_a+5_02_e_a]","1_14_a@11,4","3_18_a@11,5","1_13_b@10,4[3_11_e_a+3_08_e_a]","2_16_a@10,5[5_09_e_a]","3_20_a@10,7","1_08_a@9,5[6_01_e_a+6_06_e_a]"],
           "bonds": ["arcaneShip 0/2","deputShip 0/6","preciShip 0/2","sargonShip 0/9","siracusaShip 0/26","skillfulShip 0/4","soloShip 0/9","swiftShip 0/6"]
         }
       }
