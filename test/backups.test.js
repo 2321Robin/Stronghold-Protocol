@@ -325,7 +325,7 @@ test('DIY: the owned-6★ pool and the faction → bond rule (mainPower + every 
   }
   const tally = {};
   for (const id of ownedPool) { const k = operators[id].bonds.join('+'); tally[k] = (tally[k] || 0) + 1; }
-  assert.deepEqual(tally, { emptyShip: 44, yanShip: 14, victoriaShip: 8, sargonShip: 4, siracusaShip: 4, lateranoShip: 2, kazimierzShip: 1, 'yanShip+victoriaShip': 1 });
+  assert.deepEqual(tally, { emptyShip: 44, yanShip: 14, victoriaShip: 8, sargonShip: 4, siracusaShip: 4, lateranoShip: 2, kazimierzShip: 1, egirShip: 1, 'yanShip+victoriaShip': 1 });
   // the collab operators are out of the data and the pool upstream (the owner's decision of 2026-10-05: copyright);
   // the local SP_DIY_COLLAB build (playtest #21) re-includes all 7 — excluded is empty here
   assert.deepEqual(backups.diy.excluded, []);
@@ -340,7 +340,7 @@ test('DIY: powers and the owned pool re-derived from character_table', { skip: !
   const collab = (c) => [c.mainPower, ...(c.subPower || [])].some((p) => ['rainbow', 'action4', 'mujica', 'sees', 'laios'].includes(p?.teamId))
     || /^(?:MH|RS|AM|PS|DD)\d/.test(c.displayNumber || '');
   const legal = Object.entries(CT).filter(([id, c]) => id.startsWith('char_') && c.rarity === 'TIER_6' && !['TOKEN', 'TRAP'].includes(c.profession) && !c.isNotObtainable && !roster.has(id));
-  assert.equal(legal.length, 78, 'the excel\'s 78 obtainable 6★ outside the chess pool');
+  assert.equal(legal.length, 79, 'the excel\'s 78 obtainable 6★ outside the chess pool');
   // the local SP_DIY_COLLAB build re-includes 丰川祥子 (playtest #21); the other six collab picks stay excluded
   const LOCAL_COLLAB = new Set(['char_4182_oblvns', 'char_456_ash', 'char_1029_yato2', 'char_4123_ela', 'char_4141_marcil', 'char_1048_orchd2', 'char_4217_makoto']);
   assert.deepEqual([...backups.diy.ownedPool].sort(), legal.filter(([id, c]) => !collab(c) || LOCAL_COLLAB.has(id)).map(([id]) => id).sort());
