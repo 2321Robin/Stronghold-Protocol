@@ -77,10 +77,10 @@ describe('地灵 room option: client pure helpers', () => {
 });
 
 describe('地灵 room option: match pool + loadout (harness)', () => {
-  test('extras on → the shared pool opts her in (12 copies); off → not at all', () => {
+  test('extras on → the shared pool opts her in (the tier-1 copies, ×2 in this co-op match); off → not at all', () => {
     const on = makeMatch({ mode: 'coop', difficulty: 'HARD', humans: 1, extras: { earthspirit: true } });
     assert.equal(on.m.pool.has(ES), true);
-    assert.equal(on.m.pool.cap(ES), 12);
+    assert.equal(on.m.pool.cap(ES), 24, 'tier-1 table 12 × poolCopiesCoopScale 2 (GitHub #430)');
     const off = makeMatch({ mode: 'coop', difficulty: 'HARD', humans: 1 });
     assert.equal(off.m.pool.has(ES), false);
   });
