@@ -53,7 +53,7 @@ A bond the mode never activates (标准: official `inactiveBondIdList`) reads �
 首战资源预热（playtest #28,本地线）：页面在标题/大厅空闲时按优先级把首战要拉的大头提前取进 HTTP 缓存
 ——本回合 BGM → 通用 UI/战斗音效 → 全自选池干员的头像与立绘 → 首领 BGM → 逐干员音效库
 （`ui/warmup.js` 的 `warmupQueue`，去重、并发 2、`fetch` 低优先级、失败静默——真用到时照旧按需加载）。
-路由进房间/对局即停（管道让给正在打的人），回到大厅从游标续跑；`navigator.connection.saveData` 下不启动。
+路由进对局（点开始）才停，房间等待期继续预热（用户实测裁定），停后回到大厅从游标续跑；`navigator.connection.saveData` 下不启动。
 spine 刻意不预热：备战棋盘和敌波预览拉的正是战斗要用的模型，而已解析的 skeleton 是内存不是缓存
 （assets.js 按内存预算逐出，预取会和它打架）。静态服务对 `/assets/**` 发 `max-age=86400` + 强 ETag，
 预热一次当日命中磁盘缓存。

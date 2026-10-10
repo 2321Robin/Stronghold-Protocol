@@ -12,10 +12,11 @@
 // Spines are deliberately not warmed: the prep board and the enemy pen load exactly the models a battle shows, and
 // a parsed skeleton is memory, not cache (assets.js evicts them on a memory budget — prefetching would fight it).
 //
-// Start/stop follows the route (installed from main.js like installAudio): title / lobby ⇒ start, room / game ⇒
-// stop — once the player is actually in a room the spare pipe belongs to whoever is playing, and the room's own
-// screens pull the battle-adjacent bytes anyway. The cursor survives a stop: returning to the lobby resumes what is
-// left (usually nothing). Respects `navigator.connection.saveData` (never starts).
+// Start/stop follows the route (installed from main.js like installAudio): title / lobby / room ⇒ start, game ⇒
+// stop. Waiting in a room is exactly when the pipe is idle but the match is imminent, so the warmup keeps running
+// through it (user request 2026-10-10: 「进房间时不停,点开始才停」) and hands the pipe over only when the match
+// screen takes over (点开始 → room.inMatch / m.public.phase). The cursor survives a stop: back on the lobby the
+// remaining queue resumes (usually nothing). Respects `navigator.connection.saveData` (never starts).
 //
 // Pure at import time: no fetch, no DOM access until installWarmup runs (Node tests import the helpers).
 
@@ -64,16 +65,15 @@ const RETRY_MANIFEST_MAX = 30; // ~30 s of patience for data.load('assets')
 let installed = null;
 
 /**
- * Route-driven warmup, wired like installAudio: subscribe to the app store and start on title / lobby, stop on
- * room / game. Safe to call twice (the second install is ignored); returns the controller (tests).
+ * Route-driven warmup, wired like installAudio: subscribe to the app store and start on title / lobby / room,
+ * stop on game (点开始). Safe to call twice (the second install is ignored); returns the controller (tests).
  */
 export function installWarmup(deps) {
   if (installed) return installed;
   const warm = createWarmup(deps);
   const sync = () => {
-    const r = deps.selectRoute(deps.getState());
-    if (r === 'title' || r === 'lobby') warm.start();
-    else warm.stop();
+    if (deps.selectRoute(deps.getState()) === 'game') warm.stop();
+    else warm.start();
   };
   sync();
   deps.subscribe(sync);

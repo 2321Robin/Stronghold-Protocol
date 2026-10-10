@@ -367,8 +367,9 @@ async function boot() {
   net.attachBrowserHooks();
   // Audio: unlock on first gesture, BGM follows the route / match phase (js/audio.js).
   installAudio({ getManifest: () => data.get('assets'), subscribe: store.subscribe, getState: store.get, selectRoute, settings: settingsStore.get() });
-  // Idle-time HTTP-cache warmup (ui/warmup.js): title / lobby fetch the first battle's BGM, SFX and portraits so a
-  // cold browser's first fight does not start with a minute of downloads on a slow pipe; room / game hands the pipe back.
+  // Idle-time HTTP-cache warmup (ui/warmup.js): title / lobby / room fetch the first battle's BGM, SFX and portraits
+  // so a cold browser's first fight does not start with a minute of downloads on a slow pipe; the match screen (点开始)
+  // hands the pipe back.
   installWarmup({ getManifest: () => data.get('assets'), subscribe: store.subscribe, getState: store.get, selectRoute });
   data.load('assets').catch(() => {});
   // Warm the data cache in the background (missing files are tolerated).
