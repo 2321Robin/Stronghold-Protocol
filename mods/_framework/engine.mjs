@@ -258,7 +258,7 @@ export function topoSort(mods) {
     visiting.add(m.id);
     for (const d of m.dependsOn || []) {
       const dep = byId.get(d);
-      if (dep && !trail.includes(d)) visit(d, [...trail, d]);
+      if (dep && !trail.includes(d)) visit(dep, [...trail, d]);
     }
     visiting.delete(m.id);
     done.add(m.id);
