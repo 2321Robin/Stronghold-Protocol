@@ -1,0 +1,48 @@
+{
+  "file": "public/js/ui/loadoutModel.js",
+  "patches": [
+    {
+      "id": "sanitizeEntries-signature",
+      "anchor": "export function sanitizeEntries(entries, getChess) {",
+      "op": "replace",
+      "old": ["export function sanitizeEntries(entries, getChess) {"],
+      "new": ["export function sanitizeEntries(entries, getChess, extraChess = null) {"]
+    },
+    {
+      "id": "sanitizeEntries-check-1",
+      "anchor": "const res = checkLoadout({ [id]: one }, getChess);",
+      "op": "replace",
+      "old": ["const res = checkLoadout({ [id]: one }, getChess);"],
+      "new": ["const res = checkLoadout({ [id]: one }, getChess, extraChess);"]
+    },
+    {
+      "id": "sanitizeEntries-check-2",
+      "anchor": "const r = checkLoadout({ [id]: { [k]: one[k] } }, getChess);",
+      "op": "replace",
+      "old": ["const r = checkLoadout({ [id]: { [k]: one[k] } }, getChess);"],
+      "new": ["const r = checkLoadout({ [id]: { [k]: one[k] } }, getChess, extraChess);"]
+    },
+    {
+      "id": "isLoadoutSlot-allows-extra",
+      "anchor": "export const isLoadoutSlot = (c) => !!c && !c.isGolden && c.visible !== false && !c.isHidden && !c.isDiy && (!c.baseId || c.baseId === c.chessId);",
+      "op": "replace",
+      "old": ["export const isLoadoutSlot = (c) => !!c && !c.isGolden && c.visible !== false && !c.isHidden && !c.isDiy && (!c.baseId || c.baseId === c.chessId);"],
+      "new": ["export const isLoadoutSlot = (c, extraChess = null) => !!c && !c.isGolden && !c.isDiy && (!c.baseId || c.baseId === c.chessId) && ((c.visible !== false && !c.isHidden) || (Array.isArray(extraChess) && extraChess.includes(c.chessId)));"]
+    },
+    {
+      "id": "rosterOf-signature",
+      "anchor": "export function rosterOf(list) {",
+      "op": "replace",
+      "old": [
+        "export function rosterOf(list) {",
+        "  return (Array.isArray(list) ? list : [])",
+        "    .filter(isLoadoutSlot)"
+      ],
+      "new": [
+        "export function rosterOf(list, extraChess = null) {",
+        "  return (Array.isArray(list) ? list : [])",
+        "    .filter((c) => isLoadoutSlot(c, extraChess))"
+      ]
+    }
+  ]
+}
