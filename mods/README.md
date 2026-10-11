@@ -111,9 +111,39 @@ A mod that changes gameplay numbers moves the golden digests. Declare `"golden":
 `mod.json`, replay, then re-pin and commit the new digests with the change, as `test/golden/README.md`
 requires. Reverting restores them with the rest of the tree.
 
+## Mods do not step on each other
+
+Two mods touching the same file is normal — every lobby-side feature lands in `server/lobby.js`.
+Restoring a file hands the *whole* file back to upstream, so reverting one mod replays the other
+mods' patches onto the clean file afterwards, and says so:
+
+```
+- probe-shared reverted (0 removed, 1 restored)
+    shared with another mod, replayed for it: server/lobby.js
+```
+
+A replay that itself drifted is reported as `could not replay <mod> <file> [<patch>] — <reason>`
+with a non-zero exit — nothing goes missing quietly.
+
+Whether a mod is still applied is decided per patch (is its own output in the file?), never by a file
+hash: on a file two mods share, the other mod's edits change the hash every time, so a hash could
+never tell "mine is still there" from "someone else just wrote".
+
+Two mods may even share one anchor. They stack in mod-id order, and a mod recognises its own block
+anywhere in the file, so `apply` never inserts the same block twice.
+
+## Depending on another mod
+
+`"dependsOn": ["earthspirit"]` in `mod.json` — a dev-mode hook that drives `room.setExtras` has to
+see that flag exist before its own anchors are searched. Apply runs deps first, revert runs them
+last. A dep that is not under `mods/` is reported at startup (`depends on "x", which is not under
+mods/`) and does not stop the run — a retired mod you deleted is the usual reason.
+
 ## Rules
 
 - Never put a mod's code in a pull request. `upstream: false` is the whole point.
 - Keep one mod per feature. A mod is the unit you replay, revert and retire.
+- Sharing a file with another mod is fine; depending on another mod's *behaviour* is what
+  `dependsOn` is for.
 - A patch that drifts twice is a sign the anchor was badly chosen — pick a line upstream is unlikely
   to touch, not the nearest one.

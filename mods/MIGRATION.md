@@ -93,6 +93,18 @@ git reset --hard <实现前的sha>
 
 第 4 步不能省。capture 只保证"生成了补丁"，不保证"补丁能在别的版本上重放"。
 
+### 多个 mod 改同一个文件
+
+联防视角、开发者模式、lastLineup 都会落进 `server/lobby.js`、`main.js` 这类集中文件，共用是
+常态，不用为了避开而拆分：
+
+- revert 一个 mod 会把文件整份交回上游，随后**自动把其他仍在应用的 mod 在该文件上的补丁重放
+  一遍**，并在输出里点名（`shared with another mod, replayed for it: …`）。重放失败会报
+  `could not replay …` 并以非零退出，不会悄悄丢东西。
+- 两个 mod 用同一个锚点也成立：按 mod id 排序堆叠，`apply` 重复执行不会插两遍。
+- 只有当一个 mod 依赖另一个 mod **先落地**（开发者模式要用房主的 `room.setExtras`），才在
+  `mod.json` 里写 `"dependsOn": ["earthspirit"]`——apply 正向、revert 逆向。
+
 ## 四、以后的上游升级
 
 ```bash
@@ -119,3 +131,15 @@ node --test test/…
 
 这说明：上游的小版本演进基本不会打断补丁；真正需要人介入的，是上游重写了某个文件的结构。
 那时候 `check` 会精确点名是哪条补丁的哪个锚点，并打印它周围现在的内容。
+
+### 共享文件的隔离实测
+
+用一个和地灵共用 `server/lobby.js`、且共用同一个锚点的探针 mod 验证：
+
+| 步骤 | 结果 |
+|---|---|
+| `apply --all` | 地灵 56/56、探针 1/1，0 漂移 |
+| `apply --force`（重放） | 56 + 1 全部判为 already in place，标记数不变（无重复插入） |
+| `revert 探针` | 探针标记 0；地灵的 extras 字段、setExtras、dispatch 全部保住，并打印重放 |
+| `revert 地灵` | 工作树 `[clean]`，只剩 mod 目录本身 |
+| 测试 | 两个 mod 同时应用时地灵 11/11 通过 |
