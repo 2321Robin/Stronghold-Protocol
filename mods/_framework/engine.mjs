@@ -110,7 +110,10 @@ export function planOne(lines, patch) {
   }
   if (op === 'replace') {
     const old = patch.old || [];
-    if (blockAt(lines, at, body) && body.length === old.length) return { status: 'already', hits };
+    // Our own output already sits here. No length check: a replacement that *grew* the block
+    // (the new block starts with the old line and adds to it) still starts at the anchor, and
+    // missing it would make every replay insert the block a second time.
+    if (blockAt(lines, at, body)) return { status: 'already', hits };
     if (blockAt(lines, at, old)) {
       return { status: 'ok', hits, lines: [...lines.slice(0, at), ...body, ...lines.slice(at + old.length)] };
     }
