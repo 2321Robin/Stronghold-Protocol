@@ -50,15 +50,18 @@ function pick(mods) {
   return mods.filter((m) => wanted.has(m.id));
 }
 
+/** Dependency order. Reverting walks the same order backwards, so a mod comes down after what it builds on. */
+const ordered = (mods) => topoSort(mods);
+
 /**
- * Dependency order, and a warning for any mod naming a dep that is not there.
- * Reverting walks the same order backwards, so a mod always comes down after what it builds on.
+ * Warn once about any mod naming a dep that is not there.
+ * Always run this against the *full* list: reverting one mod passes only that mod, and its dep
+ * is perfectly present — just not in the subset.
  */
-function ordered(mods) {
+function warnDeps(mods) {
   for (const d of missingDeps(mods)) {
     console.log(`! ${d.id} depends on "${d.missing}", which is not under ${MODS_DIR}/`);
   }
-  return topoSort(mods);
 }
 
 async function cmdStatus(mods) {
@@ -184,6 +187,7 @@ async function cmdDoctor() {
 
 const mods = await loadMods(ROOT);
 const selected = pick(mods);
+warnDeps(mods);
 
 switch (command) {
   case 'status': await cmdStatus(mods); break;
