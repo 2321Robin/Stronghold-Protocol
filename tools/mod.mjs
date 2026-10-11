@@ -19,6 +19,7 @@ import { execFile } from 'node:child_process';
 
 import {
   MODS_DIR, STATE_FILE, loadMods, applyMod, revertMod, readState, sha256, upstreamVersion,
+  topoSort, missingDeps,
 } from '../mods/_framework/engine.mjs';
 import { formatReport, formatSummary } from '../mods/_framework/report.mjs';
 import { capture } from '../mods/_framework/capture.mjs';
@@ -49,6 +50,17 @@ function pick(mods) {
   return mods.filter((m) => wanted.has(m.id));
 }
 
+/**
+ * Dependency order, and a warning for any mod naming a dep that is not there.
+ * Reverting walks the same order backwards, so a mod always comes down after what it builds on.
+ */
+function ordered(mods) {
+  for (const d of missingDeps(mods)) {
+    console.log(`! ${d.id} depends on "${d.missing}", which is not under ${MODS_DIR}/`);
+  }
+  return topoSort(mods);
+}
+
 async function cmdStatus(mods) {
   const state = await readState(ROOT);
   const version = await upstreamVersion(ROOT);
@@ -73,17 +85,20 @@ async function cmdStatus(mods) {
 }
 
 async function cmdCheck(mods) {
+  const list = ordered(mods);
   const results = [];
-  for (const m of mods) {
+  const ran = [];
+  for (const m of list) {
     if (m.retired) {
       console.log(`- ${m.id} skipped: upstream ${m.retiredIn} ships it natively`);
       continue;
     }
+    ran.push(m);
     results.push(await applyMod(ROOT, m, { dryRun: true }));
   }
   if (verbose) {
     for (const [i, r] of results.entries()) {
-      console.log(formatReport(mods[i], r, { verbose: true, linesOf }));
+      console.log(formatReport(ran[i], r, { verbose: true, linesOf }));
       console.log('');
     }
   }
@@ -94,7 +109,7 @@ async function cmdCheck(mods) {
 async function cmdApply(mods) {
   const state = await readState(ROOT);
   const results = [];
-  for (const m of mods) {
+  for (const m of ordered(mods)) {
     if (m.retired) {
       console.log(`- ${m.id} skipped: upstream ${m.retiredIn} ships it natively (delete mods/${m.id})`);
       continue;
@@ -115,18 +130,30 @@ async function cmdApply(mods) {
   }
 }
 
-async function cmdRevert(mods) {
-  for (const m of mods) {
-    const r = await revertMod(ROOT, m, { force });
+/**
+ * `allMods` is the full list, not just the ones being reverted: a reverted file may carry another
+ * mod's patches, and those have to be replayed onto the restored file afterwards.
+ */
+async function cmdRevert(targets, allMods) {
+  const list = ordered(targets).slice().reverse();
+  for (const m of list) {
+    const r = await revertMod(ROOT, m, allMods, { force });
     if (r.status === 'not-applied') console.log(`- ${m.id} not applied`);
     else if (r.status === 'blocked') {
-      console.log(`! ${m.id} blocked — a file changed since it was applied (use --force):`);
-      for (const p of r.problems) console.log(`    ${p.path} — ${p.reason}`);
+      console.log(`! ${m.id} blocked — its own patches are no longer in place (use --force):`);
+      for (const p of r.problems) console.log(`    ${p.path}${p.patch ? ` [${p.patch}]` : ''} — ${p.reason}`);
       process.exitCode = 1;
     } else if (r.status === 'failed') {
       console.log(`! ${m.id} failed: ${r.error}`);
       process.exitCode = 1;
-    } else console.log(`- ${m.id} reverted (${r.removed} removed, ${r.restored} restored)`);
+    } else {
+      console.log(`- ${m.id} reverted (${r.removed} removed, ${r.restored} restored)`);
+      if (r.rebuilt && r.rebuilt.length) console.log(`    shared with another mod, replayed for it: ${r.rebuilt.join(', ')}`);
+      if (r.lost && r.lost.length) {
+        for (const l of r.lost) console.log(`    ! could not replay ${l.mod} ${l.file} [${l.id}] — ${l.reason}`);
+        process.exitCode = 1;
+      }
+    }
   }
 }
 
@@ -162,7 +189,7 @@ switch (command) {
   case 'status': await cmdStatus(mods); break;
   case 'check': await cmdCheck(selected.length || all ? selected : mods); break;
   case 'apply': await cmdApply(selected); break;
-  case 'revert': await cmdRevert(selected.length || all ? selected : mods); break;
+  case 'revert': await cmdRevert(selected.length || all ? selected : mods, mods); break;
   case 'doctor': await cmdDoctor(); break;
   case 'capture': {
     const id = ids[0];
