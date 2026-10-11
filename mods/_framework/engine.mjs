@@ -67,7 +67,7 @@ const blockAt = (lines, at, block) => block.length > 0
   && block.every((l, i) => sameTrim(lines[at + i], l));
 
 /** Find where an already-applied patch's own output now sits. */
-function findApplied(lines, patch) {
+export function findApplied(lines, patch) {
   const body = patch.new || [];
   if (!body.length) return -1;
   const probe = locate(lines, { anchor: body[0] });
@@ -210,6 +210,8 @@ export async function loadMods(root) {
     // A mod upstream has since shipped natively: replaying it would fight the native code.
     const retiredIn = manifest.retiredIn || null;
     const retired = !!(retiredIn && version && cmpVersion(version, retiredIn) >= 0);
+    const dep = manifest.dependsOn;
+    const dependsOn = Array.isArray(dep) ? dep.slice() : (typeof dep === 'string' ? [dep] : []);
     mods.push({
       id: manifest.id || e.name,
       name: manifest.name || manifest.id || e.name,
@@ -218,11 +220,52 @@ export async function loadMods(root) {
       manifest,
       patches,
       files,
+      dependsOn,
       retiredIn,
       retired,
     });
   }
   return mods.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Deps named by a mod that no longer exist (deleted, renamed, already upstreamed). */
+export function missingDeps(mods) {
+  const known = new Set(mods.map((m) => m.id));
+  const out = [];
+  for (const m of mods) {
+    for (const d of m.dependsOn || []) if (!known.has(d)) out.push({ id: m.id, missing: d });
+  }
+  return out;
+}
+
+/**
+ * Order mods so a mod always follows the ones it depends on.
+ * A mod that builds on another's work (say, a dev-mode hook that drives an operator-opt-in flag)
+ * has to see that work in the file before its own anchors are searched for.
+ * Cycles are broken by name so the run still finishes and reports, rather than hanging.
+ */
+export function topoSort(mods) {
+  const byId = new Map(mods.map((m) => [m.id, m]));
+  const out = [];
+  const done = new Set();
+  const visiting = new Set();
+  const visit = (m, trail) => {
+    if (done.has(m.id)) return;
+    if (visiting.has(m.id)) {
+      // Cycle: drop back to declaration order and move on; `missingDeps` does not see this one.
+      return;
+    }
+    visiting.add(m.id);
+    for (const d of m.dependsOn || []) {
+      const dep = byId.get(d);
+      if (dep && !trail.includes(d)) visit(d, [...trail, d]);
+    }
+    visiting.delete(m.id);
+    done.add(m.id);
+    out.push(m);
+  };
+  for (const m of mods) visit(m, [m.id]);
+  return out;
 }
 
 export async function readState(root) {
@@ -322,31 +365,120 @@ export async function applyMod(root, mod, opts = {}) {
 }
 
 /**
- * Revert one mod: delete what it created and restore what it modified.
- * Refuses when a modified file changed since it was applied, unless `force`.
+ * Is this one patch's own output present in `lines` right now?
+ * Used instead of a file hash: on a file two mods both own, the other mod's edits change the hash
+ * every time, so a hash can never tell "still applied" from "someone else touched it".
  */
-export async function revertMod(root, mod, opts = {}) {
+function patchInPlace(lines, patch) {
+  const res = planOne(lines, patch);
+  if (res.status === 'already') return true;
+  // The anchor may now occur twice because our own inserted block repeats it: trust the block match.
+  if (res.status === 'drift' && res.reason === 'anchor-ambiguous') return findApplied(lines, patch) >= 0;
+  return false;
+}
+
+/**
+ * Revert one mod: delete what it created and restore what it modified.
+ *
+ * Files are restored with `git checkout`, which is whole-file — so any *other* applied mod that also
+ * patches the same file would lose its work. After restoring, those mods' patches are replayed on
+ * the clean file, which is what keeps mods independent of each other. Pass the full mod list as
+ * `allMods`; pass only the mods being reverted and the replay has nothing to work with.
+ *
+ * @param {string} root repository root
+ * @param {object} mod the mod to revert
+ * @param {object[]} [allMods] every loaded mod, so shared files can be rebuilt for the others
+ * @param {{force?: boolean}} [opts]
+ */
+export async function revertMod(root, mod, allMods = [], opts = {}) {
   const state = await readState(root);
   const entry = state.mods[mod.id];
   if (!entry) return { id: mod.id, status: 'not-applied' };
+
   const problems = [];
-  for (const [path, hash] of Object.entries(entry.hashes || {})) {
-    let now = null;
-    try { now = sha256(await readFile(resolve(root, path), 'utf8')); } catch { /* gone */ }
-    if (now !== hash) problems.push({ path, reason: now === null ? 'missing' : 'edited-since-apply' });
+  for (const group of mod.patches) {
+    if (group.entries.every((p) => p.op === 'json-merge')) continue;
+    let text;
+    try { text = await readFile(resolve(root, group.file), 'utf8'); } catch {
+      problems.push({ path: group.file, reason: 'file-missing' });
+      continue;
+    }
+    const lines = splitLines(text);
+    for (const patch of group.entries) {
+      if (patch.op === 'json-merge') continue;
+      if (!patchInPlace(lines, patch)) {
+        problems.push({ path: group.file, patch: patch.id || '(unnamed)', reason: 'not-in-place' });
+      }
+    }
   }
   if (problems.length && !opts.force) return { id: mod.id, status: 'blocked', problems };
 
   for (const p of entry.created || []) {
     try { await rm(resolve(root, p)); } catch { /* already gone */ }
   }
-  const modified = (entry.modified || []).filter((p) => !problems.some((x) => x.path === p && x.reason === 'missing'));
+  const modified = entry.modified || [];
   if (modified.length) {
     try { await git(root, ['checkout', '--', ...modified]); } catch (e) {
       return { id: mod.id, status: 'failed', error: String(e && e.message) };
     }
   }
   delete state.mods[mod.id];
+
+  // Rebuild: every file we just handed back to upstream may carry another mod's work.
+  const rebuilt = [];
+  const lost = [];
+  const others = (allMods || []).filter((m) => m.id !== mod.id && state.mods[m.id]);
+  for (const path of modified) {
+    const owners = others.filter((m) => m.patches.some((g) => g.file === path));
+    if (!owners.length) continue;
+    let text;
+    try { text = await readFile(resolve(root, path), 'utf8'); } catch { continue; }
+    const eol = eolOf(text);
+    let outText = null;
+    for (const m of owners) {
+      for (const group of m.patches) {
+        if (group.file !== path) continue;
+        // JSON merges rewrite the whole text; do them first, then the line patches on the result.
+        for (const patch of group.entries) {
+          if (patch.op !== 'json-merge') continue;
+          const res = planJson(text, patch);
+          if (res.status === 'ok') { text = res.text; outText = res.text; }
+          else if (res.status === 'drift') lost.push({ mod: m.id, file: path, id: patch.id || '(json)', reason: res.reason });
+        }
+      }
+    }
+    let lines = splitLines(text);
+    let dirty = outText !== null;
+    for (const m of owners) {
+      for (const group of m.patches) {
+        if (group.file !== path) continue;
+        for (const patch of group.entries) {
+          if (patch.op === 'json-merge') continue;
+          const res = planOne(lines, patch);
+          if (res.status === 'ok') { lines = res.lines; dirty = true; }
+          else if (res.status === 'drift') lost.push({ mod: m.id, file: path, id: patch.id || '(unnamed)', reason: res.reason });
+        }
+      }
+    }
+    if (dirty) {
+      const out = outText !== null ? outText : lines.join(eol);
+      await writeFile(resolve(root, path), out, 'utf8');
+      rebuilt.push(path);
+      const fresh = sha256(out);
+      for (const m of owners) {
+        const e = state.mods[m.id];
+        if (e && e.hashes && path in e.hashes) e.hashes[path] = fresh;
+      }
+    }
+  }
+
   await writeState(root, state);
-  return { id: mod.id, status: 'reverted', removed: (entry.created || []).length, restored: modified.length };
+  return {
+    id: mod.id,
+    status: 'reverted',
+    removed: (entry.created || []).length,
+    restored: modified.length,
+    rebuilt,
+    lost,
+  };
 }
