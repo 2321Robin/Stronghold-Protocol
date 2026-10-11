@@ -1,0 +1,19 @@
+{
+  "file": "public/js/ui/matchInfo.js",
+  "patches": [
+    {
+      "id": "matchInfoModel-signature",
+      "anchor": "export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = null, priv = null, diyData = null } = {}) {",
+      "op": "replace",
+      "old": ["export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = null, priv = null, diyData = null } = {}) {"],
+      "new": ["export function matchInfoModel(pub, { bonds = [], chess = () => null, mode = null, priv = null, diyData = null, extraChess = [] } = {}) {"]
+    },
+    {
+      "id": "matchInfoModel-perBond",
+      "anchor": "banned, perBond: bannedPerBond(list, banned),",
+      "op": "replace",
+      "old": ["banned, perBond: bannedPerBond(list, banned),"],
+      "new": ["banned, perBond: bannedPerBond(list, banned, extraChess),"]
+    }
+  ]
+}

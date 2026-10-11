@@ -1,0 +1,27 @@
+{
+  "file": "data/config.json",
+  "patches": [
+    {
+      "id": "economy-pool-copies",
+      "op": "json-merge",
+      "merge": {
+        "economy": {
+          "poolCopiesOverrides": {
+            "chess_char_1_07_a": 10,
+            "chess_char_1_08_a": 10,
+            "chess_char_1_09_a": 10,
+            "chess_char_1_10_a": 10,
+            "chess_char_1_14_a": 10,
+            "chess_char_2_11_a": 8,
+            "chess_char_2_02_a": 12,
+            "chess_char_2_09_a": 12,
+            "chess_char_2_12_a": 12,
+            "chess_char_2_13_a": 12,
+            "chess_char_2_14_a": 12
+          },
+          "poolCopiesCoopScale": 2
+        }
+      }
+    }
+  ]
+}

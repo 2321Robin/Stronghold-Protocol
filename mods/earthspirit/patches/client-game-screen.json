@@ -1,0 +1,18 @@
+{
+  "file": "public/js/screens/game.js",
+  "patches": [
+    {
+      "id": "import-extraChessOf",
+      "anchor": "import { PHASE, GEO } from '../../../shared/constants.js';",
+      "op": "insert-after",
+      "new": ["import { extraChessOf } from '../../../shared/protocol.js';"]
+    },
+    {
+      "id": "bondPopup-extraMembers",
+      "anchor": "${bondPop ? html`<${BondPopup} bondId=${bondPop.bondId} entry=${bondPop.entry} priv=${bondPop.priv} banned=${pub?.bannedChess || []} owner=${bondPop.name}",
+      "op": "replace",
+      "old": ["${bondPop ? html`<${BondPopup} bondId=${bondPop.bondId} entry=${bondPop.entry} priv=${bondPop.priv} banned=${pub?.bannedChess || []} owner=${bondPop.name}"],
+      "new": ["${bondPop ? html`<${BondPopup} bondId=${bondPop.bondId} entry=${bondPop.entry} priv=${bondPop.priv} banned=${pub?.bannedChess || []} extraMembers=${extraChessOf(pub?.extras)} owner=${bondPop.name}"]
+    }
+  ]
+}
