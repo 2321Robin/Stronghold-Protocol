@@ -1,0 +1,11 @@
+{
+  "file": "test/match/harness.js",
+  "patches": [
+    {
+      "id": "harness-extras-opt",
+      "anchor": "roomCode: 'TEST', mode, difficulty, seats, spectators: o.spectators, seed: o.seed ?? 1, matchNo: o.matchNo, data: o.data ?? DATA, log,",
+      "op": "insert-after",
+      "new": ["extras: o.extras,"]
+    }
+  ]
+}
