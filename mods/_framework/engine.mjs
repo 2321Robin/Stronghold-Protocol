@@ -101,11 +101,13 @@ export function planOne(lines, patch) {
   const body = renderBlock(patch.new || [], baseIndent, patch.indent || 0);
 
   if (op === 'insert-after') {
-    if (blockAt(lines, at + 1, body)) return { status: 'already', hits };
+    // Not only the line right below the anchor: another mod may have inserted at the same anchor,
+    // which pushes our block further down. If our block is anywhere in the file, we are applied.
+    if (blockAt(lines, at + 1, body) || findApplied(lines, patch) >= 0) return { status: 'already', hits };
     return { status: 'ok', hits, lines: [...lines.slice(0, at + 1), ...body, ...lines.slice(at + 1)] };
   }
   if (op === 'insert-before') {
-    if (blockAt(lines, at - body.length, body)) return { status: 'already', hits };
+    if (blockAt(lines, at - body.length, body) || findApplied(lines, patch) >= 0) return { status: 'already', hits };
     return { status: 'ok', hits, lines: [...lines.slice(0, at), ...body, ...lines.slice(at)] };
   }
   if (op === 'replace') {
