@@ -1,5 +1,8 @@
 # The local mod layer
 
+> 怎么把现有本地线切换过来、剩下 8 个功能怎么搬：见 [MIGRATION.md](MIGRATION.md)。
+> 框架挂在哪个分支上是有讲究的——基线必须是纯上游，否则框架自己也会变成要手工 rebase 的东西。
+
 Everything in here is **ours, never upstream**: personal-use features that will never go into a PR.
 Upstream can be pulled as a clean fast-forward because a mod is not a commit on top of upstream —
 it is a set of *declarations* that a tool replays onto whatever upstream looks like today.
