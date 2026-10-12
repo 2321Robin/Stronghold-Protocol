@@ -7,8 +7,9 @@
 
 ## 一、结果一句话
 
-本地线 17 笔提交 → **10 个 mod、194 条补丁、40 个新增文件**；在纯上游 v0.2.4 上
-`apply --all` **194/194 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
+本地线 17 笔提交 → **9 个 mod、190 条补丁、40 个新增文件**（#22 联防视角裁定于 2026-10-13 废弃，见 §二）；
+在纯上游 v0.2.4 上
+`apply --all` **190/190 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
 相对纯上游仍**只新增 `mods/` 与 `tools/mod.mjs` 两条路径**。
 
 ## 二、功能清单（全部完成）
@@ -19,7 +20,6 @@
 | #30 同盟池 ×2 | 653ab495 + bbba5a4d | `coop-pool-x2` | 5 | 0 | `retiredIn: "0.2.4"`，到版本自动停用 |
 | #16 策略/道具进度 | b4af72c6 + 49ef735f | `band-progress` | 30 | 3 | 4 语言包全部 json-merge |
 | lastLineup | c8396341 | `last-lineup` | 6 | 0 | 自带 golden 重钉（3 场景） |
-| 联防视角 #22 | 6ec14176 | `unite-view` | 4 | 0 | — |
 | #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | 27 | 14 | golden 重钉 + 11 个新场景 |
 | #28 预热 | 68eb594a + 03c44388 | `warmup` | 3 | 2 | — |
 | 跨源迁移页 | 03c44388 | `origin-migrate` | 0 | 1 | 纯新增文件 |
@@ -28,10 +28,15 @@
 
 `apply` 顺序由 `dependsOn` 拓扑排序决定：`warmup → asset-pack`、`earthspirit → dev-mode`。
 
+> **#22 联防视角已于 2026-10-13 废弃**（用户决定改用上游行为：联防视角构建 **rows 6–13**，不再裁到 9–13）。
+> 对应 mod `unite-view` 目录**已删除**。注意这**不是** `retiredIn` 退役——上游**从未**收编该裁定，
+> 是主动放弃本地观感裁定，故既不保留 mod 也不写 `retiredIn` 标记（写它会误导为"上游已原生实现"）。
+> 随之 `test/render/playtest5-maps.test.js` 与 `test/ui/playtest2.test.js` 恢复上游断言，v0.2.5 上 **31 项全通过**。
+
 ## 三、兼容性（v0.2.4）
 
-- `node tools/mod.mjs check` → **every patch found its anchor**（9 个未退役 mod 全部 0 drifted）。
-- `node tools/mod.mjs apply` → 194 条补丁全部 applied、0 drifted。
+- `node tools/mod.mjs check` → **every patch found its anchor**（8 个未退役 mod 全部 0 drifted）。
+- `node tools/mod.mjs apply` → 190 条补丁全部 applied、0 drifted。
 - `node tools/mod.mjs apply --force` 重放 → 全部判 already in place，**字节级幂等**
   （`test/golden/diy.json` 的 sha256 重放前后一致）。
 - `node tools/mod.mjs revert --all` → 工作树 `[clean]`，只剩 mod 目录本身。
