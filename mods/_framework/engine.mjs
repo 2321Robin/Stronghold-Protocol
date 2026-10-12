@@ -239,10 +239,40 @@ const lineIndentAt = (text, pos) => {
   return (/^[ \t]*/.exec(text.slice(ls, pos)) || [''])[0];
 };
 
+/**
+ * Does this value's file keep short scalar-only values on one line?
+ * `test/golden/*.json` does (`"players": {…}` and each `units` row inline); the i18n packs do not.
+ * Read off the value being replaced, so a merged key is written the way its neighbours are.
+ */
+const inlineNestedStyle = (node) => !!node.entries
+  && node.entries.some((e) => e.node.kind !== 'leaf' && e.node.inline);
+
+/**
+ * The writer `tools/golden.mjs` uses, so a merged key is indistinguishable from a regenerated one:
+ * scalars stay inline, and at depth ≥ 6 a value short enough (or scalar-only and under 400 chars)
+ * stays on one line too. Everything else breaks, arrays of scalars always staying compact.
+ */
+const stringifyStyled = (value, indent, inlineNested) => {
+  const one = JSON.stringify(value);
+  if (value === null || typeof value !== 'object') return one;
+  if (!inlineNested) return JSON.stringify(value, null, 2).split('\n').join(`\n${indent}`);
+  const scalars = Object.values(value).every((x) => x === null || typeof x !== 'object');
+  if (indent.length >= 6 && (one.length <= 160 || (scalars && one.length <= 400))) return one;
+  const inner = `${indent}  `;
+  if (Array.isArray(value)) {
+    if (!value.length) return '[]';
+    if (scalars) return one;
+    return `[\n${value.map((x) => inner + stringifyStyled(x, inner, true)).join(',\n')}\n${indent}]`;
+  }
+  const keys = Object.keys(value);
+  if (!keys.length) return '{}';
+  return `{\n${keys.map((k) => `${inner}${JSON.stringify(k)}: ${stringifyStyled(value[k], inner, true)}`).join(',\n')}\n${indent}}`;
+};
+
 /** Write `value` the way `refNode` was written: inline stays one line, multi-line keeps its indent. */
 const serializeLike = (value, refNode, indent) => {
   if (!refNode || refNode.inline || value === null || typeof value !== 'object') return JSON.stringify(value);
-  return JSON.stringify(value, null, 2).split('\n').join(`\n${indent}`);
+  return stringifyStyled(value, indent, inlineNestedStyle(refNode));
 };
 
 /** Render one entry's value with the merge applied, keeping the style it was written in. */
@@ -277,10 +307,12 @@ function mergeObjectNode(text, node, mergeObj) {
     ? lineIndentAt(text, node.entries[0].keyStart)
     : `${lineIndentAt(text, node.start)}  `;
   const closeIndent = lineIndentAt(text, node.end - 1);
-  const siblingStyle = { inline: node.entries.length ? node.entries[0].node.inline : false };
+  // The first sibling *is* the style reference: its own inline flag and whether it nests values
+  // inline decide how the new entry is written.
+  const sibling = node.entries.length ? node.entries[0].node : null;
   const parts = node.entries.map((e) => `${JSON.stringify(e.key)}: ${
     e.key in mergeObj ? renderMerged(text, e, mergeObj[e.key]) : text.slice(e.node.start, e.node.end)}`);
-  for (const k of added) parts.push(`${JSON.stringify(k)}: ${serializeLike(mergeObj[k], siblingStyle, indent)}`);
+  for (const k of added) parts.push(`${JSON.stringify(k)}: ${serializeLike(mergeObj[k], sibling, indent)}`);
   return `{\n${parts.map((p) => `${indent}${p}`).join(',\n')}\n${closeIndent}}`;
 }
 
