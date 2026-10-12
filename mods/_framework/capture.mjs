@@ -125,7 +125,7 @@ export async function capture(root, opts) {
   // `git diff` never sees untracked files, and those are exactly a feature's new modules.
   const { stdout: untracked } = await execFileP('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root });
   const inScope = (p) => (!paths.length || paths.some((x) => p.startsWith(x)))
-    && !p.startsWith('mods/') && !p.startsWith('.workbuddy/');
+    && !p.startsWith('mods/') && !p.startsWith('.workbuddy/') && p !== 'tools/mod.mjs';
   for (const p of untracked.split(/\r?\n/)) {
     if (!p || !inScope(p)) continue;
     files.push({ path: p.split(sep).join('/'), isNew: true, isDeleted: false, hunks: [] });

@@ -133,8 +133,9 @@ export function planOne(lines, patch) {
   return { status: 'drift', reason: `unknown-op:${op}`, hits };
 }
 
+const isPlain = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
 function deepMerge(base, overlay) {
-  const isPlain = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   if (!isPlain(base) || !isPlain(overlay)) return overlay;
   const out = { ...base };
   for (const [k, v] of Object.entries(overlay)) {
@@ -143,17 +144,169 @@ function deepMerge(base, overlay) {
   return out;
 }
 
-/** A JSON patch merges key by key, so upstream edits to other keys never collide. */
+/**
+ * Parse JSON while recording each value's span in the source text and whether it was written inline.
+ *
+ * Upstream data files mix styles on purpose — `test/golden/*.json` writes `"errors": {"count":0,"kinds":[]}`
+ * on one line next to multi-line scenario objects. Re-serialising the whole document would rewrite all of
+ * it (6081 lines became 57138), so a merge has to touch only the keys it actually changes. That is what
+ * these spans buy: everything else is copied byte for byte.
+ */
+function parseJsonSpans(text) {
+  let i = 0;
+  const n = text.length;
+  const skipWs = () => { while (i < n && ' \t\r\n'.includes(text[i])) i++; };
+  const fail = (m) => { throw new Error(`${m} at offset ${i}`); };
+
+  const parseString = () => {
+    if (text[i] !== '"') fail('expected a string');
+    const start = i;
+    i++;
+    while (i < n) {
+      if (text[i] === '\\') { i += 2; continue; }
+      if (text[i] === '"') { i++; return JSON.parse(text.slice(start, i)); }
+      i++;
+    }
+    return fail('unterminated string');
+  };
+
+  const objectNode = (entries, start, end) => ({
+    kind: 'object',
+    value: Object.fromEntries(entries.map((e) => [e.key, e.node.value])),
+    start, end, entries,
+    inline: !text.slice(start, end).includes('\n'),
+  });
+  const arrayNode = (items, start, end) => ({
+    kind: 'array', value: items.map((it) => it.value), start, end, items,
+    inline: !text.slice(start, end).includes('\n'),
+  });
+  const leaf = (value, start, end) => ({ kind: 'leaf', value, start, end, inline: true });
+
+  const parseValue = () => {
+    skipWs();
+    const start = i;
+    const c = text[i];
+    if (c === '{') {
+      i++;
+      const entries = [];
+      skipWs();
+      if (text[i] === '}') { i++; return objectNode(entries, start, i); }
+      for (;;) {
+        skipWs();
+        const keyStart = i;
+        const key = parseString();
+        skipWs();
+        if (text[i] !== ':') fail('expected ":"');
+        i++;
+        entries.push({ key, keyStart, node: parseValue() });
+        skipWs();
+        if (text[i] === ',') { i++; continue; }
+        if (text[i] === '}') { i++; break; }
+        fail('expected "," or "}"');
+      }
+      return objectNode(entries, start, i);
+    }
+    if (c === '[') {
+      i++;
+      const items = [];
+      skipWs();
+      if (text[i] === ']') { i++; return arrayNode(items, start, i); }
+      for (;;) {
+        items.push(parseValue());
+        skipWs();
+        if (text[i] === ',') { i++; continue; }
+        if (text[i] === ']') { i++; break; }
+        fail('expected "," or "]"');
+      }
+      return arrayNode(items, start, i);
+    }
+    if (c === '"') return leaf(parseString(), start, i);
+    const m = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/.exec(text.slice(i));
+    if (!m) fail('unexpected value');
+    i += m[0].length;
+    return leaf(JSON.parse(m[0]), start, i);
+  };
+
+  const root = parseValue();
+  skipWs();
+  if (i !== n) fail('trailing content');
+  return root;
+}
+
+/** The indent of the line `pos` sits on. */
+const lineIndentAt = (text, pos) => {
+  const ls = text.lastIndexOf('\n', Math.max(0, pos - 1)) + 1;
+  return (/^[ \t]*/.exec(text.slice(ls, pos)) || [''])[0];
+};
+
+/** Write `value` the way `refNode` was written: inline stays one line, multi-line keeps its indent. */
+const serializeLike = (value, refNode, indent) => {
+  if (!refNode || refNode.inline || value === null || typeof value !== 'object') return JSON.stringify(value);
+  return JSON.stringify(value, null, 2).split('\n').join(`\n${indent}`);
+};
+
+/** Render one entry's value with the merge applied, keeping the style it was written in. */
+const renderMerged = (text, entry, mv) => {
+  if (isPlain(mv) && entry.node.kind === 'object' && !entry.node.inline) return mergeObjectNode(text, entry.node, mv);
+  if (isPlain(mv) && entry.node.kind === 'object') return JSON.stringify(deepMerge(entry.node.value, mv));
+  return serializeLike(mv, entry.node, lineIndentAt(text, entry.keyStart));
+};
+
+/** Merge `mergeObj` into one object node, rewriting only the spans that change. */
+function mergeObjectNode(text, node, mergeObj) {
+  const known = new Set(node.entries.map((e) => e.key));
+  const added = Object.keys(mergeObj).filter((k) => !known.has(k));
+
+  if (!added.length) {
+    // Nothing new: swap the changed spans in place and copy everything else verbatim.
+    let out = '';
+    let cursor = node.start;
+    for (const e of node.entries) {
+      if (!(e.key in mergeObj)) continue;
+      out += text.slice(cursor, e.node.start) + renderMerged(text, e, mergeObj[e.key]);
+      cursor = e.node.end;
+    }
+    return out + text.slice(cursor, node.end);
+  }
+
+  // Keys to add: rebuild the object — existing entries merged where the merge names them (never
+  // copied verbatim, or a value that also grew a field would silently keep the old one), new ones
+  // appended the way their siblings are written.
+  if (node.inline) return JSON.stringify(deepMerge(node.value, mergeObj));
+  const indent = node.entries.length
+    ? lineIndentAt(text, node.entries[0].keyStart)
+    : `${lineIndentAt(text, node.start)}  `;
+  const closeIndent = lineIndentAt(text, node.end - 1);
+  const siblingStyle = { inline: node.entries.length ? node.entries[0].node.inline : false };
+  const parts = node.entries.map((e) => `${JSON.stringify(e.key)}: ${
+    e.key in mergeObj ? renderMerged(text, e, mergeObj[e.key]) : text.slice(e.node.start, e.node.end)}`);
+  for (const k of added) parts.push(`${JSON.stringify(k)}: ${serializeLike(mergeObj[k], siblingStyle, indent)}`);
+  return `{\n${parts.map((p) => `${indent}${p}`).join(',\n')}\n${closeIndent}}`;
+}
+
+/**
+ * A JSON patch merges key by key, so upstream edits to other keys never collide — and the merge is
+ * surgical: only the spans of the keys it names are rewritten, the rest of the file is copied through,
+ * which keeps a mixed-style file (compact inline values next to multi-line objects) intact.
+ */
 export function planJson(text, patch) {
   let parsed;
   try { parsed = JSON.parse(text); } catch { return { status: 'drift', reason: 'invalid-json' }; }
-  const merged = deepMerge(parsed, patch.merge || {});
+  const merge = patch.merge || {};
+  const merged = deepMerge(parsed, merge);
   if (JSON.stringify(parsed) === JSON.stringify(merged)) return { status: 'already' };
-  // Keep the file's own shape: `data/config.json` is one long line, the i18n packs are pretty-printed.
-  const compact = !/\n\s/.test(text.slice(0, 4096));
-  const body = compact ? JSON.stringify(merged) : JSON.stringify(merged, null, 2);
+
+  let root;
+  try { root = parseJsonSpans(text); } catch { return { status: 'drift', reason: 'unparseable-json' }; }
+  let outText;
+  try {
+    outText = isPlain(merge) && root.kind === 'object'
+      ? mergeObjectNode(text, root, merge)
+      : serializeLike(merged, root, lineIndentAt(text, root.start));
+  } catch { return { status: 'drift', reason: 'merge-failed' }; }
+
   const endsWithNewline = /\n$/.test(text);
-  return { status: 'ok', text: endsWithNewline ? `${body}\n` : body };
+  return { status: 'ok', text: endsWithNewline ? `${outText}\n` : outText };
 }
 
 async function walk(dir, out = []) {
@@ -358,12 +511,16 @@ export async function applyMod(root, mod, opts = {}) {
 
   if (!dryRun && touched.length) {
     const state = await readState(root);
-    const hashes = {};
-    for (const t of touched) {
-      if (t.action !== 'modified') continue;
-      try { hashes[t.path] = sha256(await readFile(resolve(root, t.path), 'utf8')); } catch { /* left unhashed */ }
+    // Merge with what an earlier apply already recorded: a later `--force` replay that only rewrites
+    // one file must not forget the fifteen the first apply touched, or revert restores just that one.
+    const prev = state.mods[mod.id] || { created: [], modified: [], hashes: {} };
+    const created = [...new Set([...(prev.created || []), ...touched.filter((t) => t.action === 'created').map((t) => t.path)])];
+    const modified = [...new Set([...(prev.modified || []), ...touched.filter((t) => t.action === 'modified').map((t) => t.path)])];
+    const hashes = { ...(prev.hashes || {}) };
+    for (const path of modified) {
+      try { hashes[path] = sha256(await readFile(resolve(root, path), 'utf8')); } catch { /* left unhashed */ }
     }
-    state.mods[mod.id] = { appliedAt: new Date().toISOString(), created: touched.filter((t) => t.action === 'created').map((t) => t.path), modified: touched.filter((t) => t.action === 'modified').map((t) => t.path), hashes };
+    state.mods[mod.id] = { appliedAt: new Date().toISOString(), created, modified, hashes };
     await writeState(root, state);
   }
   return { id: mod.id, report, touched };
