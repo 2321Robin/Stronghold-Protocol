@@ -1,0 +1,25 @@
+{
+  "file": "public/i18n/ja.json",
+  "patches": [
+    {
+      "id": "i18n-band-progress-ja",
+      "op": "json-merge",
+      "merge": {
+        "{when}已购 {x} 名 · 本回合 +{x} 已到账": "{when}購入 {x} 名 · 本ラウンド +{x} 適用",
+        "已售 {sold}/{goal}": "売却済み {sold}/{goal}",
+        "已完成": "達成済み",
+        "本回合 +{x} 已到账": "本ラウンド +{x} 適用",
+        "本回合已得 {got}/{max}": "本ラウンド獲得 {got}/{max}",
+        "本回合已购 {x} 名 · 下回合 +{x}": "本ラウンド購入 {x} 名 · 次のラウンド +{x}",
+        "本回合已购 {x}/{max}": "本ラウンド購入 {x}/{max}",
+        "第 {st} 回合": "第 {st} ラウンド",
+        "累计花费 {shown}/{goal}": "累計消費 {shown}/{goal}",
+        "累计花费 {shown}/{goal} · 已完成": "累計消費 {shown}/{goal} · 達成済み",
+        "该道具已累计的出售数（每卖满一次后清零重新累计）": "この道具の累計売却数（1回売り切るたびにリセットして再集計）",
+        "距下次 {acc}/{goal}": "次まで {acc}/{goal}",
+        "距下次 {toNext}/{every} · 本回合已得 {got}/{max}": "次まで {toNext}/{every} · 本ラウンド獲得 {got}/{max}",
+        "距下次 {toNext}/{every}(累计刷新 {total})": "次まで {toNext}/{every}（累計更新 {total}）"
+      }
+    }
+  ]
+}
