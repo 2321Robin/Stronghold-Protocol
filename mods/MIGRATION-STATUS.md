@@ -1,121 +1,110 @@
-# 本地功能 → mod 迁移：进度与交接
+# 本地功能 → mod 迁移：完成报告
 
-> 本文件是「把剩余本地自用功能迁移到 mod 框架」任务的**进度快照与下一步交接单**。
-> 框架本身的原理、命令、规则见同目录 `README.md` 与 `MIGRATION.md`。
-> 最后更新：撞到模型调用频率上限（429）的那一轮，已完成 5 个功能并提交到各自的 `wip/mods-*` 分支；`#33`/`#24` 已捕获补丁声明但**未**验证、未提交；`#21` 尚未开始。
+> 原《进度与交接单》。**17 笔本地线独有提交已全部转成 mod，并在纯上游 v0.2.4 上完成兼容性与可移植性验证。**
+> 框架原理见同目录 `README.md`，迁移方法见 `MIGRATION.md`。
 
 ---
 
-## 一、当前进度（一句话）
+## 一、结果一句话
 
-框架分支已就绪、单测/隔离/依赖排序都已验证；17 笔本地线独有提交已逐功能盘点，**5 个功能已完成并落盘，2 个功能已捕获待收尾，1 个功能（#21）还没动手**。
+本地线 17 笔提交 → **10 个 mod、194 条补丁、40 个新增文件**；在纯上游 v0.2.4 上
+`apply --all` **194/194 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
+相对纯上游仍**只新增 `mods/` 与 `tools/mod.mjs` 两条路径**。
 
-## 二、功能清单与状态
+## 二、功能清单（全部完成）
 
-| 功能 | 本地提交（tip） | mod id | capture 工作树(tip) | 验证分支(wip) | 提交 sha | 状态 | 备注 |
-|---|---|---|---|---|---|---|---|
-| 地灵 #17 | d5610658..798c7449 + ed83a0b0 | `earthspirit` | — | feat/mods-024 | — | 已完成 | 56 补丁；测试 11/11；v0.2.4 上 0 漂移 |
-| #30 同盟池 ×2 | 653ab495 + bbba5a4d | `coop-pool-x2` | — | feat/mods-024 | — | 已完成 | `retiredIn: "0.2.4"`，到 0.2.4 自动跳过 |
-| #16 策略/道具进度 | b4af72c6 + 49ef735f | `band-progress` | cap-band(49ef735f) | wip/mods-band | `00f61ca6` | 已完成 | 24 补丁；i18n→json-merge(15 key)；修 1 漂移；测试 18/18 |
-| lastLineup | c8396341 | `last-lineup` | cap-lastlineup(c8396341) | wip/mods-lastlineup | `a6279f30` | 已完成(动 golden) | 5 补丁；测试 5/5；**会移动 3 场景/7 行 golden，需重钉** |
-| 联防视角 #22 | 6ec14176 | `unite-view` | cap-unite(6ec14176) | wip/mods-unite | `95bafdee` | 已完成 | 4 补丁；测试 31/31；0 漂移 |
-| #28 预热 | 68eb594a + 03c44388 | `warmup` + `origin-migrate` | cap-warmup(03c44388) | wip/mods-warmup | `ac969d3d` | 已完成 | warmup=3 补丁+2 新文件；origin-migrate=纯新文件；测试 8/8 |
-| #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | cap-collab(9398ac2a) | wip/mods-collab | — | **未开始** | 见第四节 |
-| #33 资源包 | 60a7cd26 | `asset-pack` | cap-pack(60a7cd26) | wip/mods-pack | — | **已捕获未验证** | 见第三节 |
-| #24 开发者模式 | ee66eac5 | `dev-mode` | cap-devmode(ee66eac5) | wip/mods-devmode | — | **已捕获未验证** | 见第三节；基线极旧(v0.2.0)，预期多漂移 |
+| 功能 | 本地提交 | mod id | 补丁 | 新增文件 | 备注 |
+|---|---|---|---|---|---|
+| 地灵 #17 | d5610658..798c7449 + ed83a0b0 | `earthspirit` | 60 | 1 | 含 4 语言包 i18n 补丁 |
+| #30 同盟池 ×2 | 653ab495 + bbba5a4d | `coop-pool-x2` | 5 | 0 | `retiredIn: "0.2.4"`，到版本自动停用 |
+| #16 策略/道具进度 | b4af72c6 + 49ef735f | `band-progress` | 30 | 3 | 4 语言包全部 json-merge |
+| lastLineup | c8396341 | `last-lineup` | 6 | 0 | 自带 golden 重钉（3 场景） |
+| 联防视角 #22 | 6ec14176 | `unite-view` | 4 | 0 | — |
+| #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | 27 | 14 | golden 重钉 + 11 个新场景 |
+| #28 预热 | 68eb594a + 03c44388 | `warmup` | 3 | 2 | — |
+| 跨源迁移页 | 03c44388 | `origin-migrate` | 0 | 1 | 纯新增文件 |
+| #33 资源包 | 60a7cd26 | `asset-pack` | 3 | 11 | `dependsOn: ["warmup"]` |
+| #24 开发者模式 | ee66eac5 | `dev-mode` | 16 | 3 | `dependsOn: ["earthspirit"]` |
 
-> #24 位于 `feat/dev-mode` 分支，分叉点 `13033214`（约 v0.2.0）。补丁从 v0.2.0 时代文件生成、要在 v0.2.4 上重放，预期多条漂移，属正常，逐条按 `check` 报告修即可。
+`apply` 顺序由 `dependsOn` 拓扑排序决定：`warmup → asset-pack`、`earthspirit → dev-mode`。
 
-## 三、pack / devmode 半成品如何收尾
+## 三、兼容性（v0.2.4）
 
-两者的 `mods/<id>` 目录已存在于对应 `cap-*` 工作树，但**没有**验证、没有在 `t-*` 提交、没有补 `mod.json` 的 `name`/`dependsOn`。对每个都按下面四步收尾：
+- `node tools/mod.mjs check` → **every patch found its anchor**（9 个未退役 mod 全部 0 drifted）。
+- `node tools/mod.mjs apply` → 194 条补丁全部 applied、0 drifted。
+- `node tools/mod.mjs apply --force` 重放 → 全部判 already in place，**字节级幂等**
+  （`test/golden/diy.json` 的 sha256 重放前后一致）。
+- `node tools/mod.mjs revert --all` → 工作树 `[clean]`，只剩 mod 目录本身。
+- golden：`matches.json` 3 个场景、`diy.json` 5 个重钉 + 11 个新增，两个文件都与
+  「应用全部 mod 后跑 `npm run golden:update`」的产出**字节一致**。
+- i18n：`node tools/i18n.mjs check --all --strict` 四语 **100%（1209/1209，0 missing）**。
+- eslint：`mods/_framework/` 与 `tools/mod.mjs` **0 problem**。
+- 全量 `npm test`：6118 项，5901 通过。与**纯上游基线**（5995 项，5789 通过）逐条比对失败名单，
+  多出的 6 项**全部为环境性**，与 mod 无关：
+  - 5 项 `test/pack-assets.test.js` / `packSw.test.js`：`spawnSync` 在本机返回 `EBUSY`
+    （`node --check public/sw.js` 手动跑通过），且需要 gitignored 的 `public/assets`。
+    **在本地线原版实现上跑同样这 5 项，结果完全一致。**
+  - 1 项 `test/sim/perf.test.js` 基准：单独跑 2/2 通过，仅在全量并发负载下超时。
 
-1. 把 `cap-<feature>/mods/<id>` 整个目录复制到 `.worktrees/t-<feature>/mods/<id>`。
-2. 补 `mod.json`（见下）。
-3. 在 `t-<feature>` 工作树里：`node tools/mod.mjs check <id>` → 修到 0 drifted → `apply` → 跑该功能的测试 → `revert --all` → `git status --porcelain` 只剩 mod 目录 → `git add -A mods/<id> && git commit`。
+## 四、可移植性
 
-### asset-pack (#33) 收尾要点
-- `mod.json`：`{"id":"asset-pack","name":"#33 浏览器端资源包预导入（SW）","upstream":false,"dependsOn":["warmup"]}`
-  - **必须 dependsOn warmup**：它的 `public/js/main.js` 两条补丁的锚点（`import { installWarmup }` 与 `installWarmup({...})`）是 warmup mod 注入的，没 warmup 先应用就会漂移。
-- 11 个新增文件已正确放进 `files/`，`.gitignore` 与 `main.js` 两个行补丁已就绪、无 `_review`。
-- 验证：`cd .worktrees/t-pack && node tools/mod.mjs apply && node --test test/pack-assets.test.js test/ui/pack.test.js test/ui/packSw.test.js test/ui/packZip.test.js`
-- UI 测试若缺 `public/vendor/*.js`（gitignored），从主仓库 `C:/Users/Robin/Documents/GitHub/Stronghold-Protocol/public/vendor` 拷过去，不影响 git status。
+用一个**模拟上游演进**的提交（故意改掉若干 mod 锚点所在行：`server/lobby.js`、
+`server/match/PlayerState.js`、`public/js/render/app/view.js`、`server/sim/content/kits/index.js`、
+`public/js/main.js`）做对比实验：
 
-### dev-mode (#24) 收尾要点
-- `mod.json`：`{"id":"dev-mode","name":"#24 开发者模式（房主把本局标记为 dev）","upstream":false,"dependsOn":["earthspirit"]}`
-  - **必须 dependsOn earthspirit**：开发者模式复用 `room.setExtras` 通道（extras 上加 `devMode`）。
-- `public-i18n-en.json` 目前是**行补丁**，必须改 json-merge：先用
-  `git -C .worktrees/cap-devmode diff 22d01ee5 -- public/i18n/en.json` 看清本功能新增了哪些 key，只放这些 key 进 `merge`。
-- 有 2 个 `_review` 标记（`public-js-screens-game.js.json`、`server-lobby.js.json`）——锚点不唯一，需换成文件里唯一、上游不太会动的行。
-- 最难点：v0.2.0→v0.2.4，预期多条漂移；`dependsOn` 保证地灵先落。先 `node tools/mod.mjs check dev-mode --verbose` 看报告，逐条改锚点。
-- 若某补丁确实因**上游重写了那段代码**（非锚点选得不好）而换锚点也无法解决，不要硬凑：保留该补丁并在交接里点名「需按新代码重新实现」。
-- 测试：`node --test test/dev-mode.test.js test/match/fuzz.test.js`
-
-## 四、collab-kits (#21) 从零怎么做
-
-capture 工作树 `cap-collab` 已就绪（在 `9398ac2a`，含 62f16618 + 9398ac2a 两笔）。
-
-### 捕获命令（在 `cap-collab` 里执行）
-```
-node tools/mod.mjs capture collab-kits --from=6ec14176 \
-  server/sim/content/kits/ops/op-ash.js \
-  server/sim/content/kits/ops/op-ela.js \
-  server/sim/content/kits/ops/op-makoto.js \
-  server/sim/content/kits/ops/op-marcil.js \
-  server/sim/content/kits/ops/op-oblvns.js \
-  server/sim/content/kits/ops/op-orchd2.js \
-  server/sim/content/kits/ops/op-yato2.js \
-  server/sim/content/kits/index.js \
-  server/sim/content/kits/README.md \
-  public/i18n/ja.json public/i18n/ko.json public/i18n/zh-TW.json \
-  test/content/op_ash.test.js test/content/op_ela.test.js test/content/op_makoto.test.js \
-  test/content/op_marcil.test.js test/content/op_oblvns.test.js test/content/op_orchd2.test.js test/content/op_yato2.test.js \
-  test/assets-diy.test.js test/backups.test.js test/content/feedback5-we2-summon-hand.test.js \
-  test/data.test.js test/diy.test.js test/feedback7-voices.test.js test/full-potential.test.js \
-  test/golden/matches.json test/potential.test.js test/render/issue25-downback.test.js test/sim/trait_attack_speed.test.js \
-  data/assets.json data/backups.json test/golden/diy.json
-```
-
-### 关键难点
-- **7 个 kit + 7 个 test 是新增文件**：capture 对 tracked 的新文件不会自动收，需手工从 `git show 9398ac2a:<path>` 拷进 `mods/collab-kits/files/<path>`（保留仓库相对路径）。
-- **i18n 三个文件 → json-merge**，绝不用行补丁。
-- **`data/assets.json` / `data/backups.json` 是生成数据**（SP_DIY_COLLAB 构建产物）：整文件替换会丢上游新增项。优先 json-merge；若是数组增项，需评估——必要时**向我请求给 json-merge 加 array-union 语义，不要自己改框架**。
-- **`test/golden/matches.json` / `test/golden/diy.json` 是 golden 摘要**：在 `mod.json` 加 `"golden": true`，并随变更重钉（见第五节）。
-- 其余 test 文件 → 行补丁，处理 `_review`。
-- 验证分支 `wip/mods-collab` 已就绪；验证后提交。
-
-## 五、全部完成后如何整合
-
-1. 在 `feat/mods-024`（worktree `mods-024`）上，把 7 个 `wip/mods-*` 分支的 `mods/<id>` 目录逐个合并进来（每个分支只新增一个 `mods/<id>`，`git merge` 或手动复制皆可）。
-2. 全量验证：
-   - `node tools/mod.mjs check --all` → 必须 0 drifted（此时所有 mod 基于同一 v0.2.4，互相锚点已协调）。
-   - `node tools/mod.mjs apply --all` → 全应用。
-   - **golden 重钉**：因 last-lineup（及 collab 若动 golden）会移动 golden 摘要，一次性
-     `npm run golden:update`（遵循 `test/golden/README.md`），把新摘要随对应 mod 提交。
-   - 跑受影响测试套件 + `npx --no-install eslint mods/_framework tools/mod.mjs` + `node tools/check-imports.mjs`。
-3. 可移植性（portability）验证：
-   - 用一个模拟上游演进的提交（故意改若干锚点所在行），对 `feat/mods-024` 跑
-     `git merge-tree --write-tree` 证零冲突（参照 `MIGRATION.md` 的对比实验：`feat/mods-024` 退出码 0 / `local-preview` 退出码 1 有 13 冲突）。
-   - `node tools/mod.mjs revert --all` 后 `git status --porcelain` 必须为空（只剩 mod 目录）。
-
-## 六、踩坑与约定（务必遵守）
-
-- **Edit 工具可能报成功但内容没落盘**：改完用 `node -e` 同进程读回验证，**别信 grep/sed 的回显**。（本轮出现过 grep 看到 `visit(dep`、node 实际读到 `visit(d` 的不一致。）
-- **先 `git commit` 再 `git checkout -- .`**：否则刚打的补丁会被一起还原，表现为「改了没生效」。（本轮因此空耗过时间。）
-- **父提交顺序**：本地线从旧到新为 `d5610658 → … → 60a7cd26`；capture 的 `--from` 传**父**（更早的），不是子。注意 `49ef735f` 是 `c8396341` 的子（i18n 提交），不是父。
-- **`public/js/main.js` 被 warmup 与 asset-pack 共用**：两 mod 已通过锚点分工隔离（warmup 占 import 区 `startBuildGuard` 行 + boot 区 `data.load('assets')` 行；pack 占 `installWarmup` 引用行）。后续再动 main.js 沿用同一分工，且 asset-pack 必须 `dependsOn:["warmup"]`。
-- **i18n 一律 json-merge**，绝不走行补丁；但只放本功能新增 key，不要顺手收进别的功能的 key。
-- **共享文件天然允许**：revert 会自动重放其他 mod 的同文件补丁，框架已验证（见 `README.md`「Mods do not step on each other」）。
-- 目标 `t-*` 工作树若缺 `public/vendor/*.js`（gitignored），从主仓库 `public/vendor` 拷，不影响 git status。
-- **不要把任何 mod 的代码提 PR**：`upstream: false` 是框架的立身之本。
-
-## 七、工作树布局速查
-
-| 用途 | 路径 |
+| 分支 | `git merge-tree --write-tree` |
 |---|---|
-| 框架主线 | `.worktrees/mods-024`（分支 `feat/mods-024`，基线纯上游 `bc50cac0` v0.2.4，仅新增 `mods/` + `tools/mod.mjs`） |
-| 捕获（各功能 tip，含框架副本） | `.worktrees/cap-band`、`cap-lastlineup`、`cap-unite`、`cap-collab`、`cap-warmup`、`cap-pack`、`cap-devmode` |
-| 验证目标（v0.2.4 + 框架，分支 `wip/mods-<feature>`） | `.worktrees/t-band`、`t-lastlineup`、`t-unite`、`t-collab`、`t-warmup`、`t-pack`、`t-devmode` |
-| 旧线参考 | `.worktrees/port-020..023`、`SP-dev`(local-preview) 等 |
+| `feat/mods-024`（框架 + 全部 mod） | 退出码 **0**，**零冲突** |
+| `local-preview`（v0.2.3 + 17 笔本地提交） | 退出码 **1**，**18 个文件冲突** |
 
-> 整合完成后，所有 `cap-*` / `t-*` 工作树可 `git worktree remove`（确认无未提交改动后）。
+把框架+mod 放到那个模拟上游上跑 `check`，输出精确点名：**11 条漂移**，逐条给出
+mod / 文件 / 补丁 id / 原因（`anchor-missing` 等）与锚点周围现在的内容——没有冲突块要解。
+
+## 五、本轮修掉的框架缺陷（都很实质）
+
+1. **`planJson` 整文件重序列化**：上游数据文件刻意混用样式（golden 里
+   `"errors": {"count":0,"kinds":[]}` 紧挨多行场景对象），`JSON.stringify(x,null,2)` 会把
+   6081 行炸成 57138 行。改为**跨度感知的外科合并**：解析时记录每个值的文本跨度，
+   只重写被合并键的跨度，其余字节原样拷贝。
+2. **rebuild 路径漏合已有键**：值长大出新字段时走 rebuild，旧字段被原样拷贝导致替换不生效
+   （collab 的 golden 重钉因此有 5 条没落地）。
+3. **写入器不匹配 golden.mjs 的行内规则**：`units` 每行、`players` 整行被拆开。
+   复刻 `stringifyGolden` 的规则（标量与短标量对象保持一行、深度≥6 且够短才内联、
+   标量数组恒紧凑），并按被替换值自身是否含行内嵌套来判定文件遵循哪套。
+4. **键集相同时用替换代替递归合并**：递归保留上游键序，而 `golden:update` 写的是模拟器产出的
+   顺序，恒差 11 行。键集一致时两者等价，改用替换以对齐字节。
+5. **数组节点的样式探测**：数组记的是 `items` 不是 `entries`，`inlineNestedStyle` 对 `units`
+   这类数组恒返回 false。
+6. **apply 状态被覆盖**：`--force` 重放只碰 1 个文件时，状态丢掉首次 apply 的另外 15 个，
+   revert 于是只还原 1 个。改为与既有条目合并（created/modified 取并集，哈希全量刷新）。
+7. **`check --verbose` 崩溃**：`linesOf` 是 async，同步调用拿到 Promise，`excerpt` 一 slice 就炸。
+   只有「漂移且锚点仍有命中」才会触发。
+8. **`capture` 会把 `tools/mod.mjs` 自己也当新文件收进去**：已排除。
+
+## 六、超出本地线的三处补齐（有意为之）
+
+本地线一直带着这些缺口，整合到 v0.2.4 不该把绿着的门弄红：
+
+1. **ja/ko/zh-TW 译文**：#16 与 #24 的字符串此前只有 en 条目，各缺 26 条，`--strict` 直接红。
+   补齐 78 条；地灵的 7 条界面字符串也从本地线搬进 mod（此前 mod 里根本没有 i18n 补丁）。
+2. **地灵房间 UI 的裸中文字面量**：包上 `t()`。`i18n.mjs check` 只校验已包裹的字符串所以看不见，
+   而 `test/i18n.test.js` 的「no Chinese literal left unwrapped」直接红。
+3. **地灵测试的深比较**：原先深比较整个 `extras`，dev-mode 往共享通道加 `devMode` 字段会误判为
+   失败；改为只断言 `earthspirit` 自己那一项。
+
+## 七、踩坑（下次直接照做）
+
+- **改完文件先 commit，再 `git checkout -- .` / `git clean -fd`**。本轮因此白丢过四次成果
+  （golden 更新、i18n 补丁、地灵断言放宽、dev-mode 同步），表现为"改了没生效"。
+- **Edit 工具可能报成功但内容没落盘**：改完用 `node -e` 同进程读回验证，别信 grep/sed 的回显。
+- **父提交顺序**：本地线从旧到新为 `d5610658 → … → 60a7cd26`，capture 的 `--from` 传**父**。
+- **共享文件天然允许**：`public/js/main.js` 被 warmup 与 asset-pack 共用，靠锚点分工隔离
+  （warmup 占 import 区 `startBuildGuard` 行 + boot 区 `data.load('assets')` 行；pack 占
+  `installWarmup` 引用行）；asset-pack 因此必须 `dependsOn: ["warmup"]`。
+- **本机 `spawnSync` 会间歇返回 `EBUSY`**：用 `node --check` / 手动跑复判，别急着归因于代码。
+
+## 八、工作树
+
+框架主线 `.worktrees/mods-024`（分支 `feat/mods-024`，基线纯上游 `bc50cac0` v0.2.4）。
+各功能的 capture / 验证工作树（`cap-*`、`t-*`）与 `wip/mods-*` 分支已完成使命，可清理：
+`git worktree remove` 后 `git branch -D wip/mods-*`。
