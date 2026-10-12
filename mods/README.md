@@ -102,8 +102,8 @@ lines now sitting there. You decide the new anchor; you never decode a conflict 
 
 When upstream ships a feature natively, set `"retiredIn": "0.2.4"` in `mod.json`. Once
 `package.json` reaches that version the mod is skipped everywhere and `status` says so — then
-delete the directory. `coop-pool-x2` is the first of these (upstream 0.2.4 took it as
-`poolCopiesCoopScale`).
+delete the directory. `coop-pool-x2` was the first of these (upstream 0.2.4 took it as
+`poolCopiesCoopScale`; its directory has since been deleted).
 
 ## Golden results
 
