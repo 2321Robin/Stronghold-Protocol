@@ -9,7 +9,11 @@
         ".room-bar__opts { display: flex; flex-direction: column; align-items: flex-start; gap: .08rem; min-width: 0; }"
       ],
       "new": [
-        ".room-bar__opts { display: flex; flex-wrap: wrap; align-items: center; gap: .08rem .14rem; min-width: 0; }"
+        ".room-bar__opts { display: flex; flex-wrap: wrap; align-items: center; gap: .08rem .14rem; min-width: 0; }",
+        "/* local (mod): keep upstream's stacking — the difficulty picker keeps the first row to itself, and the rest",
+        "   (upstream's AI-last toggle, then the local 地灵 / dev-mode options) flow horizontally on the rows below.",
+        "   Upstream stacks all of them vertically, which overflows the viewport once the two local options are in. */",
+        ".room-bar__opts > :first-child { flex: 1 0 100%; }"
       ]
     }
   ]
