@@ -134,7 +134,9 @@ describe('地灵 room option: lobby over WebSocket (stub match)', () => {
     const seatLoadout = stub.opts.seats[0].loadout[ES];
     assert.equal(seatLoadout.skill, 1, 'the 地灵 loadout (skill 流沙化) reaches the match');
     assert.equal(seatLoadout.module, 'uniequip_002_skgoat', 'pinned to her default module alongside the non-default skill');
-    assert.deepEqual(stub.opts.extras, { earthspirit: true }, 'the match gets the extras option');
+    // 只断言地灵自己这一项：extras 是共享通道，别的 mod（如开发者模式的 devMode）会往里加字段，
+    // 深比较会把这种正常共存判成失败。
+    assert.equal(stub.opts.extras.earthspirit, true, 'the match gets the extras option');
   });
 
   test('a guest cannot toggle; toggling back off re-gates the loadout', async () => {
