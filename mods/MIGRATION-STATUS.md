@@ -7,7 +7,7 @@
 
 ## 一、结果一句话
 
-本地线 17 笔提交 → **9 个 mod、190 条补丁、40 个新增文件**（#22 联防视角裁定于 2026-10-13 废弃，见 §二）；
+本地线 17 笔提交 → **8 个 mod、190 条补丁、39 个新增文件**（#22 联防视角、#29 跨源迁移页均于 2026-10-13 废弃，见 §二）；
 在纯上游 v0.2.4 上
 `apply --all` **190/190 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
 相对纯上游仍**只新增 `mods/` 与 `tools/mod.mjs` 两条路径**。
@@ -22,7 +22,6 @@
 | lastLineup | c8396341 | `last-lineup` | 6 | 0 | 自带 golden 重钉（3 场景） |
 | #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | 27 | 14 | golden 重钉 + 11 个新场景 |
 | #28 预热 | 68eb594a + 03c44388 | `warmup` | 3 | 2 | — |
-| 跨源迁移页 | 03c44388 | `origin-migrate` | 0 | 1 | 纯新增文件 |
 | #33 资源包 | 60a7cd26 | `asset-pack` | 3 | 11 | `dependsOn: ["warmup"]` |
 | #24 开发者模式 | ee66eac5 | `dev-mode` | 16 | 3 | `dependsOn: ["earthspirit"]` |
 
@@ -35,7 +34,7 @@
 
 ## 三、兼容性（v0.2.4）
 
-- `node tools/mod.mjs check` → **every patch found its anchor**（8 个未退役 mod 全部 0 drifted）。
+- `node tools/mod.mjs check` → **every patch found its anchor**（7 个未退役 mod 全部 0 drifted）。
 - `node tools/mod.mjs apply` → 190 条补丁全部 applied、0 drifted。
 - `node tools/mod.mjs apply --force` 重放 → 全部判 already in place，**字节级幂等**
   （`test/golden/diy.json` 的 sha256 重放前后一致）。
