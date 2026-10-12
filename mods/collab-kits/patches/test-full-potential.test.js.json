@@ -1,0 +1,17 @@
+{
+  "file": "test/full-potential.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "assert.equal(forms, 259);",
+      "op": "replace",
+      "old": [
+        "assert.equal(forms, 259);"
+      ],
+      "new": [
+        "// 280 = upstream's 259 in 0.2.3 (incl. Clementia) + the seven collab 6★ × 3 forms (the local SP_DIY_COLLAB build, playtest #21) — all checked above",
+        "assert.equal(forms, 280);"
+      ]
+    }
+  ]
+}

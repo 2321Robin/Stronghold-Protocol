@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<title>资源包导入 · 卫戍协议：盟约</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center;
+         background: #0c0f0e; color: #d8e2dd; font: 14px/1.7 system-ui, "Microsoft YaHei", sans-serif; padding: 24px; }
+  .card { width: min(760px, 100%); background: #111614; border: 1px solid #1f2a25; border-radius: 12px; padding: 28px 30px; }
+  h1 { font-size: 19px; margin: 0 0 4px; color: #4ed8af; }
+  .sub { color: #7d8f88; font-size: 12.5px; margin-bottom: 18px; }
+  h2 { font-size: 15px; margin: 22px 0 8px; color: #4ed8af; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  td { padding: 4px 8px 4px 0; vertical-align: top; border-bottom: 1px solid #1a231f; }
+  td.k { color: #8fa39a; white-space: nowrap; width: 11em; }
+  .ok { color: #4ed8af; } .warn { color: #e0b64e; } .err { color: #e06a5e; } .dim { color: #7d8f88; }
+  .hidden { display: none; }
+  button { background: #1d7a5f; border: 0; color: #eafff7; font: 600 13.5px/1 inherit; padding: 10px 18px;
+           border-radius: 8px; cursor: pointer; margin: 10px 8px 0 0; }
+  button:hover { background: #249473; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: transparent; border: 1px solid #2a3a33; color: #aebbb4; }
+  button.danger { background: transparent; border: 1px solid #4a2a26; color: #e06a5e; }
+  .bar { height: 8px; background: #0c0f0e; border: 1px solid #24322c; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; width: 0%; background: #1d7a5f; transition: width .2s; }
+  .now { font: 12px/1.6 Consolas, monospace; color: #8fa39a; word-break: break-all; margin-top: 6px; min-height: 1.6em; }
+  .fails { font: 12px/1.6 Consolas, monospace; color: #e06a5e; max-height: 180px; overflow: auto; margin-top: 8px; white-space: pre-wrap; }
+  .notes { color: #7d8f88; font-size: 12.5px; margin-top: 18px; border-top: 1px solid #1a231f; padding-top: 12px; }
+  .notes li { margin: 3px 0; }
+  a { color: #4ed8af; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>资源包导入</h1>
+  <div class="sub">把资源包 zip 一次性写进本浏览器（本地磁盘 → 浏览器，不吃服务器带宽）。之后游戏内的资源请求
+    由本地缓存直接应答，新资源自动回源。需要 HTTPS（或 localhost）与支持 Service Worker 的桌面浏览器。</div>
+
+  <h2>当前状态</h2>
+  <table>
+    <tr><td class="k">服务器资源清单</td><td id="serverManifest" class="dim">加载中…</td></tr>
+    <tr><td class="k">部署态尺寸表</td><td id="serverSizes" class="dim">加载中…</td></tr>
+    <tr><td class="k">本机资源包</td><td id="packState" class="dim">读取中…</td></tr>
+    <tr><td class="k">对比结论</td><td id="packVerdict" class="dim">—</td></tr>
+    <tr><td class="k">存储占用 / 配额</td><td id="storage" class="dim">—</td></tr>
+  </table>
+
+  <h2>导入</h2>
+  <ol class="dim" style="font-size:12.5px;margin:4px 0 10px;padding-left:20px">
+    <li>选择资源包 zip（由 <code>node tools/pack-assets.mjs</code> 生成，内含逐文件大小表 <code>_pack.json</code>）。</li>
+    <li>点「导入」——导入会先清空旧包再逐条写入并做 CRC 校验，全程请保持本页打开。</li>
+  </ol>
+  <input type="file" id="file" accept=".zip,application/zip" style="margin-bottom:6px">
+  <br>
+  <button id="importBtn" disabled>导入</button>
+  <span id="importMsg"></span>
+  <div class="bar hidden" id="barWrap"><div id="bar"></div></div>
+  <div class="now" id="now"></div>
+  <div class="fails hidden" id="fails"></div>
+
+  <h2>卸载</h2>
+  <button id="clearBtn" class="danger">清空本机资源包</button>
+  <span id="clearMsg"></span>
+
+  <div class="notes">
+    <ul>
+      <li><b>新资源自动回源</b>：每日更新的新干员/新语音/新皮肤不在包内，请求直接走服务器，无需任何操作。</li>
+      <li><b>同 URL 内容变更</b>（罕见）：部署了尺寸表时自动绕开包；未部署时可能短暂使用包内旧文件，重新导入即恢复。</li>
+      <li>包版本落后只影响覆盖面，不影响正确性；随时可以重新导入新包覆盖。清空后回到「全靠服务器 + warmup 预热」的状态。</li>
+      <li>状态与游戏共用同一份存储：<a href="/">回游戏首页</a>即自动生效（Service Worker 接管资源请求）。</li>
+    </ul>
+  </div>
+</div>
+
+<script type="module">
+import { PACK_CACHE, SIZES_URL, readPackMeta, putPackEntry, putPackMeta } from '/js/ui/pack.js';
+import { zipEntriesFromBlob, extractZipEntry } from '/js/ui/packZip.js';
+
+const PACK_META_NAME = '_pack.json';
+const $ = (id) => document.getElementById(id);
+const MB = 1024 * 1024;
+const fmtBytes = (n) => n == null ? '—' : n >= 1024 * MB ? (n / (1024 * MB)).toFixed(2) + ' GB'
+  : n >= MB ? (n / MB).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
+
+const ORIGIN = location.origin + '/';
+let serverHash = null;
+let hasSizes = false;
+let packMeta = null;
+
+async function registerSw() {
+  if (!('serviceWorker' in navigator) || navigator.webdriver) return;
+  try { await navigator.serviceWorker.register('/sw.js', { type: 'module' }); } catch (e) { /* the game pages register too */ }
+}
+
+async function loadStatus() {
+  // server side
+  try {
+    const res = await fetch('/data/assets.json', { cache: 'no-cache' });
+    const m = await res.json();
+    serverHash = m && m.hash ? m.hash : null;
+    $('serverManifest').textContent = serverHash
+      ? `hash ${serverHash}` : '未取得 hash';
+    $('serverManifest').className = serverHash ? 'ok' : 'warn';
+  } catch {
+    $('serverManifest').textContent = '加载失败（需要本站服务）';
+    $('serverManifest').className = 'err';
+  }
+  try {
+    const res = await fetch(SIZES_URL, { cache: 'no-cache' });
+    const t = res.ok ? await res.json() : null;
+    hasSizes = !!(t && t.files);
+    $('serverSizes').innerHTML = hasSizes
+      ? '<span class="ok">已部署</span> <span class="dim">（同 URL 内容变更会自动绕开包）</span>'
+      : '<span class="dim">未部署（可选；没有它时同 URL 变更靠重新导入兜底）</span>';
+  } catch {
+    $('serverSizes').innerHTML = '<span class="dim">未部署（可选）</span>';
+  }
+  // local side
+  packMeta = await readPackMeta(ORIGIN);
+  renderPack();
+  // storage
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const persist = navigator.storage.persisted ? await navigator.storage.persisted() : null;
+      $('storage').innerHTML = `${fmtBytes(est.usage)} / ${fmtBytes(est.quota)}` +
+        (persist === null ? '' : persist ? ' <span class="ok">· 持久存储已授予</span>' : ' <span class="warn">· 持久存储未授予</span>');
+    } else $('storage').textContent = '浏览器未提供 estimate()';
+  } catch { $('storage').textContent = '—'; }
+}
+
+function renderPack() {
+  if (!packMeta) {
+    $('packState').innerHTML = '<span class="dim">未安装 —— 游戏照常从服务器加载（warmup 预热仍在）</span>';
+    $('packVerdict').innerHTML = '<span class="dim">—</span>';
+    $('clearBtn').disabled = true;
+    return;
+  }
+  $('clearBtn').disabled = false;
+  const built = packMeta.builtAt ? new Date(packMeta.builtAt).toLocaleString() : '未知时间';
+  $('packState').textContent =
+    `${packMeta.count} 个文件 · ${fmtBytes(packMeta.totalBytes)} · 基于清单 ${packMeta.manifest || '?'} · 构建于 ${built}`;
+  if (!serverHash) {
+    $('packVerdict').innerHTML = '<span class="dim">服务器清单未取得，无法对比</span>';
+  } else if (packMeta.manifest === serverHash) {
+    $('packVerdict').innerHTML = '<span class="ok">✓ 包与服务器清单一致</span>';
+  } else {
+    $('packVerdict').innerHTML =
+      `<span class="warn">⚠ 包基于旧清单 ${packMeta.manifest}，服务器已是 ${serverHash}</span>` +
+      `<div class="dim">新 URL 自动回源；${hasSizes ? '已部署尺寸表，同 URL 变更也会自动绕开包' : '未部署尺寸表，同 URL 变更可能使用包内旧文件'}。建议重新导入新包。</div>`;
+  }
+}
+
+// ---- import ---------------------------------------------------------------------------------------------
+
+$('file').addEventListener('change', () => {
+  const f = $('file').files && $('file').files[0];
+  $('importBtn').disabled = !f;
+  if (f) $('importMsg').textContent = `已选择 ${f.name}（${fmtBytes(f.size)}）`;
+});
+
+$('importBtn').addEventListener('click', async () => {
+  const f = $('file').files && $('file').files[0];
+  if (!f) return;
+  const msg = $('importMsg');
+  setBusy(true);
+  $('fails').classList.add('hidden');
+  $('barWrap').classList.remove('hidden');
+  try {
+    msg.textContent = '读取压缩包…';
+    const entries = await zipEntriesFromBlob(f);
+    const metaEntry = entries.find((e) => e.name === PACK_META_NAME);
+    if (!metaEntry) throw new Error('这不是资源包：缺少 _pack.json');
+    msg.textContent = '校验 _pack.json…';
+    const metaBytes = await extractZipEntry(f, metaEntry);
+    const meta = JSON.parse(new TextDecoder().decode(metaBytes));
+    if (!meta || typeof meta.files !== 'object' || !meta.files || !Object.keys(meta.files).length) {
+      throw new Error('_pack.json 缺少 files 大小表');
+    }
+    const files = meta.files;
+    const body = entries.filter((e) => e.name !== PACK_META_NAME);
+    const total = body.reduce((s, e) => s + e.size, 0) || 1;
+    const t0 = Date.now();
+
+    msg.textContent = '清空旧包…';
+    await caches.delete(PACK_CACHE);
+    const cache = await caches.open(PACK_CACHE);
+
+    let done = 0, written = 0, bytes = 0;
+    const failed = [];
+    const writtenFiles = {};
+    for (const entry of body) {
+      const url = '/' + entry.name;
+      let bad = null;
+      if (!/^\/(assets|fonts)\//.test(url) || url.includes('..')) bad = '不在资源目录内，已跳过';
+      else if (!Object.hasOwn(files, url)) bad = '不在 _pack.json 清单中，已跳过';
+      else if (files[url] !== entry.size) bad = `大小与清单不符（zip ${entry.size} / 清单 ${files[url]}），已跳过`;
+      if (!bad) {
+        try {
+          const buf = await extractZipEntry(f, entry); // CRC-verified
+          await putPackEntry(url, buf, ORIGIN);
+          writtenFiles[url] = buf.byteLength;
+          written++; bytes += buf.byteLength;
+        } catch (err) { bad = String(err.message || err); }
+      }
+      if (bad) failed.push(entry.name + ' — ' + bad);
+      done++;
+      if (done % 25 === 0 || done === body.length) {
+        $('bar').style.width = (100 * bytes / total).toFixed(1) + '%';
+        const secs = Math.max(0.1, (Date.now() - t0) / 1000);
+        $('now').textContent = `${done}/${body.length} 个文件 · ${fmtBytes(bytes)}/${fmtBytes(total)} · ${fmtBytes(bytes / secs)}/s`;
+        msg.textContent = '写入本地缓存…';
+      }
+    }
+
+    msg.textContent = '写入包信息（提交标记）…';
+    await putPackMeta({
+      manifest: meta.manifest || null, builtAt: meta.builtAt || new Date().toISOString(),
+      generator: meta.generator || null, count: written, totalBytes: bytes, files: writtenFiles,
+    }, ORIGIN);
+    await notifySw();
+    $('bar').style.width = '100%';
+    $('now').textContent = `完成：${done}/${body.length}`;
+    if (failed.length) {
+      $('fails').classList.remove('hidden');
+      $('fails').textContent = `${failed.length} 条失败/跳过：\n` + failed.join('\n');
+      msg.innerHTML = `<span class="warn">导入完成，${written} 条成功、${failed.length} 条失败/跳过（失败条目照常回源）</span>`;
+    } else {
+      msg.innerHTML = `<span class="ok">导入完成 ✓ ${written} 个文件，${fmtBytes(bytes)} —— 回 <a href="/">游戏首页</a> 即生效</span>`;
+    }
+  } catch (err) {
+    msg.innerHTML = `<span class="err">导入失败：${String(err.message || err)}</span>`;
+  } finally {
+    setBusy(false);
+    await loadStatus();
+  }
+});
+
+$('clearBtn').addEventListener('click', async () => {
+  if (!confirm('清空本机资源包？之后的资源全部由服务器下发。')) return;
+  try {
+    await caches.delete(PACK_CACHE);
+    await notifySw();
+    $('clearMsg').innerHTML = '<span class="ok">已清空 ✓</span>';
+  } catch (err) {
+    $('clearMsg').innerHTML = `<span class="err">清空失败：${String(err.message || err)}</span>`;
+  }
+  setTimeout(() => { $('clearMsg').textContent = ''; }, 4000);
+  await loadStatus();
+});
+
+function setBusy(busy) {
+  $('importBtn').disabled = busy || !($('file').files && $('file').files[0]);
+  $('clearBtn').disabled = busy || !packMeta;
+  $('file').disabled = busy;
+}
+
+async function notifySw() {
+  try {
+    if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'sp-pack-updated' });
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const r of regs) if (r.active) r.active.postMessage({ type: 'sp-pack-updated' });
+  } catch { /* the worker also re-reads state on its own TTL */ }
+}
+
+registerSw().then(loadStatus);
+</script>
+</body>
+</html>

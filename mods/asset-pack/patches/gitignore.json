@@ -1,0 +1,14 @@
+{
+  "file": ".gitignore",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": ".cache/",
+      "op": "insert-after",
+      "new": [
+        "# the local asset pack (tools/pack-assets.mjs, playtest #33) — built per machine, shared out of band",
+        "dist/"
+      ]
+    }
+  ]
+}

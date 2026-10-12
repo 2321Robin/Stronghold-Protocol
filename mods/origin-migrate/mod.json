@@ -1,0 +1,5 @@
+{
+  "id": "origin-migrate",
+  "name": "跨 origin（http→https）localStorage 迁移页",
+  "upstream": false
+}

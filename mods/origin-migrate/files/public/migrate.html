@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>数据迁移 · 卫戍协议：盟约</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         background: #0c0f0e; color: #d8e2dd; font: 14px/1.7 system-ui, "Microsoft YaHei", sans-serif; padding: 24px; }
+  .card { width: min(720px, 100%); background: #111614; border: 1px solid #1f2a25; border-radius: 12px; padding: 28px 30px; }
+  h1 { font-size: 19px; margin: 0 0 4px; color: #4ed8af; }
+  .sub { color: #7d8f88; font-size: 12.5px; margin-bottom: 18px; }
+  .step { font-weight: 600; margin: 18px 0 8px; }
+  .step b { color: #4ed8af; }
+  ol { margin: 6px 0 14px; padding-left: 20px; color: #aebbb4; }
+  li { margin: 4px 0; }
+  textarea { width: 100%; height: 140px; background: #0c0f0e; color: #cfe0d8; border: 1px solid #24322c;
+             border-radius: 8px; padding: 10px; font: 12px/1.5 Consolas, monospace; resize: vertical; }
+  button { background: #1d7a5f; border: 0; color: #eafff7; font: 600 13.5px/1 inherit; padding: 10px 18px;
+           border-radius: 8px; cursor: pointer; margin: 10px 8px 0 0; }
+  button:hover { background: #249473; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: transparent; border: 1px solid #2a3a33; color: #aebbb4; }
+  .keys { font: 12px/1.6 Consolas, monospace; color: #8fa39a; word-break: break-all; margin-top: 8px; }
+  .ok { color: #4ed8af; } .warn { color: #e0b64e; } .err { color: #e06a5e; }
+  .hidden { display: none; }
+  a { color: #4ed8af; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>数据迁移</h1>
+  <div class="sub" id="sub"></div>
+
+  <!-- EXPORT (http origin, holds the old data) -->
+  <div id="exportBox">
+    <div class="step"><b>第 1 步</b> · 导出旧地址的数据</div>
+    <ol>
+      <li>点下方按钮，复制（或下载）这份 JSON —— 里面是这台浏览器在旧地址的全部本地数据：统计数据、干员配置、设置、昵称等。</li>
+      <li>打开 <a href="https://covenant.w2321.top/migrate.html">https://covenant.w2321.top/migrate.html</a>，粘贴并点「写入」。</li>
+    </ol>
+    <button id="copyBtn">复制全部数据</button>
+    <button id="dlBtn" class="ghost">下载 .json 文件</button>
+  </div>
+
+  <!-- IMPORT (https origin, the new home) -->
+  <div id="importBox" class="hidden">
+    <div class="step"><b>第 2 步</b> · 导入到新地址</div>
+    <ol>
+      <li>把旧地址导出的 JSON 粘贴到下面的框里（或在旧页面用「下载」后，在这里选文件）。</li>
+      <li>点「写入本机」，完成后回 <a href="/">游戏首页</a> 即可。</li>
+    </ol>
+    <input type="file" id="file" accept=".json,application/json" style="margin-bottom:10px">
+    <textarea id="payload" placeholder='粘贴形如 {"migratedFrom": …, "data": {…}} 的 JSON'></textarea>
+    <button id="writeBtn">写入本机</button>
+    <span id="writeMsg"></span>
+  </div>
+
+  <div class="keys" id="keys"></div>
+</div>
+<script>
+(function () {
+  var https = location.protocol === 'https:';
+  document.getElementById('sub').textContent =
+    '当前地址：' + location.origin + (https
+      ? '（新地址 —— 在这里写入）'
+      : '（旧地址 —— 你的数据还安全地存在这里，本页把它导出）');
+
+  // ---- shared: enumerate sp.* keys only (this origin only ever held this game's data) ----
+  function collect() {
+    var out = {}, n = 0;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      out[k] = localStorage.getItem(k); n++; // this origin only ever held this game's data — take everything
+    }
+    return { n: n, data: out };
+  }
+  function showKeys(obj) {
+    var ks = Object.keys(obj || {});
+    document.getElementById('keys').textContent = ks.length
+      ? '包含 ' + ks.length + ' 项：' + ks.join('、')
+      : '（这里没有找到任何本地数据）';
+  }
+
+  if (!https) {
+    var c = collect();
+    showKeys(c.data);
+    if (!c.n) {
+      document.getElementById('copyBtn').disabled = true;
+      document.getElementById('dlBtn').disabled = true;
+      return;
+    }
+    var payload = JSON.stringify({ migratedFrom: location.origin, at: new Date().toISOString(), sp: c.data });
+    var ta = document.getElementById('payload');
+    // keep a hidden textarea so select()/execCommand can work on http (no async clipboard there)
+    ta.value = payload;
+    document.getElementById('exportBox').appendChild(ta);
+    ta.readOnly = true;
+    document.getElementById('copyBtn').onclick = function () {
+      ta.removeAttribute('readonly'); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { /* ignore */ }
+      this.textContent = ok ? '已复制 ✓' : '复制失败，请手动全选复制';
+      this.disabled = true;
+    };
+    document.getElementById('dlBtn').onclick = function () {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+      a.download = 'stronghold-migration.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+  } else {
+    document.getElementById('exportBox').classList.add('hidden');
+    document.getElementById('importBox').classList.remove('hidden');
+    var c2 = collect();
+    if (c2.n) {
+      document.getElementById('keys').innerHTML =
+        '<span class="warn">本机在新地址已有 ' + c2.n + ' 项数据（键：' + Object.keys(c2.data).join('、') +
+        '）。继续写入会用粘贴的内容覆盖同名键。</span>';
+    }
+    document.getElementById('file').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      if (f.size > 4 * 1024 * 1024) { alert('文件过大'); return; }
+      var r = new FileReader();
+      r.onload = function () { document.getElementById('payload').value = r.result; };
+      r.readAsText(f);
+    });
+    document.getElementById('writeBtn').onclick = function () {
+      var msg = document.getElementById('writeMsg');
+      var parsed;
+      try { parsed = JSON.parse(document.getElementById('payload').value); }
+      catch (e) { msg.className = 'err'; msg.textContent = '不是合法的 JSON'; return; }
+      var data = parsed && parsed.sp ? parsed.sp : (parsed && typeof parsed === 'object' ? parsed : null);
+      if (!data || typeof data !== 'object') { msg.className = 'err'; msg.textContent = '内容里没有可写入的数据'; return; }
+      var n = 0;
+      for (var k in data) {
+        if (!Object.hasOwn(data, k) || typeof data[k] !== 'string') continue;
+        if (!/^[\w.:\-]+$/.test(k)) continue; // sane key names only
+        localStorage.setItem(k, data[k]); n++;
+      }
+      msg.className = 'ok';
+      msg.textContent = '已写入 ' + n + ' 项 ✓ 回游戏首页即可';
+      showKeys(collect().data);
+    };
+  }
+})();
+</script>
+</body>
+</html>

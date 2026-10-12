@@ -1,0 +1,48 @@
+{
+  "file": "public/js/ui/enemyDrawer.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "import { matchInfoModel, DiyBannedLine } from './matchInfo.js';",
+      "op": "insert-after",
+      "new": [
+        "import { bandProgress } from './bandProgress.js';"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {",
+      "op": "replace",
+      "old": [
+        "function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {"
+      ],
+      "new": [
+        "export function InfoTab({ pub, priv, onChess, bandId = null, bandOwner = null }) {"
+      ]
+    },
+    {
+      "id": "captured-3",
+      "anchor": "  const band = (bandId || priv?.bandId) ? data.lookup('bands', bandId || priv.bandId) : null;",
+      "op": "insert-after",
+      "new": [
+        "// the cumulative strategies' progress (playtest #16): one's own m.private.counters only — a scouted teammate's band",
+        "// shows no progress line (their counters are not in our m.private)",
+        "const progress = band && !bandOwner ? bandProgress(band.bandId, priv?.counters, pub?.round ?? null) : null;"
+      ]
+    },
+    {
+      "id": "captured-4",
+      "anchor": "      <div><${MicroLabel} tone=\"mint\">STRATEGY // ${bandOwner ? t('{bandOwner} 的策略', { bandOwner }) : t('我的策略')}</${MicroLabel}><b>${band.name} <small class=\"t-lo\">${band.effectName}</small></b>",
+      "op": "replace",
+      "old": [
+        "<div><${MicroLabel} tone=\"mint\">STRATEGY // ${bandOwner ? t('{bandOwner} 的策略', { bandOwner }) : t('我的策略')}</${MicroLabel}><b>${band.name} <small class=\"t-lo\">${band.effectName}</small></b>",
+        "  <${RichText} text=${band.descRaw || band.desc} class=\"iband__desc\" /></div>"
+      ],
+      "new": [
+        "<div><${MicroLabel} tone=\"mint\">STRATEGY // ${bandOwner ? t('{bandOwner} 的策略', { bandOwner }) : t('我的策略')}</${MicroLabel}><b>${band.name} <small class=\"t-lo\">${band.effectName}</small></b>",
+        "  <${RichText} text=${band.descRaw || band.desc} class=\"iband__desc\" />",
+        "  ${progress ? html`<div class=\"iband__progress\">${progress.lines.map((l, i) => html`<span key=${i}>${l}</span>`)}</div>` : null}</div>"
+      ]
+    }
+  ]
+}

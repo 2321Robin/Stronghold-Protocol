@@ -1,0 +1,13 @@
+{
+  "file": "test/content/feedback5-we2-summon-hand.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "    case 'char_4048_doroth': return 9;                                                     // 10 / 13, the hand's 9 cap",
+      "op": "insert-after",
+      "new": [
+        "case 'char_4123_ela': return 4;                                                        // PRTS: 4, 最多拥有4个 (the local collab pick, playtest #21)"
+      ]
+    }
+  ]
+}
