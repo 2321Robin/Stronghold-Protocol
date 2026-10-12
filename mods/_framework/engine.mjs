@@ -280,9 +280,20 @@ const serializeLike = (value, refNode, indent) => {
 
 /** Render one entry's value with the merge applied, keeping the style it was written in. */
 const renderMerged = (text, entry, mv) => {
-  if (isPlain(mv) && entry.node.kind === 'object' && !entry.node.inline) return mergeObjectNode(text, entry.node, mv);
-  if (isPlain(mv) && entry.node.kind === 'object') return JSON.stringify(deepMerge(entry.node.value, mv));
-  return serializeLike(mv, entry.node, lineIndentAt(text, entry.keyStart));
+  const n = entry.node;
+  if (isPlain(mv) && n.kind === 'object') {
+    const base = n.value;
+    const sameShape = isPlain(base)
+      && Object.keys(base).length === Object.keys(mv).length
+      && Object.keys(base).every((k) => k in mv);
+    // Same key set, so merging and replacing agree on the result — replace, because that keeps the
+    // order the merge value carries. A regenerated golden file has its own key order, and matching
+    // it is what makes the merged file byte-identical to what the generator would write.
+    if (sameShape) return n.inline ? JSON.stringify(mv) : serializeLike(mv, n, lineIndentAt(text, entry.keyStart));
+    if (!n.inline) return mergeObjectNode(text, n, mv);
+    return JSON.stringify(deepMerge(base, mv));
+  }
+  return serializeLike(mv, n, lineIndentAt(text, entry.keyStart));
 };
 
 /** Merge `mergeObj` into one object node, rewriting only the spans that change. */
