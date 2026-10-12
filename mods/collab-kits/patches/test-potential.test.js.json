@@ -1,0 +1,18 @@
+{
+  "file": "test/potential.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "assert.equal(forms, 259);",
+      "op": "replace",
+      "old": [
+        "assert.equal(forms, 259);"
+      ],
+      "new": [
+        "// 280 = upstream's 259 in 0.2.3 (incl. Clementia) + the seven collab 6★ of the local SP_DIY_COLLAB build × their three slot forms",
+        "// (playtest #21, never upstreamed), each checked against character_table in the same loop",
+        "assert.equal(forms, 280);"
+      ]
+    }
+  ]
+}

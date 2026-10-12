@@ -1,0 +1,122 @@
+{
+  "file": "test/backups.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "test('DIY: the 72 owned 6★ picks — a form at every slot status with all three skills, every module at stage 1 and 3, their summons', () => {",
+      "op": "replace",
+      "old": [
+        "test('DIY: the 72 owned 6★ picks — a form at every slot status with all three skills, every module at stage 1 and 3, their summons', () => {",
+        "  const { ownedPool } = backups.diy;",
+        "  assert.equal(ownedPool.length, 72);"
+      ],
+      "new": [
+        "test('DIY: the 79 owned 6★ picks (72 upstream incl. Clementia + all 7 collab 6★ of the local SP_DIY_COLLAB build, playtest #21) — a form at every slot status with all three skills, every module at stage 1 and 3, their summons', () => {",
+        "  const { ownedPool } = backups.diy;",
+        "  assert.equal(ownedPool.length, 79);"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "assert.equal(summoners, 27, 'owned picks with summons');",
+      "op": "replace",
+      "old": [
+        "assert.equal(summoners, 27, 'owned picks with summons');"
+      ],
+      "new": [
+        "assert.equal(summoners, 28, 'owned picks with summons (艾拉的雷鸣地雷 joined, playtest #21)');"
+      ]
+    },
+    {
+      "id": "captured-3",
+      "anchor": "  const roster = new Set(base.map((c) => c.charId).filter(Boolean));",
+      "op": "replace",
+      "old": [
+        "const roster = new Set(base.map((c) => c.charId).filter(Boolean));",
+        "assert.equal(ownedPool.length, 72);"
+      ],
+      "new": [
+        "const roster = new Set(base.map((c) => c.charId).filter(Boolean));",
+        "assert.equal(ownedPool.length, 79);"
+      ]
+    },
+    {
+      "id": "captured-4",
+      "anchor": "  for (const id of ownedPool) { const k = operators[id].bonds.join('+'); tally[k] = (tally[k] || 0) + 1; }",
+      "op": "replace",
+      "old": [
+        "for (const id of ownedPool) { const k = operators[id].bonds.join('+'); tally[k] = (tally[k] || 0) + 1; }",
+        "assert.deepEqual(tally, { emptyShip: 38, yanShip: 14, victoriaShip: 8, sargonShip: 4, siracusaShip: 4, lateranoShip: 1, kazimierzShip: 1, egirShip: 1, 'yanShip+victoriaShip': 1 });",
+        "// the collab operators are out of the data and the pool (the owner's decision of 2026-10-05: copyright)",
+        "assert.deepEqual(backups.diy.excluded.map((id) => [id, backups.units[id], operators[id]]),",
+        "  ['char_456_ash', 'char_1029_yato2', 'char_1048_orchd2', 'char_4123_ela', 'char_4141_marcil', 'char_4182_oblvns', 'char_4217_makoto'].map((id) => [id, undefined, undefined]),",
+        "  '灰烬, 麒麟R夜刀, 焰狐龙梓兰 (MH05: a 联动寻访, by its display number), 艾拉, 玛露西尔, 丰川祥子, 结城理');"
+      ],
+      "new": [
+        "for (const id of ownedPool) { const k = operators[id].bonds.join('+'); tally[k] = (tally[k] || 0) + 1; }",
+        "assert.deepEqual(tally, { emptyShip: 44, yanShip: 14, victoriaShip: 8, sargonShip: 4, siracusaShip: 4, lateranoShip: 2, kazimierzShip: 1, egirShip: 1, 'yanShip+victoriaShip': 1 });",
+        "// the collab operators are out of the data and the pool upstream (the owner's decision of 2026-10-05: copyright);",
+        "// the local SP_DIY_COLLAB build (playtest #21) re-includes all 7 — excluded is empty here",
+        "assert.deepEqual(backups.diy.excluded, []);"
+      ]
+    },
+    {
+      "id": "captured-5",
+      "anchor": "  const legal = Object.entries(CT).filter(([id, c]) => id.startsWith('char_') && c.rarity === 'TIER_6' && !['TOKEN', 'TRAP'].includes(c.profession) && !c.isNotObtainable && !roster.has(id));",
+      "op": "replace",
+      "old": [
+        "const legal = Object.entries(CT).filter(([id, c]) => id.startsWith('char_') && c.rarity === 'TIER_6' && !['TOKEN', 'TRAP'].includes(c.profession) && !c.isNotObtainable && !roster.has(id));",
+        "assert.equal(legal.length, 79, 'the excel\\'s 79 obtainable 6★ outside the chess pool');",
+        "assert.deepEqual([...backups.diy.ownedPool].sort(), legal.filter(([, c]) => !collab(c)).map(([id]) => id).sort());",
+        "assert.deepEqual([...backups.diy.excluded].sort(), legal.filter(([, c]) => collab(c)).map(([id]) => id).sort());",
+        "for (const [id, o] of Object.entries(backups.diy.operators)) {",
+        "  const c = CT[id];",
+        "  const want = [...new Set([c.mainPower, ...(c.subPower || [])].flatMap((p) => [p?.nationId, p?.groupId, p?.teamId]).filter(Boolean))];",
+        "  assert.deepEqual(o.powers, want, `${id}: powers`);",
+        "}",
+        "// eight owned picks get their core bond from a subPower only (鸿雪, 真言, 假日威龙陈, 弑君者, 予愿安洁莉娜, 涤火杰西卡, 薇薇安娜, 煌;",
+        "// the ninth of the excel, 结城理, is a collab)",
+        "const coreOf = (powers) => Object.values(bonds).filter((b) => b.isCore && b.powerIdList.some((p) => powers.includes(p))).map((b) => b.bondId);",
+        "const subOnly = backups.diy.ownedPool.filter((id) => {",
+        "  const m = CT[id].mainPower;",
+        "  return coreOf([m?.nationId, m?.groupId, m?.teamId].filter(Boolean)).join() !== coreOf(backups.diy.operators[id].powers).join();",
+        "});",
+        "assert.equal(subOnly.length, 8);"
+      ],
+      "new": [
+        "const legal = Object.entries(CT).filter(([id, c]) => id.startsWith('char_') && c.rarity === 'TIER_6' && !['TOKEN', 'TRAP'].includes(c.profession) && !c.isNotObtainable && !roster.has(id));",
+        "assert.equal(legal.length, 79, 'the excel\\'s 78 obtainable 6★ outside the chess pool');",
+        "// the local SP_DIY_COLLAB build re-includes 丰川祥子 (playtest #21); the other six collab picks stay excluded",
+        "const LOCAL_COLLAB = new Set(['char_4182_oblvns', 'char_456_ash', 'char_1029_yato2', 'char_4123_ela', 'char_4141_marcil', 'char_1048_orchd2', 'char_4217_makoto']);",
+        "assert.deepEqual([...backups.diy.ownedPool].sort(), legal.filter(([id, c]) => !collab(c) || LOCAL_COLLAB.has(id)).map(([id]) => id).sort());",
+        "assert.deepEqual([...backups.diy.excluded].sort(), legal.filter(([id, c]) => collab(c) && !LOCAL_COLLAB.has(id)).map(([id]) => id).sort());",
+        "for (const [id, o] of Object.entries(backups.diy.operators)) {",
+        "  const c = CT[id];",
+        "  const want = [...new Set([c.mainPower, ...(c.subPower || [])].flatMap((p) => [p?.nationId, p?.groupId, p?.teamId]).filter(Boolean))];",
+        "  assert.deepEqual(o.powers, want, `${id}: powers`);",
+        "}",
+        "// nine owned picks get their core bond from a subPower only (鸿雪, 真言, 假日威龙陈, 弑君者, 予愿安洁莉娜, 涤火杰西卡, 薇薇安娜, 煌,",
+        "// and 结城理 — the ninth of the excel, locally in the pool since the SP_DIY_COLLAB build, playtest #21)",
+        "const coreOf = (powers) => Object.values(bonds).filter((b) => b.isCore && b.powerIdList.some((p) => powers.includes(p))).map((b) => b.bondId);",
+        "const subOnly = backups.diy.ownedPool.filter((id) => {",
+        "  const m = CT[id].mainPower;",
+        "  return coreOf([m?.nationId, m?.groupId, m?.teamId].filter(Boolean)).join() !== coreOf(backups.diy.operators[id].powers).join();",
+        "});",
+        "assert.equal(subOnly.length, 9);"
+      ]
+    },
+    {
+      "id": "collab-units-key-order",
+      "anchor": "assert.deepEqual(Object.keys(backups.units), [...RESERVES, ...ELITES, ...backups.diy.ownedPool], 'the stand-ins, then the owned 6★ picks');",
+      "op": "replace",
+      "old": [
+        "assert.deepEqual(Object.keys(backups.units), [...RESERVES, ...ELITES, ...backups.diy.ownedPool], 'the stand-ins, then the owned 6★ picks');"
+      ],
+      "new": [
+        "// local (playtest #21): the mod layer merges the collab units into data/backups.json as new keys, so the seven sit at",
+        "// the end of `units` instead of in ownedPool order — membership and the stand-in prefix are what this pins",
+        "assert.deepEqual([...Object.keys(backups.units)].sort(), [...RESERVES, ...ELITES, ...backups.diy.ownedPool].sort(), 'the stand-ins, then the owned 6★ picks');"
+      ]
+    }
+  ]
+}

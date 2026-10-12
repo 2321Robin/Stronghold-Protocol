@@ -1,0 +1,5 @@
+{
+  "id": "warmup",
+  "name": "#28 空闲期 HTTP 缓存预热",
+  "upstream": false
+}

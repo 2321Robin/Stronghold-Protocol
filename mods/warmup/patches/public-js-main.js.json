@@ -1,0 +1,24 @@
+{
+  "file": "public/js/main.js",
+  "patches": [
+    {
+      "id": "main-import-installWarmup",
+      "anchor": "import { startBuildGuard } from './ui/buildGuard.js';",
+      "op": "insert-after",
+      "new": [
+        "import { installWarmup } from './ui/warmup.js';"
+      ]
+    },
+    {
+      "id": "main-boot-installWarmup",
+      "anchor": "data.load('assets').catch(() => {});",
+      "op": "insert-before",
+      "new": [
+        "// Idle-time HTTP-cache warmup (ui/warmup.js): title / lobby / room fetch the first battle's BGM, SFX and portraits",
+        "// so a cold browser's first fight does not start with a minute of downloads on a slow pipe; the match screen (点开始)",
+        "// hands the pipe back.",
+        "installWarmup({ getManifest: () => data.get('assets'), subscribe: store.subscribe, getState: store.get, selectRoute });"
+      ]
+    }
+  ]
+}

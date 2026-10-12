@@ -1,0 +1,23 @@
+{
+  "file": "public/js/screens/game.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "import { ShopBar } from '../ui/shopBar.js';",
+      "op": "insert-after",
+      "new": [
+        "// playtest #24 (local dev tool, never upstream): the developer-mode quick switches (room.setExtras devMode)",
+        "import { DevPanel } from '../ui/devPanel.js';"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || collapsed}",
+      "op": "insert-before",
+      "new": [
+        "<${DevPanel} hidden=${watchingOther} />",
+        ""
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "file": "public/js/screens/game.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "  const detailBonds = detailOwner === strip.ownerId ? stripBonds : playerBonds({ pub, priv, myId, ownerId: detailOwner, live: liveLayers });",
+      "op": "insert-after",
+      "new": [
+        "// the per-copy item counters on the cards (商业包装方案 已售 X/N, playtest #16): your own for your pieces and the shop /",
+        "// reward cards; a teammate's unit's items are theirs — their counters are not in our m.private",
+        "const detailCounters = (() => {",
+        "  if (resolved?.type === 'chess' && detailTarget?.kind === 'unit') {",
+        "    const owner = detailTarget.unit?.ownerId;",
+        "    if (!resolved.piece && !(owner != null && owner === myId)) return null;",
+        "  }",
+        "  return priv?.counters ?? null;",
+        "})();"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "<div class=\"gm__effects\"><${EffectsList} effects=${watchingOther && field ? (field.effects ?? null) : priv?.effects} /></div>",
+      "op": "replace",
+      "old": [
+        "<div class=\"gm__effects\"><${EffectsList} effects=${watchingOther && field ? (field.effects ?? null) : priv?.effects} /></div>"
+      ],
+      "new": [
+        "<div class=\"gm__effects\"><${EffectsList} effects=${watchingOther && field ? (field.effects ?? null) : priv?.effects}",
+        "  bandId=${watchingOther && field ? null : priv?.bandId ?? null} counters=${watchingOther && field ? null : priv?.counters ?? null} round=${pub?.round ?? null} /></div>"
+      ]
+    },
+    {
+      "id": "captured-3",
+      "anchor": "      ${resolved ? html`<${DetailPanel} detail=${resolved} snapHp=${snapHp} onClose=${() => { setDetail(null); setSel(null); }}",
+      "op": "replace",
+      "old": [
+        "${resolved ? html`<${DetailPanel} detail=${resolved} snapHp=${snapHp} onClose=${() => { setDetail(null); setSel(null); }}",
+        "  bonds=${detailBonds} offBonds=${offBonds} loadout=${detailLoadout} ops=${priv?.ops ?? null} side=${dSide} shopOpen=${shopOpen} live=${liveStats} voice=${true}"
+      ],
+      "new": [
+        "${resolved ? html`<${DetailPanel} detail=${resolved} snapHp=${snapHp} onClose=${() => { setDetail(null); setSel(null); }}",
+        "  bonds=${detailBonds} offBonds=${offBonds} loadout=${detailLoadout} ops=${priv?.ops ?? null} side=${dSide} shopOpen=${shopOpen} live=${liveStats} voice=${true} counters=${detailCounters}"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "file": "tools/build-data.mjs",
+  "patches": [
+    {
+      "id": "sp-diy-collab-include",
+      "anchor": "const DIY_EXCLUDED_NUMBER_PREFIXES = Object.freeze(['MH', 'RS', 'AM', 'PS', 'DD']);",
+      "op": "insert-after",
+      "new": [
+        "/**",
+        " * local-preview only (playtest #21, never upstreamed): the exclusion above is the upstream owner's copyright decision",
+        " * for the public releases; this server re-includes the collab 6★ it names at build time —",
+        " *   SP_DIY_COLLAB=char_4182_oblvns[,char_…] node tools/build-data.mjs",
+        " * (unset ⇒ byte-identical to the upstream behaviour, verified 2026-10-07). Who is actually offered still needs a kit",
+        " * file (server/sim/content/kits/ops/op-<codename>.js, kits/index.js KITTED_CHARS) and its art rides data/assets.json.",
+        " */",
+        "const DIY_COLLAB_INCLUDE = Object.freeze(new Set(String(process.env.SP_DIY_COLLAB || '').split(',').map((s) => s.trim()).filter(Boolean)));",
+        ""
+      ]
+    },
+    {
+      "id": "sp-diy-collab-excluded",
+      "anchor": "  const excluded = legal6.filter((id) => teamsOf(charTable[id]).some((t) => excludedTeams.has(t)) || collabNumber(charTable[id]));",
+      "op": "replace",
+      "old": [
+        "const excluded = legal6.filter((id) => teamsOf(charTable[id]).some((t) => excludedTeams.has(t)) || collabNumber(charTable[id]));",
+        "for (const t of DIY_EXCLUDED_TEAMS) if (!excluded.some((id) => teamsOf(charTable[id]).includes(t))) warn(`DIY_EXCLUDED_TEAMS: no owned-6★ pick of team ${t}`);"
+      ],
+      "new": [
+        "const collab = legal6.filter((id) => teamsOf(charTable[id]).some((t) => excludedTeams.has(t)) || collabNumber(charTable[id]));",
+        "for (const id of DIY_COLLAB_INCLUDE) if (!collab.includes(id)) warn(`SP_DIY_COLLAB: ${id} is not a collab 6★ of the pool (no effect)`);",
+        "const excluded = collab.filter((id) => !DIY_COLLAB_INCLUDE.has(id));",
+        "const includeTeams = new Set([...DIY_COLLAB_INCLUDE].flatMap((id) => charTable[id] ? teamsOf(charTable[id]) : []));",
+        "for (const t of DIY_EXCLUDED_TEAMS) if (!includeTeams.has(t) && !excluded.some((id) => teamsOf(charTable[id]).includes(t))) warn(`DIY_EXCLUDED_TEAMS: no owned-6★ pick of team ${t}`);"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "last-lineup",
+  "name": "被淘汰玩家的结算行保留最后部署阵容",
+  "upstream": false,
+  "golden": true
+}

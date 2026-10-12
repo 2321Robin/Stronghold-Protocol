@@ -1,0 +1,15 @@
+{
+  "file": "test/match/fuzz.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "    case 'g.pause': return { t, on: rng() < 0.5 };",
+      "op": "insert-after",
+      "new": [
+        "// playtest #24 (local dev tool): mostly the known 'funds' action, sometimes a bogus one; dev mode is off in",
+        "// these matches, so the handler's gate answers BAD_MSG",
+        "case 'g.dev': return { t, action: rng() < 0.9 ? 'funds' : rng.pick(['funds', 'teleport', '__proto__', 'x'.repeat(31)]), ...(rng() < 0.5 ? { v: rng.int(1200) } : {}) };"
+      ]
+    }
+  ]
+}
