@@ -95,6 +95,19 @@ mod / 文件 / 补丁 id / 原因（`anchor-missing` 等）与锚点周围现在
 7. **`check --verbose` 崩溃**：`linesOf` 是 async，同步调用拿到 Promise，`excerpt` 一 slice 就炸。
    只有「漂移且锚点仍有命中」才会触发。
 8. **`capture` 会把 `tools/mod.mjs` 自己也当新文件收进去**：已排除。
+9. **`apply` 在「一切都已就位」时不写状态 → revert 漏删，且形成死循环**（2026-10-13）：
+   `applyMod` 对**已存在且内容相同**的文件判 `already` 后 `continue`，不记进 `touched`；
+   某文件的补丁全部 `already` 时 `dirty` 也为 false，该文件也不记进 `modified`。
+   于是这次 apply 写出的 state 里既无 `created` 也无 `modified` → `revert` 判 `not applied` →
+   **既不删文件也不还原文件**；而残留的文件又让下次 apply 继续判 `already` → 永远清不掉。
+   触发条件：短时间内反复 apply/revert 且 state 中途被清空（本轮实测残留 19 个文件 + 51 个未还原文件）。
+   修法两条：
+   ① 文件**内容相同**即视为「本 mod 放的」，补记 `created`——但**被 git 跟踪的路径除外**
+      （那可能是上游文件，revert 绝不能删），用 `git ls-files --error-unmatch` 判定；
+   ② 某文件的补丁**全部** `already` 时补记 `modified`（新增 `allApplied` 判定），revert 才会
+      `git checkout` 还原它。
+   验证：state 清空后再 apply，`created` 从 0 恢复为 34、`modified` 恢复为 70；revert 后
+   残留 untracked **0**、未还原文件 **0**。
 
 ## 六、超出本地线的三处补齐（有意为之）
 
