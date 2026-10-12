@@ -12,14 +12,8 @@
     {
       "id": "captured-2",
       "anchor": "    this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};",
-      "op": "replace",
-      "old": [
-        "this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};",
-        "// per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool",
-        "this.extras = { earthspirit: !!(opts.extras && opts.extras.earthspirit) };"
-      ],
+      "op": "insert-after",
       "new": [
-        "this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};",
         "// per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool,",
         "// extras.devMode turns on the developer-mode quick switches (match/match/dev.js g.dev)",
         "this.extras = {",
