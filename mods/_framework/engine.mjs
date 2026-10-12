@@ -243,9 +243,12 @@ const lineIndentAt = (text, pos) => {
  * Does this value's file keep short scalar-only values on one line?
  * `test/golden/*.json` does (`"players": {…}` and each `units` row inline); the i18n packs do not.
  * Read off the value being replaced, so a merged key is written the way its neighbours are.
+ * Array nodes carry `items`, object nodes `entries` — both have to be looked at.
  */
-const inlineNestedStyle = (node) => !!node.entries
-  && node.entries.some((e) => e.node.kind !== 'leaf' && e.node.inline);
+const inlineNestedStyle = (node) => {
+  const kids = node.entries || node.items || [];
+  return kids.some((k) => { const n = k.node || k; return n.kind !== 'leaf' && n.inline; });
+};
 
 /**
  * The writer `tools/golden.mjs` uses, so a merged key is indistinguishable from a regenerated one:
