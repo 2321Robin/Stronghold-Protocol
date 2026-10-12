@@ -19,7 +19,7 @@
       ],
       "new": [
         "<${AiLastToggle} option=${aiLastOption(room, me.playerId)} busy=${busy} onToggle=${setAiLast} />",
-        "${(() => {",
+        "${/* 地灵 host toggle (#17) */ (() => {",
         "  const on = !!room.extras?.earthspirit;",
         "  return html`<${Tooltip} text=${facts.isHost",
         "    ? (on ? t('自用：本局招募池已加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见），点击移除') : t('自用：点击后本局招募池加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见）'))",
