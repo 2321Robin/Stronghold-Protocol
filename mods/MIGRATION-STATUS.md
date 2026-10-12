@@ -22,10 +22,21 @@
 | lastLineup | c8396341 | `last-lineup` | 6 | 0 | 自带 golden 重钉（3 场景） |
 | #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | 27 | 14 | golden 重钉 + 11 个新场景 |
 | #28 预热 | 68eb594a + 03c44388 | `warmup` | 3 | 2 | — |
-| #33 资源包 | 60a7cd26 | `asset-pack` | 3 | 11 | `dependsOn: ["warmup"]` |
+| #33 资源包 | 60a7cd26 | `asset-pack` | 3 | 11 | 2026-10-13 起与 warmup 解耦（见下） |
 | #24 开发者模式 | ee66eac5 | `dev-mode` | 16 | 3 | `dependsOn: ["earthspirit"]` |
 
-`apply` 顺序由 `dependsOn` 拓扑排序决定：`warmup → asset-pack`、`earthspirit → dev-mode`。
+`apply` 顺序由 `dependsOn` 拓扑排序决定：现只剩 `earthspirit → dev-mode` 一项行为依赖。
+
+> **2026-10-13:#33 与 #28 解耦**（零功能变化）。此前 asset-pack 依赖 warmup 有两层：
+> ① `tools/pack-assets.mjs` 静态 `import { collectUrls } from '../public/js/ui/warmup.js'`（**方向反了**——
+> 是 #33 依赖 #28，删 warmup 会让打包工具直接 `ERR_MODULE_NOT_FOUND`）；② asset-pack 的两条 main.js
+> 补丁锚点逐字符等于 warmup 注入的 `installWarmup` 行，删 warmup 就会 `anchor-missing`。
+> 现已：把 `collectUrls` **内联进 `tools/pack-assets.mjs`**（不再 import warmup.js，浏览器侧本就不用它），
+> 两条锚点**改回上游原有行**（import 区 `import { initLang, useLang, tickerText } from './ui/lang.js';`、
+> boot 区 `data.load('assets').catch(() => {});`，均已验证在 main.js 中唯一命中），并移除 `dependsOn: ["warmup"]`。
+> 验证:拆解前后 `--sizes` 产出**逐字节相同**(11132 文件 / 603460643 字节 / manifest hash 一致);
+> **单独 apply asset-pack(完全不装 warmup)** = 14 applied **0 drifted**,打包工具照常运行;
+> `check` 里 asset-pack 的 2 处假阳性**归零**。
 
 > **#22 联防视角已于 2026-10-13 废弃**（用户决定改用上游行为：联防视角构建 **rows 6–13**，不再裁到 9–13）。
 > 对应 mod `unite-view` 目录**已删除**。注意这**不是** `retiredIn` 退役——上游**从未**收编该裁定，
@@ -102,9 +113,10 @@ mod / 文件 / 补丁 id / 原因（`anchor-missing` 等）与锚点周围现在
   （golden 更新、i18n 补丁、地灵断言放宽、dev-mode 同步），表现为"改了没生效"。
 - **Edit 工具可能报成功但内容没落盘**：改完用 `node -e` 同进程读回验证，别信 grep/sed 的回显。
 - **父提交顺序**：本地线从旧到新为 `d5610658 → … → 60a7cd26`，capture 的 `--from` 传**父**。
-- **共享文件天然允许**：`public/js/main.js` 被 warmup 与 asset-pack 共用，靠锚点分工隔离
-  （warmup 占 import 区 `startBuildGuard` 行 + boot 区 `data.load('assets')` 行；pack 占
-  `installWarmup` 引用行）；asset-pack 因此必须 `dependsOn: ["warmup"]`。
+- **共享文件天然允许**：`public/js/main.js` 被 warmup 与 asset-pack 共用，靠锚点分工隔离。
+  2026-10-13 起两者**彻底解耦**：asset-pack 的锚点改回上游原有行（import 区 `initLang/useLang/tickerText`
+  行、boot 区 `data.load('assets')` 行），不再靠 warmup 注入的 `installWarmup` 行生存，
+  `dependsOn: ["warmup"]` 已移除（详见 §二）。同一锚点被两个 mod 各插各的本来就行。
 - **本机 `spawnSync` 会间歇返回 `EBUSY`**：用 `node --check` / 手动跑复判，别急着归因于代码。
 
 ## 八、工作树
