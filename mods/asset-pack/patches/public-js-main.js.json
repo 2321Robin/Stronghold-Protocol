@@ -3,7 +3,7 @@
   "patches": [
     {
       "id": "captured-1",
-      "anchor": "import { installWarmup } from './ui/warmup.js';",
+      "anchor": "import { initLang, useLang, tickerText } from './ui/lang.js';",
       "op": "insert-after",
       "new": [
         "import { installPack } from './ui/packInstall.js';"
@@ -11,7 +11,7 @@
     },
     {
       "id": "captured-2",
-      "anchor": "  installWarmup({ getManifest: () => data.get('assets'), subscribe: store.subscribe, getState: store.get, selectRoute });",
+      "anchor": "  data.load('assets').catch(() => {});",
       "op": "insert-after",
       "new": [
         "// Asset-pack service worker (ui/packInstall.js, playtest #33, local line): serves /assets/** /fonts/** /media/**",
