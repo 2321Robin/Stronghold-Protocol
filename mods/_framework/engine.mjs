@@ -486,6 +486,15 @@ const git = async (root, args) => {
 };
 
 /**
+ * Is `path` tracked by git, i.e. does it belong to upstream rather than to a mod?
+ * A mod's `files/` entry is meant to be a new file; if it ever lands on a tracked path, revert must
+ * not delete it — that would silently drop an upstream file.
+ */
+const isTracked = async (root, path) => {
+  try { await git(root, ['ls-files', '--error-unmatch', path]); return true; } catch { return false; }
+};
+
+/**
  * Apply one mod.
  * @param {string} root repository root
  * @param {object} mod a loaded mod
@@ -509,6 +518,12 @@ export async function applyMod(root, mod, opts = {}) {
         status: same ? 'already' : 'drift',
         reason: same ? undefined : 'target-differs',
       });
+      // Identical still counts as *ours*, so it has to be recorded as created even though this run
+      // writes nothing. Otherwise the state loses track of it: revert then reports "not applied" and
+      // leaves the file behind, and the next apply finds it already present and skips recording it
+      // again — a loop that strands the file forever. Tracked paths are excluded: they may be
+      // upstream's, and revert must never delete those.
+      if (same && !dryRun && !(await isTracked(root, f.to))) touched.push({ action: 'created', path: f.to });
       continue;
     }
     report.push({ kind: 'file', to: f.to, status: 'ok' });
@@ -531,11 +546,16 @@ export async function applyMod(root, mod, opts = {}) {
     // A json-merge rewrites the whole text; line patches rewrite the line array. `outText` wins when set.
     let outText = null;
     let dirty = false;
+    // Every patch already in place: this file carries our work even though this run writes nothing, so it
+    // still has to be recorded as modified — otherwise the state forgets it, revert never checks the file
+    // out, and the patches stay in it for good.
+    let allApplied = group.entries.length > 0;
     for (const patch of group.entries) {
       if (patch.op === 'json-merge') {
         const res = planJson(text, patch);
         report.push({ kind: 'patch', file: group.file, id: patch.id || '(json)', status: res.status, reason: res.reason });
         if (res.status === 'ok') { text = res.text; outText = res.text; dirty = true; }
+        else if (res.status !== 'already') allApplied = false;
         continue;
       }
       const res = planOne(lines, patch);
@@ -550,9 +570,10 @@ export async function applyMod(root, mod, opts = {}) {
         found: res.found,
       });
       if (res.status === 'ok') { lines = res.lines; dirty = true; }
+      else if (res.status !== 'already') allApplied = false;
     }
     if (dirty && !dryRun) await writeFile(target, outText !== null ? outText : lines.join(eol), 'utf8');
-    if (dirty) touched.push({ action: 'modified', path: group.file });
+    if (dirty || allApplied) touched.push({ action: 'modified', path: group.file });
   }
 
   if (!dryRun && touched.length) {
