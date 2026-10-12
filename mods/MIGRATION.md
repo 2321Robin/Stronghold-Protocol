@@ -63,7 +63,6 @@ node tools/mod.mjs status        # 标 [retired in 0.2.4] 的就是
 |---|---|---|
 | #21 七名联动 | 7 个新 kit + `kits/index.js` 一处 + 构建脚本 | 低（几乎全是新增文件） |
 | #33 SW 资源包 | 8 个新文件 + `main.js` 一处注册 | 低 |
-| 联防视角 | `render/app/view.js` 单 hunk | 低 |
 | #28 首战预热 | 新文件 + `main.js::boot()` 两处 | 低 |
 | #24 开发者模式 | 新文件 + extras 管道数处，且在旧 0.2.0 基线上 | 中（要先重放到新线） |
 | #16 策略/道具进度 | 新文件 + 3 处挂载 | 中 |
@@ -95,7 +94,7 @@ git reset --hard <实现前的sha>
 
 ### 多个 mod 改同一个文件
 
-联防视角、开发者模式、lastLineup 都会落进 `server/lobby.js`、`main.js` 这类集中文件，共用是
+开发者模式、lastLineup 都会落进 `server/lobby.js`、`main.js` 这类集中文件，共用是
 常态，不用为了避开而拆分：
 
 - revert 一个 mod 会把文件整份交回上游，随后**自动把其他仍在应用的 mod 在该文件上的补丁重放
