@@ -14,6 +14,7 @@
 
 import { resolve } from 'node:path';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
@@ -40,8 +41,9 @@ const gitStatus = async () => {
   return stdout.split(/\r?\n/).filter(Boolean);
 };
 
-const linesOf = async (file) => {
-  try { return String(await readFile(resolve(ROOT, file), 'utf8')).split(/\r?\n/); } catch { return null; }
+// formatReport 是同步的，这里必须同步返回，否则传进去的是 Promise（truthy 但不是数组）。
+const linesOf = (file) => {
+  try { return String(readFileSync(resolve(ROOT, file), 'utf8')).split(/\r?\n/); } catch { return null; }
 };
 
 function pick(mods) {
