@@ -3,8 +3,12 @@
   "patches": [
     {
       "id": "captured-1",
-      "anchor": "const setAiLast = (on) => run('ailast', () => net.request('room.setAiPicksLast', { on }));",
-      "op": "insert-after",
+      "anchor": "// local mod: the host opts 地灵 into the next match's pool (room.setExtras; default off, personal use only)",
+      "op": "replace",
+      "old": [
+        "// local mod: the host opts 地灵 into the next match's pool (room.setExtras; default off, personal use only)",
+        "const setExtras = (earthspirit) => run('extras', () => net.request('room.setExtras', { earthspirit }));"
+      ],
       "new": [
         "// local mod: per-match host options (room.setExtras) — 地灵 (the hidden operator, playtest #17) and devMode (the",
         "// in-match developer switches, playtest #24). The request always carries the full current set with one key patched:",
@@ -14,8 +18,22 @@
     },
     {
       "id": "captured-2",
-      "anchor": "<${AiLastToggle} option=${aiLastOption(room, me.playerId)} busy=${busy} onToggle=${setAiLast} />",
-      "op": "insert-after",
+      "anchor": "${(() => {",
+      "op": "replace",
+      "old": [
+        "${(() => {",
+        "  const on = !!room.extras?.earthspirit;",
+        "  return html`<${Tooltip} text=${facts.isHost",
+        "    ? (on ? t('自用：本局招募池已加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见），点击移除') : t('自用：点击后本局招募池加入隐藏干员「地灵」（1 阶 · 奇迹 / 远见）'))",
+        "    : t('创建者{state}将隐藏干员「地灵」加入本局招募池（仅创建者可改）', { state: on ? t('已') : t('未') })} placement=\"top\">",
+        "    <button type=\"button\" class=\"dpick__opt${on ? ' is-active' : ''}\" aria-pressed=${on ? 'true' : 'false'}",
+        "      style=${`--d-color: var(--mint-500); margin-left: .12rem; border-right: 0; border: 1px solid var(--${on ? 'mint-700' : 'line'}); border-radius: .04rem;`}",
+        "      disabled=${!facts.isHost || !!busy || room.inMatch} onClick=${() => setExtras(!on)}>",
+        "      ${on ? t('✓ 本局加地灵') : t('+ 本局加地灵')}",
+        "    </button>",
+        "  <//>`;",
+        "})()}"
+      ],
       "new": [
         "${(() => {",
         "  const on = !!room.extras?.earthspirit;",
