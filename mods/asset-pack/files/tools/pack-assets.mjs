@@ -25,7 +25,6 @@ import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { collectUrls } from '../public/js/ui/warmup.js';
 import { crc32, dosStamp, zipLocalChunk, zipCentralChunk, zipEndChunk } from '../public/js/ui/packZip.js';
 
 const DEFAULT_MANIFEST = 'data/assets.json';
@@ -66,6 +65,18 @@ function parseArgs(argv) {
     else { console.error(`unknown argument: ${a}`); usage(); process.exitCode = 1; return null; }
   }
   return opts;
+}
+
+// Inlined rather than imported from ui/warmup.js (playtest #28): the pack tool must not depend on the warmup mod,
+// so #33 stands on its own and #28 can be dropped without breaking `node tools/pack-assets.mjs`.
+const isPath = (v) => typeof v === 'string' && v.startsWith('/');
+
+/** Every URL-looking string below `node` (the manifest holds root-relative paths as plain string leaves). */
+export function collectUrls(node, out = []) {
+  if (isPath(node)) out.push(node);
+  else if (Array.isArray(node)) for (const v of node) collectUrls(v, out);
+  else if (node && typeof node === 'object') for (const v of Object.values(node)) collectUrls(v, out);
+  return out;
 }
 
 /** Every URL the manifest lists, deduplicated and sorted — the pack and the size table cover exactly this set. */
