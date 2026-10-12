@@ -1,0 +1,16 @@
+{
+  "file": "public/css/screens/room.css",
+  "patches": [
+    {
+      "id": "roombar-opts-wrap",
+      "anchor": ".room-bar__opts { display: flex; flex-direction: column; align-items: flex-start; gap: .08rem; min-width: 0; }",
+      "op": "replace",
+      "old": [
+        ".room-bar__opts { display: flex; flex-direction: column; align-items: flex-start; gap: .08rem; min-width: 0; }"
+      ],
+      "new": [
+        ".room-bar__opts { display: flex; flex-wrap: wrap; align-items: center; gap: .08rem .14rem; min-width: 0; }"
+      ]
+    }
+  ]
+}
