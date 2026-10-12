@@ -1,0 +1,20 @@
+{
+  "file": "server/sim/content/kits/README.md",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "**Who.** The owned-6★ picks are `data/backups.json diy.ownedPool` (72 operators; the collab operators are not included,",
+      "op": "replace",
+      "old": [
+        "**Who.** The owned-6★ picks are `data/backups.json diy.ownedPool` (72 operators; the collab operators are not included,",
+        "the owner's decision of 2026-10-05). The ones still without a kit:"
+      ],
+      "new": [
+        "**Who.** The owned-6★ picks are `data/backups.json diy.ownedPool` (71 operators; the collab operators are not included,",
+        "the owner's decision of 2026-10-05 — upstream. The local SP_DIY_COLLAB build, playtest #21, re-includes **all 7 collab",
+        "6★** — 丰川祥子, 灰烬, 麒麟R夜刀, 艾拉, 玛露西尔, 焰狐龙梓兰, 结城理, kits `ops/op-oblvns.js` … `ops/op-makoto.js`:",
+        "79 on this server, never upstreamed). The ones still without a kit:"
+      ]
+    }
+  ]
+}

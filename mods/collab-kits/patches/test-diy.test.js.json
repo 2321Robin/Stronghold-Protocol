@@ -1,0 +1,52 @@
+{
+  "file": "test/diy.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "const RESERVES5 = ['char_601_cguard', 'char_602_cdfend', 'char_603_csnipe', 'char_604_ccast', 'char_605_cmedic', 'char_606_csuppo'];",
+      "op": "replace",
+      "old": [
+        "const RESERVES5 = ['char_601_cguard', 'char_602_cdfend', 'char_603_csnipe', 'char_604_ccast', 'char_605_cmedic', 'char_606_csuppo'];",
+        "const COLLAB = ['char_456_ash', 'char_1029_yato2', 'char_4123_ela', 'char_4141_marcil', 'char_4182_oblvns', 'char_4217_makoto'];"
+      ],
+      "new": [
+        "const RESERVES5 = ['char_601_cguard', 'char_602_cdfend', 'char_603_csnipe', 'char_604_ccast', 'char_605_cmedic', 'char_606_csuppo'];",
+        "// the collab 6★ are all in the pool on this server (the local SP_DIY_COLLAB build, playtest #21 re-includes all 7;",
+        "// upstream keeps them out by the owner's copyright decision of 2026-10-05)",
+        "const COLLAB = [];"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "test('diyPool: tier 5 = 15 prototypes + 72 owned 6★, tier 6 = 9 + 72; no preset, no collab; with the kit registry only kitted operators', () => {",
+      "op": "replace",
+      "old": [
+        "test('diyPool: tier 5 = 15 prototypes + 72 owned 6★, tier 6 = 9 + 72; no preset, no collab; with the kit registry only kitted operators', () => {",
+        "  const p5 = diyPool(5, { data: DATA }), p6 = diyPool(6, { data: DATA });",
+        "  assert.deepEqual(p5, [...RESERVES5, ...ELITES, ...ownedPool]);",
+        "  assert.deepEqual(p6, [...ELITES, ...ownedPool]);",
+        "  assert.deepEqual([p5.length, p6.length], [87, 81]);"
+      ],
+      "new": [
+        "test('diyPool: tier 5 = 15 prototypes + 79 owned 6★, tier 6 = 9 + 79 (72 upstream incl. Clementia + all 7 local collab picks, playtest #21); no preset; with the kit registry only kitted operators', () => {",
+        "  const p5 = diyPool(5, { data: DATA }), p6 = diyPool(6, { data: DATA });",
+        "  assert.deepEqual(p5, [...RESERVES5, ...ELITES, ...ownedPool]);",
+        "  assert.deepEqual(p6, [...ELITES, ...ownedPool]);",
+        "  assert.deepEqual([p5.length, p6.length], [94, 88]);"
+      ]
+    },
+    {
+      "id": "captured-3",
+      "anchor": "    [T6, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-6/],",
+      "op": "replace",
+      "old": [
+        "[T6, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-6/],",
+        "[T5, { charId: 'char_456_ash', skillIndex: 0 }, /not a tier-5/],"
+      ],
+      "new": [
+        "[T6, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-6/],",
+        "[T5, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-5/],   // a roster 6★ is never a pick (ash, a collab pick, IS one now — playtest #21)"
+      ]
+    }
+  ]
+}

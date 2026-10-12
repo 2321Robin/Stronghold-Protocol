@@ -1,0 +1,123 @@
+{
+  "file": "public/js/ui/detailPanel.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "import { tokenVariantFor } from './gameLogic/loadout.js';",
+      "op": "insert-after",
+      "new": [
+        "import { packProgress } from './bandProgress.js';"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "/** An equipped item of the card: icon, name, effect — and for 变形同构体 / a bond item its pairing (`carried`: the wearer's items). */",
+      "op": "replace",
+      "old": [
+        "/** An equipped item of the card: icon, name, effect — and for 变形同构体 / a bond item its pairing (`carried`: the wearer's items). */",
+        "function ItemRow({ itemId, carried = null, off = null }) {",
+        "  const it = data.lookup('items', itemId);",
+        "  return html`<div class=\"ditem\">",
+        "    <${UnitThumb} kind=\"item\" id=${itemId} size=\"sm\" />",
+        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b><${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />"
+      ],
+      "new": [
+        "/**",
+        " * An equipped item of the card: icon, name, effect — and for 变形同构体 / a bond item its pairing (`carried`: the wearer's",
+        " * items). A copy with its own rolling counter (the 商业包装方案, playtest #16) shows 已售 X/N (`uid` + `counters`: the",
+        " * wearer's m.private.counters and the item piece's uid — the counter is per copy, packProgress).",
+        " */",
+        "function ItemRow({ itemId, uid = null, carried = null, off = null, counters = null }) {",
+        "  const it = data.lookup('items', itemId);",
+        "  const pack = packProgress(it, uid, counters);",
+        "  return html`<div class=\"ditem\">",
+        "    <${UnitThumb} kind=\"item\" id=${itemId} size=\"sm\" />",
+        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b><${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />",
+        "      ${pack ? html`<span class=\"dpack num\">${pack.text}</span>` : null}"
+      ]
+    },
+    {
+      "id": "chessdetail-counters-prop",
+      "anchor": "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null }) {",
+      "op": "replace",
+      "old": [
+        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null }) {"
+      ],
+      "new": [
+        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null, counters = null }) {"
+      ]
+    },
+    {
+      "id": "captured-4",
+      "anchor": "  blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
+      "op": "replace",
+      "old": [
+        "blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
+        "    ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} carried=${items} off=${offBonds} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
+      ],
+      "new": [
+        "blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
+        "    ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} uid=${it.uid} counters=${counters} carried=${items} off=${offBonds} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
+      ]
+    },
+    {
+      "id": "captured-5",
+      "anchor": "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null }) {",
+      "op": "replace",
+      "old": [
+        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null }) {",
+        "  const m = data.get('assets');"
+      ],
+      "new": [
+        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null, counters = null }) {",
+        "  const m = data.get('assets');",
+        "  // a copy with its own rolling counter (the 商业包装方案, playtest #16): 已售 X/N next to the effect text — the",
+        "  // counter is per item piece (`pack:<uid>`), so only the player's own copies show it (a shop / reward card has no uid)",
+        "  const pack = packProgress(item, piece && Number.isInteger(piece.uid) ? piece.uid : null, counters);"
+      ]
+    },
+    {
+      "id": "itemdetail-effect-pack",
+      "anchor": "<${Section} title=${t('效果')} micro=\"EFFECT\"><${RichText} as=\"p\" text=${item.descRaw || item.desc} class=\"dtext\" /><//>",
+      "op": "replace",
+      "old": [
+        "<${Section} title=${t('效果')} micro=\"EFFECT\"><${RichText} as=\"p\" text=${item.descRaw || item.desc} class=\"dtext\" /><//>"
+      ],
+      "new": [
+        "<${Section} title=${t('效果')} micro=\"EFFECT\"><${RichText} as=\"p\" text=${item.descRaw || item.desc} class=\"dtext\" />${pack ? html`<p class=\"dpack num\" title=${t('该道具已累计的出售数（每卖满一次后清零重新累计）')}>${pack.text}</p>` : null}<//>"
+      ]
+    },
+    {
+      "id": "captured-7",
+      "anchor": " *   for this line only; [ASSUMED] the official prep tap says 选中干员 like the battle's FOCUS_CHAR)",
+      "op": "replace",
+      "old": [
+        " *   for this line only; [ASSUMED] the official prep tap says 选中干员 like the battle's FOCUS_CHAR)",
+        " */",
+        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false }) {"
+      ],
+      "new": [
+        " *   for this line only; [ASSUMED] the official prep tap says 选中干员 like the battle's FOCUS_CHAR)",
+        " *   counters: the player's own m.private.counters — an equipped/hand 商业包装方案's 已售 X/N on the item and wearer",
+        " *   cards (packProgress); a scouted board passes null (the watched player's counters are not in our m.private)",
+        " */",
+        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false, counters = null }) {"
+      ]
+    },
+    {
+      "id": "captured-8",
+      "anchor": "        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
+      "op": "replace",
+      "old": [
+        "  bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
+        "  standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} />` : null}",
+        "${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} />` : null}"
+      ],
+      "new": [
+        "  bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
+        "  standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} counters=${counters} />` : null}",
+        "${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} counters=${counters} />` : null}"
+      ]
+    }
+  ]
+}
