@@ -7,23 +7,27 @@
 
 ## 一、结果一句话
 
-本地线 17 笔提交 → **7 个 mod、186 条补丁、39 个新增文件**（#22 联防视角、#29 跨源迁移页于 2026-10-13 废弃；
+本地线 17 笔提交 → **7 个 mod、153 条补丁、35 个新增文件**（**2026-10-13/14 现值**；
+#22 联防视角、#29 跨源迁移页于 2026-10-13 废弃；
 #30 同盟池 ×2 由上游 0.2.4 原生收编、按 `retiredIn` 退役并删除目录，见 §二）；
-在纯上游 v0.2.4 上
-`apply --all` **190/190 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
+在纯上游 **v0.2.5（`cf7a9400`）** 上
+`apply --all` **188/188 零漂移**，`revert --all` 后工作树干净；框架分支 `feat/mods-024`
 相对纯上游仍**只新增 `mods/` 与 `tools/mod.mjs` 两条路径**。
 
 ## 二、功能清单（全部完成）
 
 | 功能 | 本地提交 | mod id | 补丁 | 新增文件 | 备注 |
 |---|---|---|---|---|---|
-| 地灵 #17 | d5610658..798c7449 + ed83a0b0 | `earthspirit` | 61 | 1 | 含 4 语言包 i18n 补丁 + room.css 布局适配 |
-| #16 策略/道具进度 | b4af72c6 + 49ef735f | `band-progress` | 30 | 3 | 4 语言包全部 json-merge |
+| 地灵 #17 | d5610658..798c7449 + ed83a0b0 | `earthspirit` | 60 | 1 | 含 4 语言包 i18n 补丁 + room.css 布局适配 |
+| #16 策略/道具进度 | b4af72c6 + 49ef735f | `band-progress` | 27 | 3 | 4 语言包全部 json-merge |
 | lastLineup | c8396341 | `last-lineup` | 6 | 0 | 自带 golden 重钉（3 场景） |
 | #21 七名联动 | 62f16618 + 9398ac2a | `collab-kits` | 27 | 14 | golden 重钉 + 11 个新场景 |
 | #28 预热 | 68eb594a + 03c44388 | `warmup` | 3 | 2 | — |
-| #33 资源包 | 60a7cd26 | `asset-pack` | 3 | 11 | 2026-10-13 起与 warmup 解耦（见下） |
-| #24 开发者模式 | ee66eac5 | `dev-mode` | 16 | 3 | `dependsOn: ["earthspirit"]` |
+| #33 资源包 | 60a7cd26 | `asset-pack` | 11 | 12 | 设置→「资源包」小节 + 本地美术并入 + `docs/design/client.md` 段落（见下） |
+| #24 开发者模式 | ee66eac5 | `dev-mode` | 19 | 3 | `dependsOn: ["earthspirit"]` |
+
+> 计数为 **2026-10-13/14 现值**（迁移当轮为 earthspirit 61 / band-progress 30 / dev-mode 16 / asset-pack 3/11）；
+> 差异来自 2026-10-12 的 v0.2.5 重新锚定与 2026-10-13/14 的两处修复/增强。
 
 `apply` 顺序由 `dependsOn` 拓扑排序决定：现只剩 `earthspirit → dev-mode` 一项行为依赖。
 
@@ -38,22 +42,39 @@
 > **单独 apply asset-pack(完全不装 warmup)** = 14 applied **0 drifted**,打包工具照常运行;
 > `check` 里 asset-pack 的 2 处假阳性**归零**。
 
+> **2026-10-13/14：dev-mode 顺序回归修复 + asset-pack 两次增强**。
+> ① **dev-mode 真实回归**：其 `Match.js captured-2` 与 earthspirit 的 `match-extras-field` **锚在同一行**
+> `this.data = …`，v0.2.5 重新锚定时把该条改成了 `insert-after` → 后应用的 dev-mode 块被挤到 earthspirit 块
+> **前面**，earthspirit 的 `this.extras = { earthspirit }` 最后执行、**覆盖掉 `devMode`**（开发者模式静默失效，
+> `test/dev-mode.test.js` harness 3 项挂）。修法：改为 `insert-before` 锚**上游原有行**
+> `this.gd = new GameData(this.data, this.modeId);` + `this.extras.devMode = !!(…)`。**教训：`check` 只验
+> "锚点还在不在"，看不出语义顺序**——两个 mod 锚同一行且有赋值先后依赖时必须显式排序。验证：dev-mode 8/8、earthspirit 11/11。
+> ② **asset-pack 搬进设置弹窗**：新增 `public/js/ui/packPanel.js`（`PackSection`：状态表 / 选择 zip / 导入进度 /
+> 失败清单 / 清空），`settings.js` 在 `<${DiagSection} />` 后渲染，`game.css` 加 `.set-pack*`，四语言包各 +36 个 msgid；
+> 入口 = 设置齿轮（标题页/大厅/房间/对局内）。`public/pack.html` 保留。
+> ③ **asset-pack 并入本地美术**：`tools/pack-assets.mjs` 增加第二个 URL 来源，默认读 `data/local-assets.json`
+> （`--local <file>` / `--no-local`，**文件不存在静默跳过**）。`/assets/local/**` 共 **1,475 文件 / 63 MiB**
+> （官方棋盘 map/mesh、UI 贴图、图鉴页、表情），主清单里 0 条——进包与尺寸表后尺寸表 11,139 → **12,614** 条；
+> **SW 与导入端无需改动**。详见 `.agent/mod-layer.md` §五/§九。
+
 > **#22 联防视角已于 2026-10-13 废弃**（用户决定改用上游行为：联防视角构建 **rows 6–13**，不再裁到 9–13）。
 > 对应 mod `unite-view` 目录**已删除**。注意这**不是** `retiredIn` 退役——上游**从未**收编该裁定，
 > 是主动放弃本地观感裁定，故既不保留 mod 也不写 `retiredIn` 标记（写它会误导为"上游已原生实现"）。
 > 随之 `test/render/playtest5-maps.test.js` 与 `test/ui/playtest2.test.js` 恢复上游断言，v0.2.5 上 **31 项全通过**。
 
-## 三、兼容性（v0.2.4）
+## 三、兼容性（v0.2.4；2026-10-13/14 已在 v0.2.5 `cf7a9400` 上复跑）
 
 - `node tools/mod.mjs check` → **every patch found its anchor**（7 个 mod 全部 0 drifted，**已无退役 mod**）。
-- `node tools/mod.mjs apply` → 185 条补丁全部 applied、0 drifted。
+- `node tools/mod.mjs apply --all` → **188 项全部 applied、0 drifted**（v0.2.5 实测）。
 - `node tools/mod.mjs apply --force` 重放 → 全部判 already in place，**字节级幂等**
   （`test/golden/diy.json` 的 sha256 重放前后一致）。
 - `node tools/mod.mjs revert --all` → 工作树 `[clean]`，只剩 mod 目录本身。
 - golden：`matches.json` 3 个场景、`diy.json` 5 个重钉 + 11 个新增，两个文件都与
   「应用全部 mod 后跑 `npm run golden:update`」的产出**字节一致**。
-- i18n：`node tools/i18n.mjs check --all --strict` 四语 **100%（1209/1209，0 missing）**。
-- eslint：`mods/_framework/` 与 `tools/mod.mjs` **0 problem**。
+- i18n：`node tools/i18n.mjs check --all --strict` 四语 **100%（1256/1256，0 missing、0 errors）**（v0.2.5 复跑）。
+- eslint：`mods/_framework/` 与 `tools/mod.mjs` **0 problem**（v0.2.5 复跑另加：改动过的 `packPanel.js` /
+  `settings.js` / `tools/pack-assets.mjs` 等 **0 problem**，`tsc` 0，`docs-consistency` 24/24，
+  `test/ui/settings-entry.e2e` + `modal.e2e` 6/6）。
 - 全量 `npm test`：6118 项，5901 通过。与**纯上游基线**（5995 项，5789 通过）逐条比对失败名单，
   多出的 6 项**全部为环境性**，与 mod 无关：
   - 5 项 `test/pack-assets.test.js` / `packSw.test.js`：`spawnSync` 在本机返回 `EBUSY`

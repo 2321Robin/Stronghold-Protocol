@@ -43,7 +43,7 @@ test('pack build: _pack.json first, every manifest file as an entry, meta carrie
   const fx = await buildFixture();
   try {
     const out = join(fx.dir, 'pack.zip');
-    const r = run(['--manifest', fx.manifestPath, '--public', fx.pub, '--out', out]);
+    const r = run(['--no-local', '--manifest', fx.manifestPath, '--public', fx.pub, '--out', out]);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const zip = new Uint8Array(await readFile(out));
     const entries = zipEntries(zip);
@@ -73,7 +73,7 @@ test('sizes mode: the deployment table records the same urls and current sizes',
   const fx = await buildFixture();
   try {
     const sizesOut = join(fx.dir, 'asset-sizes.json');
-    const r = run(['--sizes', '--manifest', fx.manifestPath, '--public', fx.pub, '--sizes-out', sizesOut]);
+    const r = run(['--no-local', '--sizes', '--manifest', fx.manifestPath, '--public', fx.pub, '--sizes-out', sizesOut]);
     assert.equal(r.status, 0, r.stderr || r.stdout);
     const table = JSON.parse(await readFile(sizesOut, 'utf8'));
     assert.equal(table.manifest, 'deadbeef01');
@@ -91,14 +91,14 @@ test('missing files: hard failure by default, --allow-missing leaves them out of
   const fx = await buildFixture();
   try {
     await rm(join(fx.pub, 'assets', 'char', 'a.png'));
-    const bad = run(['--manifest', fx.manifestPath, '--public', fx.pub, '--out', join(fx.dir, 'no.zip')]);
+    const bad = run(['--no-local', '--manifest', fx.manifestPath, '--public', fx.pub, '--out', join(fx.dir, 'no.zip')]);
     assert.equal(bad.status, 1);
     assert.match(bad.stderr, /1 files are missing/);
     assert.match(bad.stderr, /assets\/char\/a\.png/);
     assert.equal(await stat(join(fx.dir, 'no.zip')).then(() => true, () => false), false, 'no pack written');
 
     const out = join(fx.dir, 'pack.zip');
-    const ok = run(['--allow-missing', '--manifest', fx.manifestPath, '--public', fx.pub, '--out', out]);
+    const ok = run(['--no-local', '--allow-missing', '--manifest', fx.manifestPath, '--public', fx.pub, '--out', out]);
     assert.equal(ok.status, 0, ok.stderr || ok.stdout);
     const zip = new Uint8Array(await readFile(out));
     const entries = zipEntries(zip);
@@ -106,6 +106,47 @@ test('missing files: hard failure by default, --allow-missing leaves them out of
     const meta = JSON.parse(new TextDecoder().decode(await extractZipEntry(new Blob([zip]), entries[0])));
     assert.equal(meta.count, 2);
     assert.equal(Object.hasOwn(meta.files, '/assets/char/a.png'), false, 'the missing file is not in the pack meta');
+  } finally {
+    await rm(fx.dir, { recursive: true, force: true });
+  }
+});
+
+test('local-client art: folded in by default, excluded by --no-local, deduped against the main manifest', async () => {
+  const fx = await buildFixture();
+  try {
+    await mkdir(join(fx.pub, 'assets', 'local', 'map', 'autochess'), { recursive: true });
+    await writeFile(join(fx.pub, 'assets', 'local', 'map', 'autochess', 'TX_BG.png'), PNG);
+    const localPath = join(fx.dir, 'local-assets.json');
+    // one URL of its own + one the main manifest already lists (must not double-count)
+    await writeFile(localPath, JSON.stringify({
+      version: 1, source: 'local-client', count: 2,
+      groups: {
+        map: { autochess: { bg: { path: '/assets/local/map/autochess/TX_BG.png' } } },
+        dup: { path: '/assets/char/a.png' },
+      },
+    }));
+
+    const readMeta = async (file) => {
+      const zip = new Uint8Array(await readFile(file));
+      const entries = zipEntries(zip);
+      return { entries, meta: JSON.parse(new TextDecoder().decode(await extractZipEntry(new Blob([zip]), entries[0]))) };
+    };
+
+    const out = join(fx.dir, 'pack.zip');
+    const r = run(['--manifest', fx.manifestPath, '--local', localPath, '--public', fx.pub, '--out', out]);
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    const { entries, meta } = await readMeta(out);
+    assert.ok(entries.some((e) => e.name === 'assets/local/map/autochess/TX_BG.png'), 'the local art is an entry');
+    assert.equal(meta.count, 4, '3 manifest files + 1 new local file (the duplicate URL is deduped)');
+    assert.equal(meta.local, 2, 'the local manifest contributed 2 URLs');
+    assert.equal(meta.manifest, 'deadbeef01', 'the pack identity stays the main manifest hash');
+
+    const out2 = join(fx.dir, 'pack2.zip');
+    const r2 = run(['--no-local', '--manifest', fx.manifestPath, '--public', fx.pub, '--out', out2]);
+    assert.equal(r2.status, 0, r2.stderr || r2.stdout);
+    const { meta: meta2 } = await readMeta(out2);
+    assert.equal(meta2.count, 3, '--no-local packs the main manifest only');
+    assert.equal(meta2.local, null);
   } finally {
     await rm(fx.dir, { recursive: true, force: true });
   }

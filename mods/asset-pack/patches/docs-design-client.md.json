@@ -1,0 +1,23 @@
+{
+  "file": "docs/design/client.md",
+  "patches": [
+    {
+      "id": "client-md-asset-pack-paragraph",
+      "anchorRegex": "^Interactions \\(research 09",
+      "op": "insert-before",
+      "new": [
+        "资源包预导入（playtest #33,本地线）：玩家把 `tools/pack-assets.mjs` 打出的资源包 zip（默认",
+        "`dist/stronghold-assets.zip`，store-only，首条 `_pack.json` 是逐 URL 大小表）在游戏内**设置 →「资源包」**",
+        "（`ui/packPanel.js` 的状态表 / 选择 zip / 导入进度 / 失败清单 / 清空；独立页 `/pack.html` 保留给还没进",
+        "游戏的冷浏览器）一次导入——本地磁盘 → 浏览器，不吃服务器带宽。`public/sw.js` 是 module 型 Service Worker，",
+        "拦 GET `/assets/**`、`/fonts/**`、`/media/**`：运行时缓存 → 包（`ui/pack.js` 的 `packUsableFor` 按部署态",
+        "尺寸表 `data/asset-sizes.json` 逐 URL 比对尺寸，不符就绕开包，保正确性）→ 回源；新 URL 自动回源、零操作。",
+        "包覆盖 `data/assets.json` 主清单**加上** `data/local-assets.json`（`--no-local` 可关）——后者是 §13 的",
+        "本地客户端美术（官方棋盘 map/mesh、UI 贴图、图鉴页、表情，1,475 个文件约 63 MiB），此前每次首访都由",
+        "服务器下发。注册在 `ui/packInstall.js`（空闲调度；`navigator.webdriver` 下跳过，e2e 照旧走网络）；",
+        "导入先清空旧包、逐条 CRC 校验、最后写 meta 作提交标记（半途而废 = 无包，自动全回源）。",
+        ""
+      ]
+    }
+  ]
+}
