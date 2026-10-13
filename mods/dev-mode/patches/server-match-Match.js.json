@@ -11,15 +11,13 @@
     },
     {
       "id": "captured-2",
-      "anchor": "    this.data = opts.data && typeof opts.data === 'object' ? opts.data : {};",
-      "op": "insert-after",
+      "anchor": "this.gd = new GameData(this.data, this.modeId);",
+      "op": "insert-before",
       "new": [
-        "// per-match opt-in extras (local mod, room.setExtras): extras.earthspirit adds hidden chess_char_1_11_a to the pool,",
-        "// extras.devMode turns on the developer-mode quick switches (match/match/dev.js g.dev)",
-        "this.extras = {",
-        "  earthspirit: !!(opts.extras && opts.extras.earthspirit),",
-        "  devMode: !!(opts.extras && opts.extras.devMode),",
-        "};"
+        "// per-match opt-in extras (local mod, room.setExtras): extras.devMode turns on the developer-mode quick",
+        "// switches (match/match/dev.js g.dev). The earthspirit mod sets this.extras = { earthspirit } just above",
+        "// (right below this.data), so adding devMode here — after that assignment — keeps both fields on the one object.",
+        "this.extras.devMode = !!(opts.extras && opts.extras.devMode);"
       ]
     },
     {
