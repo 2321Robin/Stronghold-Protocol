@@ -7,8 +7,9 @@
 // it for the trait's bb duration (20 s), 阻挡数 0, the HP reset and the switch animation are the engine's. The kit rides
 // the archetype's `dollSwap` { unit, form } event and `unit.trait.doll`:
 //   * T0 不羁之力: entering the 替身 停顿s the enemies around her for bb sluggish (8 s) [ASSUMED radius 1.5]; while the
-//     替身 is out she fights as the persona — ATK +atk, the interval grows by base_attack_time (0.4 s) and HP +max_hp
-//     (the trait bb's 替身 HP share, which the archetype does not apply itself [ASSUMED: kit-side as a hpPct buff]).
+//     替身 is out she fights as the persona — ATK +atk, the interval grows by base_attack_time (**+s, flat** — converted
+//     to the engine's batPct multiply by `batFlat`) and HP +max_hp (the trait bb's 替身 HP share, which the archetype
+//     does not apply itself [ASSUMED: kit-side as a hpPct buff]).
 //   * T1 S.E.E.S.队长: when the 替身 ends (the switch back), every enemy around her [ASSUMED: she is the only
 //     S.E.E.S. member the mode can field] within a radius [ASSUMED 1.5] takes ATK × atk_scale (450 %) TRUE damage.
 //   * The skills (dur 0, data SKILL_RANGE — an enemy in the skill's range casts): each cast switches to the 替身 at once
@@ -20,7 +21,9 @@
 //     unreachable, playtest #32). The persona shapes her attacks as an arts rider of ATK × the selected skill's
 //     attack@atk_scale [ASSUMED: the official replaces the attack; the rider keeps the frame]: S2's Thanatos adds the
 //     fear chance and executes a target below ATK × attack@kill_atk_scale (the execute before the rider, both before the
-//     hit's own damage lands? — the execute rides the same hit [ASSUMED]); S1's Orpheus heals the most-wounded ally in
+//     hit's own damage lands? — the execute rides the same hit [ASSUMED]); **S3's Thanatos also rides the skill's own
+//     攻击速度 +45 (talent@attack_speed, S3-only — added on the persona buff while S3 is the active skill)**;
+//     S1's Orpheus heals the most-wounded ally in
 //     her range attack@heal_scale (50 %) when no enemy is in it (as 玛露西尔 S1); S3's Orpheus: 阻挡数 +2 and the allies
 //     in her range gain 35 % physical / arts dodge with a heal pulse of attack@heal_scale (30 %) per second on up to
 //     attack@max_target_heal (4) allies [ASSUMED: the pulse rides the persona, not the skill's 0-duration window].
@@ -88,12 +91,19 @@ export default {
               }
             }
           }, { owner: unit });
+          const batFlat = (v) => Math.max(-0.9, num(v, 0) / (num(unit.base?.bat, 1) || 1));   // +s → batPct (units.js: bat = bBat × (1 + batPct))
           const shape = () => {
             const want = up(unit) && !!unit.trait.doll;
             const has = unit.findBuff('makoto:persona');
-            if (want && !has) {
+            // S3's Thanatos: the skill's own 攻击速度 +45 (talent@attack_speed) — Thanatos-only (Orpheus, and S1 / S2,
+            // have no such key). aspd is a flat add on the persona buff, so the buff is rebuilt when the persona (and
+            // with it the bonus) changes.
+            const aspd = unit.skill?.id === S3 && unit.mem.makotoPersona === 'thanatos' ? num(s3?.bb?.['talent@attack_speed'], 0) : 0;
+            if (want && (!has || num(has.mods?.aspd, 0) !== aspd)) {
+              if (has) battle.removeBuff(unit, 'makoto:persona');
               battle.addBuff(unit, { key: 'makoto:persona', tags: ['trait'], mods: {
-                atkPct: num(t0.atk, 0.85), hpPct: num(tb.max_hp, num(t0.max_hp_t1, 0.35)), batPct: num(t0.base_attack_time, 0.4),
+                atkPct: num(t0.atk, 0.85), hpPct: num(tb.max_hp, num(t0.max_hp_t1, 0.35)), batPct: batFlat(num(t0.base_attack_time, 0.4)),
+                ...(aspd ? { aspd } : null),
               } });
             } else if (!want && has) battle.removeBuff(unit, 'makoto:persona');
           };

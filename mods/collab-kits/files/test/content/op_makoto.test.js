@@ -21,6 +21,7 @@ const S1 = 'skchr_makoto_1', S2 = 'skchr_makoto_2', S3 = 'skchr_makoto_3';
 const formOf = (tier, elite) => FORMS[elite ? (tier === 5 ? '2/60/7/1' : '2/60/7/3') : '2/1/4/0'];
 const skillOf = (tier, elite, id) => formOf(tier, elite).skills.find((s) => s.skillId === id);
 const approx = (a, b, msg, eps = 1e-6) => assert.ok(Math.abs(a - b) <= eps * Math.max(1, Math.abs(b)), `${msg}: ${a} vs ${b}`);
+const numberOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const dummy = (key, o = {}) => enemyRec({ key, hp: 1e9, speed: 0, mass: 0, ...o });
 const ENEMIES = { enemy_dummy: dummy('enemy_dummy') };
 const FORMS_ALL = [[5, false, null], [6, false, null], [5, true, MOD], [6, true, MOD]];
@@ -120,6 +121,44 @@ test('the skills switch the persona and the attack rider follows the selected sk
   }
 });
 
+test('the persona stat shape: T0 ATK / HP / the interval +0.4 s flat, and S3 Thanatos rides 攻击速度 +45', () => {
+  { // the persona buff with S3 active (Thanatos): the T0 numbers, +0.4 s interval, +45 aspd — every value read
+    // back from the runtime record (满潜能 + module traitOverride), not data/backups.json's base numbers
+    const { h, u } = field({ tier: 6, elite: true, skill: 2 });
+    h.spawn('enemy_dummy', { pos: [10, 6] });
+    h.step();
+    const t0 = u.def.talents[0].bb, tb = u.def.traitBb;   // the composed T0 / trait (R22-LOADOUT 满潜能)
+    const bat0 = u.base.bat, aspd0 = u.base.aspd, atk0 = u.s.atk, hp0 = u.s.maxHp;
+    u.skill.gainSp(999);
+    assert.ok(h.runUntil(() => u.skill.activations === 1, 3), 'cast');
+    const p = u.findBuff('makoto:persona');
+    assert.ok(p, 'the persona state is on');
+    approx(p.mods.atkPct, t0.atk, `ATK +${t0.atk * 100} % (the composed T0)`);
+    approx(p.mods.hpPct, numberOr(u.def.traitBb?.max_hp, numberOr(t0.max_hp_t1, 0.35)), 'the HP share (module traitOverride else T0)');
+    approx(p.mods.batPct, 0.4 / bat0, `the +0.4 s interval as a batPct (bat ${bat0})`);
+    const spd = numberOr(u.def.skill.bb['talent@attack_speed'], 0);
+    approx(p.mods.aspd ?? 0, spd, `攻击速度 +${spd} on Thanatos`);
+    approx(u.s.atk, atk0 * (1 + t0.atk), 'the ATK rides the buff');
+    approx(u.s.maxHp, hp0 * (1 + (u.def.traitBb?.max_hp ?? t0.max_hp_t1 ?? 0.35)), 'the HP rides the buff');
+    // the interval: (bat + 0.4 s) × 100 / (aspd + 45) — +45 wins over the +0.4 s in the end
+    approx(u.s.interval, ((bat0 + 0.4) * 100) / (aspd0 + spd), 'the attack interval as Thanatos');
+    done(h);
+  }
+  { // S1 (Orpheus): no 攻击速度 key → no aspd add, the interval is only the T0 +0.4 s
+    const { h, u } = field({ tier: 6, elite: true, skill: 0 });
+    h.spawn('enemy_dummy', { pos: [10, 6] });
+    h.step();
+    const bat0 = u.base.bat, aspd0 = u.base.aspd;
+    u.skill.gainSp(999);
+    assert.ok(h.runUntil(() => u.skill.activations === 1, 3), 'cast');
+    const p = u.findBuff('makoto:persona');
+    assert.equal(p.mods.aspd ?? 0, 0, 'S1 has no 攻击速度 key');
+    approx(u.s.aspd, aspd0, 'the aspd stays the base');
+    approx(u.s.interval, ((bat0 + 0.4) * 100) / aspd0, 'the interval is the T0 +0.4 s alone');
+    done(h);
+  }
+});
+
 test('S3: every cast starts as Thanatos; while Thanatos is out nothing switches her (no recast, no toggle)', () => {
   const others = [{ uid: 2, chessId: 'chess_char_1_06_a', row: 10, col: 6 }];
   const { h, u } = field({ tier: 6, elite: true, skill: 2, others });
@@ -167,6 +206,8 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   const hp0 = ally.hp;
   assert.ok(h.runUntil(() => ally.findBuff('makoto:aura'), 2), 'the ally dodge aura');
   approx(ally.findBuff('makoto:aura').mods.dodgePhys, 0.35, '35 % physical dodge');
+  // Orpheus has no 攻击速度 clause: the +45 falls off with Thanatos
+  approx(u.s.aspd, u.base.aspd, 'the aspd bonus falls off with Thanatos');
   assert.ok(h.runUntil(() => ally.hp > hp0, 3), 'the heal pulse');
   // Orpheus herself falls to a lethal hit (the switch clause is Thanatos-with-S3 only; the archetype knocks her out)
   assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the switch animation ends');
