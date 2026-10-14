@@ -102,7 +102,9 @@ test('every chess and 自选 form at every potential: the raw keyframes plus the
       forms++;
     }
   }
-  assert.equal(forms, 259);
+  // 280 = upstream's 259 in 0.2.3 (incl. Clementia) + the seven collab 6★ of the local SP_DIY_COLLAB build × their three slot forms
+  // (playtest #21, never upstreamed), each checked against character_table in the same loop
+  assert.equal(forms, 280);
 });
 
 test('talent candidates at every potential: each talent is the last one unlocked with requiredPotentialRank ≤ the rank', { skip: !HAS_CACHE && 'no .cache/gamedata' }, () => {

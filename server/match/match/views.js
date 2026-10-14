@@ -70,6 +70,8 @@ export class MatchViews {
       serverNow: this.sched.now(),
       modeId: this.modeId,
       difficulty: this.difficulty,
+      // per-match opt-in extras (local mod: room.setExtras) so clients can show what was added
+      extras: { ...this.extras },
       stageId: this.stageId,
       setupRevision: this.setupRevision,
       rerollVote: this.setupVote ? {
