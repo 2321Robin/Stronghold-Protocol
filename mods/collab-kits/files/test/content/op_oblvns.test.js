@@ -281,3 +281,73 @@ test('Fever + S2: the current timbre becomes a 二连击 — every attack is fol
     done(h);
   }
 });
+
+test('ba.permanentatk 持续攻击 (playtest #27): with no enemy in range she still swings on her attack cadence — stats.attacks grows, the attack-recovery S1 charges and auto-releases, the notes stay empty', () => {
+  for (const [tier, elite] of [[5, false], [6, true]]) {
+    const { h, u } = field({ tier, elite, skill: 0 });
+    const iv = u.s.interval;
+    assert.ok(iv > 0, `T${tier}: an attack interval`);
+    assert.equal(u.mem.oblvnsNotes ?? 0, 0, `T${tier}: no enemy ⇒ no note (the notes track enemies)`);
+    const n0 = u.stats.attacks;
+    h.run(4 * iv);
+    const gained = u.stats.attacks - n0;
+    assert.ok(gained >= 3, `T${tier}: swung ${gained} times in ~4 intervals with nothing in range`);
+    // the empty swings are attacks: they feed the attack-recovery SP (1 per swing, 4 to a charge)
+    assert.ok(u.skill.sp > 0 || u.skill.charges > 0, `T${tier}: S1 charges with no enemy (sp ${u.skill.sp}, charges ${u.skill.charges})`);
+    // the 'atk' event carries no target (id 0): the model still plays its attack clip
+    const atkEvs = h.eventsOf('atk').filter((e) => e[1] === u.id);
+    assert.ok(atkEvs.length >= 3, `T${tier}: 'atk' events emitted (${atkEvs.length})`);
+    assert.ok(atkEvs.every((e) => e[2] === 0), `T${tier}: every one target-less`);
+    // charges fill and the install's poller auto-releases (the cast is empty — nothing to track)
+    assert.ok(h.runUntil(() => u.skill.activations >= 1, 20), `T${tier}: S1 auto-released on the empty swings`);
+    assert.equal(notes(h, u).length, 0, `T${tier}: the empty cast tracks nothing`);
+    done(h);
+  }
+});
+
+test('ba.permanentatk 持续攻击: with an enemy in range the cadence is the engine\'s own — real attacks, no target-less swing', () => {
+  for (const [tier, elite] of [[5, false], [6, true]]) {
+    const { h, u } = field({ tier, elite, skill: 0 });
+    h.spawn('enemy_dummy', { pos: [10, 6] });
+    const n0 = h.events.length;
+    h.run(6);
+    const atkEvs = h.events.slice(n0).filter((e) => e[0] === 'atk' && e[1] === u.id);
+    assert.ok(atkEvs.length >= 3, `T${tier}: she attacks (${atkEvs.length})`);
+    assert.equal(atkEvs.filter((e) => e[2] === 0).length, 0, `T${tier}: no target-less swing while an enemy is in range`);
+    assert.ok(atkHits(h, u).length >= 3, `T${tier}: the hits land`);
+    done(h);
+  }
+});
+
+test('ba.permanentatk 持续攻击: 晕眩 / 冻结 / 缴械 hold the empty cycle, as the engine holds its own', () => {
+  const { h, u } = field({ tier: 6, elite: true, skill: 0 });
+  h.run(4 * u.s.interval);
+  assert.ok(u.stats.attacks >= 3, `swings without enemies (${u.stats.attacks})`);
+  h.b.applyStatus(u, 'stun', { duration: 2 });
+  const a1 = u.stats.attacks;
+  h.run(1.5);
+  assert.equal(u.stats.attacks, a1, 'a stun holds the cycle');
+  assert.ok(h.runUntil(() => !u.s.flags.stun, 4), 'the stun ends');
+  h.run(3 * u.s.interval);
+  assert.ok(u.stats.attacks > a1, 'the cycle resumes');
+  h.b.addBuff(u, { key: 'test:disarm', flags: { disarm: true } });
+  const a2 = u.stats.attacks;
+  h.run(3 * u.s.interval);
+  assert.equal(u.stats.attacks, a2, '缴械 holds the cycle');
+  h.b.removeBuff(u, 'test:disarm');
+  h.run(3 * u.s.interval);
+  assert.ok(u.stats.attacks > a2, 'and it resumes again');
+  done(h);
+});
+
+test('ba.permanentatk 持续攻击: the empty swings keep going under a timed skill but gain no SP (the engine guard, skills.js onAttackPerformed)', () => {
+  const { h, u } = field({ tier: 6, elite: true, skill: 2 });
+  u.skill.gainSp(999);
+  u.skill.activate('test');
+  assert.ok(u.skill.active, 'S3 running');
+  const a0 = u.stats.attacks;
+  h.run(4);
+  assert.ok(u.skill.active && u.stats.attacks > a0, 'she keeps swinging with no enemy');
+  assert.deepEqual([u.skill.sp, u.skill.charges], [0, 0], 'no attack SP while a timed skill runs');
+  done(h);
+});

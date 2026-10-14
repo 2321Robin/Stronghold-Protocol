@@ -12,12 +12,16 @@
 // - Trait (领主) "可以进行远程攻击，但此时攻击力降低至80%": the lord profile (professions.js: ×atk_scale unless the
 //   target stands on her tile / the tile in front or she blocks it; she hits air, data canHitFly), range 3-10. No kit
 //   code for the scale itself — the engine reads trait.bb.atk_scale.
-// - T1 颂乐音符 "攻击会演奏追踪敌人的音符，音符飘出攻击范围一段时间后消失。每存在一个音符，Ave Mujica成员无视敌人3%的
-//   防御力和2%法术抗性（最多叠加至10层）": every attack hit plays a note (≤ max_cnt), the notes decay one per second
-//   after `delay` 1 s without an attack; per note every Ave Mujica member gains def/res ignore (buff mods
-//   defIgnorePct / resIgnorePct × notes) — no range bound (PRTS: no 攻击范围内 qualifier). LOR-Y stage 3 raises the
-//   numbers (5% / 2.5% / 12 layers, the module's talent change merged into the talent bb) and adds "技能期间远程攻击
-//   不再降低攻击力" (the S3 spec's attack profile).
+// - T1 颂乐音符 "丰川祥子可以<ba.permanentatk>持续攻击</>且攻击会演奏追踪敌人的音符，音符飘出攻击范围一段时间后消失。
+//   每存在一个音符，Ave Mujica成员无视敌人3%的防御力和2%法术抗性（最多叠加至10层）": every attack hit plays a note
+//   (≤ max_cnt), the notes decay one per second after `delay` 1 s without an attack; per note every Ave Mujica member
+//   gains def/res ignore (buff mods defIgnorePct / resIgnorePct × notes) — no range bound (PRTS: no 攻击范围内 qualifier).
+//   ba.permanentatk 持续攻击 ("无论攻击范围内是否有攻击目标，都会持续进行攻击", playtest #27): the engine's attack loop
+//   needs a target (ai.js updateAlly returns before the cooldown with none), so the install's empty swing keeps her
+//   attacking on her own cadence — an attack in every respect (stats, the model's clip, attack SP: the attack-recovery
+//   S1 charges with no enemy in range); the notes stay on hits (a note tracks an enemy; none in range ⇒ none played).
+//   LOR-Y stage 3 raises the numbers (5% / 2.5% / 12 layers, the module's talent change merged into the talent bb) and
+//   adds "技能期间远程攻击不再降低攻击力" (the S3 spec's attack profile).
 // - T2 毋畏遗忘 "对敌人造成伤害时使Fever+3；其他Ave Mujica成员的攻击范围若与自身原本攻击范围重合，则将其视作攻击范围的
 //   延伸；攻击范围内干员攻击速度+12": every damage instance she deals a living enemy (any type) feeds the Fever meter;
 //   at FEVER_MAX the Fever runs FEVER_TIME s [ASSUMED both — no published numbers; PR #178's reading], during it the
@@ -237,6 +241,24 @@ export default {
             m.oblvnsExtra = true;
             try { battle.forceAttack(unit, null, { noAmmo: true }); } finally { m.oblvnsExtra = false; }
           }, { owner: unit });
+        }, { owner: unit });
+        // ba.permanentatk 持续攻击 ("无论攻击范围内是否有攻击目标，都会持续进行攻击", playtest #27): the engine's attack loop
+        // needs a target — with none it returns before the cooldown (ai.js updateAlly), so an attack-recovery skill never
+        // charges while her range is empty. She swings on her own cadence instead: a full attack in every respect (stats,
+        // the model's clip, attack SP — onAttackPerformed keeps the engine's "no SP while a timed skill runs" guard); the
+        // notes stay on hits (a note tracks an enemy). A stun / freeze (canAct) or 缴械 holds the cycle like the engine's
+        // own, as does being off the field. 'tick' runs after the ally phase, and a swing this tick already reset atkCd,
+        // so a ready unit that made none had no target in range.
+        battle.on('tick', () => {
+          if (!up(unit) || !unit.canAct || unit.s.flags.disarm) return;
+          if (unit.atkCd > 0 || !(unit.s.interval > 0)) return;
+          const prof = battle.effectiveProfile(unit);
+          if (prof.noAttack || (prof.noAttackUnlessSkill && !(unit.skill && unit.skill.active))) return;
+          unit.stats.attacks++;
+          unit.lastAttackAt = battle.time;
+          battle._ev(['atk', unit.id, 0, prof.projectile || 'none']);   // no target (id 0): the model plays its attack clip
+          if (unit.skill) unit.skill.onAttackPerformed([], false);       // attack SP; timed skill running ⇒ the guard holds
+          unit.atkCd = Math.max(unit.atkCd, unit.s.interval);
         }, { owner: unit });
       },
     };
