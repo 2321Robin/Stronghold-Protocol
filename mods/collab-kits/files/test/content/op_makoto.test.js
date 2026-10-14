@@ -120,23 +120,66 @@ test('the skills switch the persona and the attack rider follows the selected sk
   }
 });
 
-test('S3: the persona starts as Thanatos and re-shapes on the second cast (Orpheus: 阻挡 +2, the ally dodge aura and the heal pulse)', () => {
-  const sk = skillOf(6, true, S3);
+test('S3: every cast starts as Thanatos; while Thanatos is out nothing switches her (no recast, no toggle)', () => {
   const others = [{ uid: 2, chessId: 'chess_char_1_06_a', row: 10, col: 6 }];
   const { h, u } = field({ tier: 6, elite: true, skill: 2, others });
   const ally = h.unit(2);
-  const e = h.spawn('enemy_dummy', { pos: [10, 7] });
+  const e = h.spawn('enemy_dummy', { pos: [10, 6] });
+  h.step();
+  u.skill.gainSp(999);
+  assert.ok(h.runUntil(() => u.skill.activations === 1, 3), 'cast');
+  assert.equal(u.mem.makotoPersona, 'thanatos', 'Thanatos on every cast');
+  // the window runs its 20 s out as Thanatos: no auto recast (阻回 held the bar — the switch was the point before #32)
+  assert.equal(h.runUntil(() => u.mem.makotoPersona === 'orpheus', 5), false, 'no in-persona switch');
+  assert.equal(u.mem.makotoPersona, 'thanatos', 'Thanatos stays out');
+  assert.equal(ally.findBuff('makoto:aura'), null, 'no Orpheus aura as Thanatos');
+  assert.ok(h.runUntil(() => tagged(h, u, 'makoto:total').length > 0, 25), 'the window ends on schedule (the T1 total attack)');
+  done(h);
+});
+
+test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the 替身 window continues (playtest #32)', () => {
+  const others = [{ uid: 2, chessId: 'chess_char_1_06_a', row: 10, col: 6 }];
+  const { h, u } = field({ tier: 6, elite: true, skill: 2, others });
+  const ally = h.unit(2);
+  const e = h.spawn('enemy_dummy', { pos: [10, 6] });
   h.step();
   u.skill.gainSp(999);
   assert.ok(h.runUntil(() => u.skill.activations === 1, 3), 'cast');
   assert.equal(u.mem.makotoPersona, 'thanatos', 'Thanatos first');
+  const sub = u.findBuff('trait:substitute');
+  assert.ok(sub, 'the 替身 window');
+  const slow0 = e.findBuff('sluggish')?.timeLeft ?? 0;   // the cast's T0 停顿
+  // the lethal hit: prevented — Orpheus replaces Thanatos, the window keeps running (a hit inside the entering
+  // switch animation is answered by the archetype's 不死 instead — no persona switch there)
+  assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the entering switch animation ends');
+  h.b.dealDamage(null, u, { amount: 1e12, type: 'phys', tags: ['test'] });
+  h.step();
+  assert.ok(u.alive && u.deployed, 'she does not fall');
+  assert.equal(u.mem.makotoPersona, 'orpheus', 'Orpheus replaces Thanatos');
+  assert.equal(u.findBuff('trait:substitute'), sub, 'the 替身 window continues (its own buff, untouched)');
+  assert.ok(u.findBuff('trait:dollSwitching'), 'the switch animation');
+  assert.ok(u.hp > 0, 'the HP reset');
+  assert.ok((e.findBuff('sluggish')?.timeLeft ?? 0) <= slow0, 'the switch does not re-fire the T0 停顿');
+  // the window continues — the remaining time is the cast window's (a fresh enter would give ~20 s of it)
+  assert.ok(sub.timeLeft > 16 && sub.timeLeft < 20, `the 替身 window continues (${sub.timeLeft.toFixed(1)} s left)`);
+  // Orpheus holds the window: the ally dodge aura and the heal pulse come online
   ally.hp = ally.s.maxHp * 0.5;
-  const hp0 = ally.hp;                               // the Orpheus pulse heals from here
-  // the in-persona switch: the kit recasts once (阻回 holds the bar — the switch itself is the point)
-  assert.ok(h.runUntil(() => u.mem.makotoPersona === 'orpheus', 4), 'the recast summons Orpheus');
-  assert.equal(u.mem.makotoPersona, 'orpheus', 'Orpheus on the second');
+  const hp0 = ally.hp;
   assert.ok(h.runUntil(() => ally.findBuff('makoto:aura'), 2), 'the ally dodge aura');
   approx(ally.findBuff('makoto:aura').mods.dodgePhys, 0.35, '35 % physical dodge');
   assert.ok(h.runUntil(() => ally.hp > hp0, 3), 'the heal pulse');
+  // Orpheus herself falls to a lethal hit (the switch clause is Thanatos-with-S3 only; the archetype knocks her out)
+  assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the switch animation ends');
+  h.b.dealDamage(null, u, { amount: 1e12, type: 'phys', tags: ['test'] });
+  h.step();
+  assert.ok(!u.alive, 'Orpheus falls');
   done(h);
+  // the next S3 cast starts with Thanatos again (every window, no state leaks across)
+  const { h: h2, u: u2 } = field({ tier: 6, elite: true, skill: 2 });
+  h2.spawn('enemy_dummy', { pos: [10, 7] });
+  h2.step();
+  u2.skill.gainSp(999);
+  assert.ok(h2.runUntil(() => u2.skill.activations === 1, 3), 'a fresh battle');
+  assert.equal(u2.mem.makotoPersona, 'thanatos', 'Thanatos on the next window too');
+  done(h2);
 });
