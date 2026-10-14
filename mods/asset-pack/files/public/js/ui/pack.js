@@ -17,6 +17,7 @@
 // helpers below only run in the browser.
 
 import { AUDIO_EXTS, MEDIA_PREFIX } from '../../../shared/media.js';
+import { splitHashedPath } from '../../../shared/assetPaths.js';
 
 /** Cache the pack import fills (pack.html) and the SW reads — the durable copy of the manifest's files. */
 export const PACK_CACHE = 'sp-pack-v1';
@@ -133,6 +134,25 @@ export function packUsableFor(url, packSizes, sizeTable) {
   if (!sizeTable) return true; // no deployed table: best effort — a re-import is the documented cure
   if (!Object.hasOwn(sizeTable, url)) return false; // table is for a different manifest than the pack
   return sizeTable[url] === packSizes[url];
+}
+
+/**
+ * The pack key an intercepted request path resolves to, or null when the pack cannot answer it.
+ *
+ * 0.2.6 hands art out under `/assets/~<hash>/…` and `/fonts/~<hash>/…` (the content-hash segment of
+ * shared/assetPaths.js — the server strips it and serves the plain path), while the pack stores the *plain*
+ * manifest URLs a request names today. A hashed path therefore matches nothing in the pack or in the deployed
+ * size table, so `packUsableFor` would answer false and every asset would go to the network: the segment is
+ * dropped here and the plain path looked up instead. `/media/…` keeps going through the stem index.
+ * @param {string} pathname the request path (no query)
+ * @param {Map<string, {ext: string, url: string}> | null} mediaIndex from mediaIndexFromUrls
+ * @returns {string | null} root-relative pack URL
+ */
+export function packUrlFor(pathname, mediaIndex) {
+  if (typeof pathname !== 'string') return null;
+  const plain = splitHashedPath(pathname).path;
+  if (plain.startsWith(MEDIA_PREFIX)) return mediaPackUrl(plain, mediaIndex);
+  return plain;
 }
 
 // ---- Cache Storage helpers (browser only) --------------------------------------------------------------
