@@ -8,6 +8,10 @@
 //
 // Per intercepted GET: runtime cache ('sp-runtime-v1', fills on network misses so content outlives the HTTP
 // cache's 24 h max-age) → pack ('sp-pack-v1', only while packUsableFor says its copy is still current) → network.
+// 0.2.6 serves art under /assets/~<hash>/… and /fonts/~<hash>/… (the content-hash segment of
+// shared/assetPaths.js) while the pack's keys are the plain manifest URLs, so packUrlFor drops the segment
+// before the lookup — that keeps the pack usable under the content-hash scheme instead of every request
+// falling through to the network. /media/… is resolved through the stem index the same call makes.
 // Pack state re-reads at most once per 5 minutes and is pushed with a 'sp-pack-updated' message right after an
 // import. Not intercepted: everything outside /assets/**, /fonts/** and /media/** (the shell, /data/**, /shared/**
 // stay on the plain HTTP path — assets.json is network-first because the client itself fetches it no-cache every
@@ -19,7 +23,7 @@
 
 import {
   PACK_CACHE, RUNTIME_CACHE, PACK_META_KEY, SIZES_URL, RUNTIME_MAX_ENTRIES,
-  mediaIndexFromUrls, mediaPackUrl, packUsableFor, absoluteUrl,
+  mediaIndexFromUrls, packUrlFor, packUsableFor, absoluteUrl,
 } from '/js/ui/pack.js';
 
 const REFRESH_MS = 5 * 60_000;
@@ -80,17 +84,19 @@ self.addEventListener('fetch', (event) => {
   const isAsset = p.startsWith('/assets/') || p.startsWith('/fonts/');
   if (!isMedia && !isAsset) return;
   if (req.headers.has('range')) return; // partial content: let the network answer with real ranges
-  event.respondWith(serve(event, req, url, isMedia));
+  event.respondWith(serve(event, req, url));
 });
 
-async function serve(event, req, url, isMedia) {
+async function serve(event, req, url) {
   await refreshPackState(); // no-op while fresh; on a cold worker this is the pack lookup warming up
   try {
     const runtime = await caches.open(RUNTIME_CACHE);
     const hit = await runtime.match(url.href, { ignoreSearch: true });
     if (hit) return hit;
 
-    const packUrl = isMedia ? mediaPackUrl(url.pathname, state.mediaIndex) : url.pathname;
+    // 0.2.6 hands art out under /assets/~<hash>/… and /fonts/~<hash>/…; the pack's keys are the plain manifest
+    // URLs, so packUrlFor drops the segment (it also routes /media/ through the stem index).
+    const packUrl = packUrlFor(url.pathname, state.mediaIndex);
     if (packUrl && packUsableFor(packUrl, state.packSizes, state.sizeTable)) {
       const pack = await caches.open(PACK_CACHE);
       const fromPack = await pack.match(absoluteUrl(packUrl), { ignoreSearch: true });

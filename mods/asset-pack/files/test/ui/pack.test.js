@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  mediaIndexFromUrls, mediaPackUrl, packUsableFor, mimeForUrl, absoluteUrl,
+  mediaIndexFromUrls, mediaPackUrl, packUsableFor, packUrlFor, mimeForUrl, absoluteUrl,
 } from '../../public/js/ui/pack.js';
 
 test('mediaIndexFromUrls: audio files only, extension order the server would try, deduped per stem', () => {
@@ -47,6 +47,32 @@ test('packUsableFor: pack hit + size agreement; new URLs and size drift go to th
   assert.equal(packUsableFor('/assets/b.png', packSizes, { '/assets/a.png': 100 }), false, 'URL missing from the table');
   assert.equal(packUsableFor('/assets/gone.png', packSizes, { '/assets/gone.png': 300 }), true, 'removed upstream but size agrees');
   assert.equal(packUsableFor(42, packSizes, none), false, 'non-string url');
+});
+
+test('packUrlFor: 0.2.6 hashed paths resolve to the pack\'s plain keys; /media/ keeps the stem index', () => {
+  const index = mediaIndexFromUrls(['/assets/audio/bgm/act1.mp3']);
+  assert.equal(packUrlFor('/assets/char/avatar/x.png', index), '/assets/char/avatar/x.png', 'plain path unchanged');
+  assert.equal(packUrlFor('/assets/~0123456789abcdef/char/avatar/x.png', index), '/assets/char/avatar/x.png',
+    'hashed → plain: the pack and the size table hold no hashed keys');
+  assert.equal(packUrlFor('/fonts/~fedcba9876543210/bender.woff2', index), '/fonts/bender.woff2', 'a fonts hash is dropped too');
+  assert.equal(packUrlFor('/media/bgm/act1', index), '/assets/audio/bgm/act1.mp3', 'media via the stem index');
+  assert.equal(packUrlFor('/media/~0123456789abcdef/bgm/act1', index), '/assets/audio/bgm/act1.mp3', 'hashed media resolves as well');
+  assert.equal(packUrlFor('/media/bgm/unknown', index), null, 'stem the pack lacks');
+  assert.equal(packUrlFor('/media/bgm/act1', null), null, 'no index');
+  assert.equal(packUrlFor('/assets/~nothex/x.png', index), '/assets/~nothex/x.png', 'a malformed segment is not a hash: unchanged');
+  assert.equal(packUrlFor('/assets/~0123456789abcdef', index), '/assets/~0123456789abcdef', 'no path after the segment: unchanged');
+  assert.equal(packUrlFor(42, index), null, 'non-string pathname');
+  assert.equal(packUrlFor(null, index), null, 'missing pathname');
+});
+
+test('the pack decision survives a 0.2.6 hashed URL end to end', () => {
+  const packSizes = { '/assets/char/avatar/x.png': 100 };
+  const sizeTable = { '/assets/char/avatar/x.png': 100 };
+  const hashed = '/assets/~0123456789abcdef/char/avatar/x.png';
+  assert.equal(packUsableFor(hashed, packSizes, sizeTable), false, 'the raw hashed path matches no key');
+  assert.equal(packUsableFor(packUrlFor(hashed), packSizes, sizeTable), true, 'via packUrlFor the pack serves it');
+  assert.equal(packUsableFor(packUrlFor(hashed), packSizes, { '/assets/char/avatar/x.png': 123 }), false,
+    'a size drift still bypasses the pack under the hashed URL');
 });
 
 test('mimeForUrl mirrors the static server for everything the pack stores', () => {
