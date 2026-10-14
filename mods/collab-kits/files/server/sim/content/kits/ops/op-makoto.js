@@ -12,8 +12,12 @@
 //   * T1 S.E.E.S.队长: when the 替身 ends (the switch back), every enemy around her [ASSUMED: she is the only
 //     S.E.E.S. member the mode can field] within a radius [ASSUMED 1.5] takes ATK × atk_scale (450 %) TRUE damage.
 //   * The skills (dur 0, data SKILL_RANGE — an enemy in the skill's range casts): each cast switches to the 替身 at once
-//     (the dollSwitch hook, as 归溟幽灵鲨 S2) and (re)selects the persona: S1 Orpheus, S2 Thanatos, S3 Thanatos first and
-//     Orpheus from the second cast on. The persona shapes her attacks as an arts rider of ATK × the selected skill's
+//     (the dollSwitch hook, as 归溟幽灵鲨 S2) and selects the persona: S1 Orpheus, S2 Thanatos, **S3 Thanatos — every
+//     cast starts the 替身 with Thanatos** (the description: 初始召唤塔纳托斯). The only way to Orpheus is a
+//     **lethal hit while Thanatos is out with S3 active** — the third talent answers it (the archetype itself would
+//     knock the 替身 out) and Orpheus holds the rest of the 替身 window (until <替身>状态结束, its full 20 s); there
+//     is no manual path to the switch (the game has no manual cast for her — PRTS's 「开启技能→俄耳甫斯」 clause is
+//     unreachable, playtest #32). The persona shapes her attacks as an arts rider of ATK × the selected skill's
 //     attack@atk_scale [ASSUMED: the official replaces the attack; the rider keeps the frame]: S2's Thanatos adds the
 //     fear chance and executes a target below ATK × attack@kill_atk_scale (the execute before the rider, both before the
 //     hit's own damage lands? — the execute rides the same hit [ASSUMED]); S1's Orpheus heals the most-wounded ally in
@@ -24,6 +28,7 @@
 //   the kit-side HP share read them per the picked module's traitOverride); the attributes ride the stats.
 
 import { num, talentBb, traitBb, skillRec, enemiesInGrid, up } from '../shared/tier1.js';
+import { DOLL_SWITCH } from '../../../professions.js';
 
 const S1 = 'skchr_makoto_1';
 const S2 = 'skchr_makoto_2';
@@ -54,12 +59,11 @@ export default {
             battle.emit('dollSwitch', { unit });
           },
         },
-        [S3]: {   // 开辟明日的剑刃: Thanatos first, Orpheus from the second cast on
+        [S3]: {   // 开辟明日的剑刃: the 替身 starts with Thanatos on every cast (the description: 初始召唤塔纳托斯) —
+                  // the in-替身 switch to Orpheus is the lethal hit only (the third talent), never a recast
           kind: 'instant',
           onStart({ battle, unit }) {
-            const first = unit.mem.makotoPersona == null;
-            unit.mem.makotoPersona = first || (unit.mem.makotoPersona === 'orpheus' ? 'thanatos' : 'orpheus');
-            if (first) unit.mem.makotoPersona = 'thanatos';
+            unit.mem.makotoPersona = 'thanatos';
             battle.emit('dollSwitch', { unit });
           },
         },
@@ -130,18 +134,43 @@ export default {
             }
           }, { owner: unit });
         } },
-        { install(battle, unit) {   // S3's in-persona switch: while Thanatos is out, one free recast summons Orpheus
-          battle.on('dollSwap', (c) => {
-            if (c.unit === unit && c.form == null) unit.mem.makotoS3Switched = false;   // the next window switches again
-          }, { owner: unit });
-          battle.every(0.25, () => {
+        { install(battle, unit) {   // S3's in-替身 switch: a lethal hit while Thanatos is out brings Orpheus out in
+          // her place — PRTS S3: 「塔纳托斯在场时…受到致命伤时改为召唤俄耳甫斯…直到<替身>状态结束」. The archetype
+          // knocks a 替身 out (professions.js fatal: `if (unit.trait.doll) return`), so this answers first —
+          // between PRIO_UNDYING_HELD (−99: 不死 does not switch, the archetype's own enter waits for it too) and
+          // the archetype's −100. `ctx.prevented` stops the knock-out and keeps the archetype's enter from running.
+          // The game has no manual cast for her, so PRTS's 「开启技能→俄耳甫斯」 never fires: no recast, no toggle —
+          // Thanatos stays out her full 20 s unless a lethal hit switches her (playtest #32).
+          const switchPersona = () => {   // the archetype's switch animation (professions.js startSwitch): 清除自身一切
+            // Buff (the statuses) + 1 s 不死 / 无敌 阻回 禁疗 and the HP reset. The kit's own copy — it must NOT touch
+            // trait:substitute (the 替身 window keeps its remaining time: Orpheus holds it to its end) and must NOT
+            // emit dollSwap (that would re-fire the T0 停顿).
             const sk = unit.skill;
-            if (!sk || sk.id !== S3 || !up(unit) || !unit.trait.doll) return;
-            if (unit.mem.makotoS3Switched || sk.opCooling || unit.s.flags.silence) return;
-            unit.mem.makotoS3Switched = true;
-            sk.activate('doll', { free: true });                     // 阻回 holds the bar; the switch is the point
-          }, { owner: unit, immediate: true });
-        } },
+            if (sk && sk.active && sk.kind !== 'passive') sk.end('substitute');
+            for (const b of unit.buffs.slice()) if (b.status) battle.removeBuff(unit, b);
+            unit.trait.dollSwitching = true;
+            const done = () => { unit.trait.dollSwitching = false; };
+            const ended = () => {
+              done();
+              if (!unit.alive || !unit.deployed) return;
+              unit.markDirty();
+              unit.hp = unit.s.maxHp;
+            };
+            battle.addBuff(unit, {
+              key: 'trait:dollSwitching', duration: DOLL_SWITCH, onExpire: ended, onRemove: done,
+              flags: { invulnerable: true, noSp: true, noHeal: true, healFree: true, isolated: true, disarm: true },
+            });
+            unit.markDirty();
+            unit.hp = unit.s.maxHp;   // the lethal hit is answered at once (onExpire rewrites the max as well)
+          };
+          battle.on('fatal', (ctx) => {
+            if (ctx.unit !== unit || ctx.prevented || unit.trait.dollSwitching) return;
+            if (!unit.trait.doll || unit.skill?.id !== S3 || unit.mem.makotoPersona !== 'thanatos') return;
+            ctx.prevented = true;
+            unit.mem.makotoPersona = 'orpheus';   // Orpheus takes over for the rest of the 替身 window; her own
+            switchPersona();                      // lethal hit (Orpheus out) leaves through the archetype's knock-out
+          }, { owner: unit, priority: -99.5 });
+        }},
       ],
     };
   },
