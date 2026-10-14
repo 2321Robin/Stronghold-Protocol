@@ -1,0 +1,22 @@
+{
+  "file": "public/js/render/units.js",
+  "patches": [
+    {
+      "id": "makoto-persona-forms",
+      "anchor": "  char_4016_kazema: Object.freeze({",
+      "op": "insert-after",
+      "new": [
+        "// local-preview (playtest #21 / #38): 结城理's 替身 forms — the persona clip sets inside her own skeleton",
+        "// (Doll_Skill_N_*; S3 = P1 Thanatos / P2 Orpheus, the lethal switch plays P1toP2). The sim sends the form as an",
+        "// fx ('substitute' with form: doll1 / doll2 / doll3 / doll3p2, professions' archetype keeps 'doll' for others).",
+        "  char_4217_makoto: Object.freeze({",
+        "    doll1: Object.freeze({ change: 'Doll_Skill_1_SwitchIn', leave: 'Doll_Skill_1_SwitchOut', roles: dollRoles('Doll_Skill_1_Idle', 'Doll_Skill_1_Die', 'Doll_Skill_1_Attack') }),",
+        "    doll2: Object.freeze({ change: 'Doll_Skill_2_SwitchIn', leave: 'Doll_Skill_2_SwitchOut', roles: dollRoles('Doll_Skill_2_Loop', 'Doll_Skill_2_Die', null) }),",
+        "    // S3 P1 (Thanatos) rides Attack_A [ASSUMED: no Die clip of her own — a lethal hit switches to P2 instead]",
+        "    doll3: Object.freeze({ change: 'Doll_Skill_3_P1_SwitchIn', leave: 'Doll_Skill_3_P1_SwitchOut', roles: dollRoles('Doll_Skill_3_P1_Idle', 'Doll_Skill_2_Die', 'Doll_Skill_3_P1_Attack_A') }),",
+        "    doll3p2: Object.freeze({ change: 'Doll_Skill_3_P1toP2_ChangeBegin', leave: 'Doll_Skill_3_P2_SwitchOut', roles: dollRoles('Doll_Skill_3_P2_Loop', 'Doll_Skill_3_P2_Die', null) }),",
+        "  }),"
+      ]
+    }
+  ]
+}

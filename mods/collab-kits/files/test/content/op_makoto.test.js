@@ -158,6 +158,7 @@ test('the persona stat shape: T0 ATK / HP / the interval +0.4 s flat, and S3 Tha
     approx(u.s.interval, ((bat0 + 0.4) * 100) / aspd0, 'the interval is the T0 +0.4 s alone');
     assert.equal(u.mem.makotoPersona, 'orpheus', 'S1 is Orpheus throughout');
     assert.equal(u.s.blockCnt, u.base.blockCnt, 'Orpheus 阻挡数+2 = her own base (S1 constant Orpheus)');
+    assert.ok(h.eventsOf('fx').some((e) => e[4]?.form === 'doll1'), 'the S1 form fx');
     done(h);
   }
 });
@@ -212,6 +213,7 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   // Orpheus has no 攻击速度 clause: the +45 falls off with Thanatos; her own clause 阻挡数+2 lifts the −99
   approx(u.s.aspd, u.base.aspd, 'the aspd bonus falls off with Thanatos');
   assert.equal(u.s.blockCnt, u.base.blockCnt, 'Orpheus 阻挡数 +2 on the lethal switch');
+  assert.ok(h.eventsOf('fx').some((e) => e[4]?.form === 'doll3p2'), 'the P1toP2 form fx on the lethal switch');
   assert.ok(h.runUntil(() => ally.hp > hp0, 3), 'the heal pulse');
   // Orpheus herself falls to a lethal hit (the switch clause is Thanatos-with-S3 only; the archetype knocks her out)
   assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the switch animation ends');
@@ -228,4 +230,20 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   assert.equal(u2.mem.makotoPersona, 'thanatos', 'Thanatos on the next window too');
   assert.equal(u2.s.blockCnt, 0, 'the 替身 blocks none again as Thanatos (the next window)');
   done(h2);
+});
+
+test('the 替身 fights at range: flyers in the x-1 grid take the rider; the range reverts when the 替身 ends', () => {
+  const { h, u } = field({ tier: 6, elite: true, skill: 2 });
+  h.spawn('enemy_dummy', { pos: [10, 6], motion: 'FLY' });   // 1 tile front (the T1 总攻击 radius), flying
+  h.step();
+  u.skill.gainSp(999);
+  assert.ok(h.runUntil(() => u.skill.activations === 1, 3), 'cast');
+  assert.ok(u.rangeKeySet.has(10 * 21 + 7), 'the x-1 grid reaches the flyer');
+  const e = h.enemies()[0];
+  assert.ok(h.runUntil(() => tagged(h, u, 'makoto:persona').some((c) => c.target === e), 6), 'the rider hits the flyer (canHitFly + the skill grid)');
+  // the window ends (T1 total attack): back to her own melee 2-tile grid and no flyers
+  assert.ok(h.runUntil(() => tagged(h, u, 'makoto:total').length > 0, 25), 'the window ends');
+  assert.equal(u.rangeKeySet.has(10 * 21 + 7), false, 'the x-1 grid is gone');
+  assert.equal(u.profile.canHitFly, false, 'no flyers again');
+  done(h);
 });

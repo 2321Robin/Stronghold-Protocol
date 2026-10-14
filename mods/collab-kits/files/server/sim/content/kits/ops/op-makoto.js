@@ -21,9 +21,12 @@
 //     unreachable, playtest #32). The persona shapes her attacks as an arts rider of ATK × the selected skill's
 //     attack@atk_scale [ASSUMED: the official replaces the attack; the rider keeps the frame]: S2's Thanatos adds the
 //     fear chance and executes a target below ATK × attack@kill_atk_scale (the execute before the rider, both before the
-//     hit's own damage lands? — the execute rides the same hit [ASSUMED]); **S3's Thanatos also rides the skill's own
-//     攻击速度 +45 (talent@attack_speed, S3-only — added on the persona buff while S3 is the active skill)**;
-//     S1's Orpheus heals the most-wounded ally in
+//     hit's own damage lands? — the execute rides the same hit [ASSUMED]); **every skill's 替身 is the persona fighting
+//     at range — the skill's own x-1 grid (all three skills carry rangeId x-1; her base is melee 2 tiles), 对空
+//     (profile.canHitFly while the 替身 is out) and its max_target** (the rider is an arts AoE over the selected skill's
+//     attack@max_target); **S3's Thanatos also rides the skill's own 攻击速度 +45 (talent@attack_speed, S3-only)**;
+//     the 替身 model is the persona's own (Doll_Skill_N_* clip sets in her skeleton — the client's FORMS, S3's P1→P2
+//     switch plays P1toP2; see the FORMS entry in public/js/render/units.js); S1's Orpheus heals the most-wounded ally in
 //     her range attack@heal_scale (50 %) when no enemy is in it (as 玛露西尔 S1); S3's Orpheus: 阻挡数 +2 and the allies
 //     in her range gain 35 % physical / arts dodge with a heal pulse of attack@heal_scale (30 %) per second on up to
 //     attack@max_target_heal (4) allies [ASSUMED: the pulse rides the persona, not the skill's 0-duration window].
@@ -73,9 +76,20 @@ export default {
       },
       talents: [
         { install(battle, unit) {   // T0 + T1: the entering 停顿, the persona's stat shape, the ending total attack
+          // the 替身 is the persona fighting at range (official: all three skills carry rangeId x-1, her base is melee
+          // 2 tiles): while it is out she uses the skill's x-1 grid and can hit flyers; the client draws the persona's
+          // own model (Doll_Skill_N_* clips — S3: P1 = Thanatos, P2 = Orpheus on the lethal switch). Both are reverted
+          // when the 替身 ends.
+          const DOLL_FORMS = { [S1]: 'doll1', [S2]: 'doll2', [S3]: 'doll3' };
           battle.on('dollSwap', (c) => {
             if (c.unit !== unit) return;
             if (c.form === 'doll') {
+              if (unit.mem.makotoBaseGrid == null) unit.mem.makotoBaseGrid = unit.rangeGrid;
+              if (unit.mem.makotoBaseFly == null) unit.mem.makotoBaseFly = unit.profile.canHitFly;
+              unit.rangeGrid = skillRec(chess, unit.skill?.id)?.rangeGrid ?? s3.rangeGrid ?? unit.rangeGrid;
+              unit.profile.canHitFly = true;   // effectiveProfile re-reads the profile on every attack
+              battle.refreshRange(unit);
+              battle.fx('substitute', { x: unit.x, y: unit.y, id: unit.id, form: DOLL_FORMS[unit.skill?.id] ?? 'doll3' });
               for (const e of battle.enemies) {
                 if (!e.alive || e.side !== 'enemy') continue;
                 if (Math.max(Math.abs(e.tileR - unit.tileR), Math.abs(e.tileC - unit.tileC)) <= AURA_RADIUS) {
@@ -83,6 +97,9 @@ export default {
                 }
               }
             } else {
+              if (unit.mem.makotoBaseGrid != null) { unit.rangeGrid = unit.mem.makotoBaseGrid; unit.mem.makotoBaseGrid = null; }
+              if (unit.mem.makotoBaseFly != null) { unit.profile.canHitFly = unit.mem.makotoBaseFly; unit.mem.makotoBaseFly = null; }
+              battle.refreshRange(unit);
               for (const e of battle.enemies) {
                 if (!e.alive || e.side !== 'enemy') continue;
                 if (Math.max(Math.abs(e.tileR - unit.tileR), Math.abs(e.tileC - unit.tileC)) <= AURA_RADIUS) {
@@ -108,11 +125,12 @@ export default {
             // have no such key). aspd is a flat add on the persona buff, so the buff is rebuilt when the persona (and
             // with it the bonus) changes.
             const aspd = unit.skill?.id === S3 && unit.mem.makotoPersona === 'thanatos' ? num(s3?.bb?.['talent@attack_speed'], 0) : 0;
-            if (want && (!has || num(has.mods?.aspd, 0) !== aspd)) {
+            const mt = Math.max(0, num(skillRec(chess, unit.skill?.id)?.bb?.['attack@max_target'], 1) - 1);   // the rider's targets − the base 1
+            if (want && (!has || num(has.mods?.aspd, 0) !== aspd || num(has.mods?.maxTargets, 0) !== mt)) {
               if (has) battle.removeBuff(unit, 'makoto:persona');
               battle.addBuff(unit, { key: 'makoto:persona', tags: ['trait'], mods: {
                 atkPct: num(t0.atk, 0.85), hpPct: num(tb.max_hp, num(t0.max_hp_t1, 0.35)), batPct: batFlat(num(t0.base_attack_time, 0.4)),
-                ...(aspd ? { aspd } : null),
+                ...(aspd ? { aspd } : null), ...(mt ? { maxTargets: mt } : null),
               } });
             } else if (!want && has) battle.removeBuff(unit, 'makoto:persona');
             if (want) blockCnt();
@@ -189,6 +207,7 @@ export default {
             ctx.prevented = true;
             unit.mem.makotoPersona = 'orpheus';   // Orpheus takes over for the rest of the 替身 window; her own
             switchPersona();                      // lethal hit (Orpheus out) leaves through the archetype's knock-out
+            battle.fx('substitute', { x: unit.x, y: unit.y, id: unit.id, form: 'doll3p2' });   // P1toP2 (FORMS)
           }, { owner: unit, priority: -99.5 });
         }},
       ],
