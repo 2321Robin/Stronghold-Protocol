@@ -2,6 +2,17 @@
   "file": "public/js/render/units.js",
   "patches": [
     {
+      "id": "makoto-doll-window-yellow-sp-bar",
+      "anchor": "      this.spFill.tint = ammo ? COLORS.ammo : active ? COLORS.spActive : ready ? COLORS.spReady : COLORS.sp;",
+      "op": "insert-after",
+      "new": [
+        "      // local mod (#40): a 傀儡师's 替身 window rides the SP bar as its countdown (snapshot.js) — drain it in",
+        "      // the active colour (as a timed skill's drain), not the idle cyan (she has no UF.SKILL: an instant",
+        "      // skill switched her in)",
+        "      if (this.form) this.spFill.tint = COLORS.spActive;"
+      ]
+    },
+    {
       "id": "makoto-persona-forms",
       "anchor": "  enemy_1040_bombd: Object.freeze({",
       "op": "insert-before",
