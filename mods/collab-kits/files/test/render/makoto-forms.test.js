@@ -11,6 +11,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { installFakePixi, fakeViewCtx } from './fakepixi.js';
 import { presetCamera } from '../../public/js/render/projection.js';
+import { COLORS } from '../../public/js/render/style.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const assets = JSON.parse(readFileSync(path.join(ROOT, 'data/assets.json'), 'utf8'));
@@ -98,6 +99,20 @@ test('the forms: each set starts with its own SwitchIn and holds its persona cli
     frames(v2, 70);
     assert.equal(clip(v2), 'Doll_Skill_2_Loop', 'S2 has no attack clip of its own [ASSUMED]');
   }
+});
+
+const spSample = (sp, spMax) => ({ x: 8, y: 9, hp: 3000, maxHp: 3000, sp, spMax, flags: 0, anim: 0, vx: 0 });
+
+test('the 替身 window drains the SP bar in the active colour (as a timed skill\'s drain), not the idle cyan', async () => {
+  const v = await makoto();
+  v.sync(spSample(10, 21), 1); frames(v, 1);
+  assert.equal(v.spFill.tint, COLORS.sp, 'the idle cyan at rest (no window)');
+  v.setForm('doll3');
+  v.sync(spSample(10, 21), 1.1); frames(v, 1);
+  assert.equal(v.spFill.tint, COLORS.spActive, 'the active colour while the 替身 window drains');
+  v.setForm(null);
+  v.sync(spSample(10, 21), 1.2); frames(v, 1);
+  assert.equal(v.spFill.tint, COLORS.sp, 'back to cyan once the 替身 is over');
 });
 
 test('a view built while the 替身 is out starts in the persona set without replaying the change (info.form)', async () => {
