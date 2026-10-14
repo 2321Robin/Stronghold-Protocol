@@ -142,6 +142,7 @@ test('the persona stat shape: T0 ATK / HP / the interval +0.4 s flat, and S3 Tha
     approx(u.s.maxHp, hp0 * (1 + (u.def.traitBb?.max_hp ?? t0.max_hp_t1 ?? 0.35)), 'the HP rides the buff');
     // the interval: (bat + 0.4 s) × 100 / (aspd + 45) — +45 wins over the +0.4 s in the end
     approx(u.s.interval, ((bat0 + 0.4) * 100) / (aspd0 + spd), 'the attack interval as Thanatos');
+    assert.equal(u.s.blockCnt, 0, 'the 替身 blocks none as Thanatos (trait)');
     done(h);
   }
   { // S1 (Orpheus): no 攻击速度 key → no aspd add, the interval is only the T0 +0.4 s
@@ -155,6 +156,8 @@ test('the persona stat shape: T0 ATK / HP / the interval +0.4 s flat, and S3 Tha
     assert.equal(p.mods.aspd ?? 0, 0, 'S1 has no 攻击速度 key');
     approx(u.s.aspd, aspd0, 'the aspd stays the base');
     approx(u.s.interval, ((bat0 + 0.4) * 100) / aspd0, 'the interval is the T0 +0.4 s alone');
+    assert.equal(u.mem.makotoPersona, 'orpheus', 'S1 is Orpheus throughout');
+    assert.equal(u.s.blockCnt, u.base.blockCnt, 'Orpheus 阻挡数+2 = her own base (S1 constant Orpheus)');
     done(h);
   }
 });
@@ -206,8 +209,9 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   const hp0 = ally.hp;
   assert.ok(h.runUntil(() => ally.findBuff('makoto:aura'), 2), 'the ally dodge aura');
   approx(ally.findBuff('makoto:aura').mods.dodgePhys, 0.35, '35 % physical dodge');
-  // Orpheus has no 攻击速度 clause: the +45 falls off with Thanatos
+  // Orpheus has no 攻击速度 clause: the +45 falls off with Thanatos; her own clause 阻挡数+2 lifts the −99
   approx(u.s.aspd, u.base.aspd, 'the aspd bonus falls off with Thanatos');
+  assert.equal(u.s.blockCnt, u.base.blockCnt, 'Orpheus 阻挡数 +2 on the lethal switch');
   assert.ok(h.runUntil(() => ally.hp > hp0, 3), 'the heal pulse');
   // Orpheus herself falls to a lethal hit (the switch clause is Thanatos-with-S3 only; the archetype knocks her out)
   assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the switch animation ends');
@@ -222,5 +226,6 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   u2.skill.gainSp(999);
   assert.ok(h2.runUntil(() => u2.skill.activations === 1, 3), 'a fresh battle');
   assert.equal(u2.mem.makotoPersona, 'thanatos', 'Thanatos on the next window too');
+  assert.equal(u2.s.blockCnt, 0, 'the 替身 blocks none again as Thanatos (the next window)');
   done(h2);
 });

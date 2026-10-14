@@ -92,6 +92,15 @@ export default {
             }
           }, { owner: unit });
           const batFlat = (v) => Math.max(-0.9, num(v, 0) / (num(unit.base?.bat, 1) || 1));   // +s → batPct (units.js: bat = bBat × (1 + batPct))
+          const blockCnt = () => {   // the archetype's 替身 blocks none (trait:substitute −99 → clamp 0); PRTS S3's
+            // 俄耳甫斯 「阻挡数+2」 = her own base 2 — so while Orpheus is out the −99 is lifted (units.js:
+            // `max(0, base.blockCnt + add)`: 2 + 0 = 2). The buff is the archetype's, mutated in place (mods is
+            // read every tick by aggregateMods; markDirty re-runs _recalc).
+            const sub = unit.findBuff('trait:substitute');
+            if (!sub) return;
+            const want = unit.mem.makotoPersona === 'orpheus' ? 0 : -99;   // S1 is Orpheus; S3's Orpheus on the lethal switch
+            if (num(sub.mods?.blockCnt, -99) !== want) { sub.mods.blockCnt = want; unit.markDirty(); }
+          };
           const shape = () => {
             const want = up(unit) && !!unit.trait.doll;
             const has = unit.findBuff('makoto:persona');
@@ -106,6 +115,7 @@ export default {
                 ...(aspd ? { aspd } : null),
               } });
             } else if (!want && has) battle.removeBuff(unit, 'makoto:persona');
+            if (want) blockCnt();
           };
           battle.on('tick', shape, { owner: unit });
           battle.on('battleStart', shape, { owner: unit });
