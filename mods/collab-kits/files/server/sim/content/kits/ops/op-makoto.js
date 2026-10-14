@@ -24,7 +24,9 @@
 //     hit's own damage lands? — the execute rides the same hit [ASSUMED]); **every skill's 替身 is the persona fighting
 //     at range — the skill's own x-1 grid (all three skills carry rangeId x-1; her base is melee 2 tiles), 对空
 //     (profile.canHitFly while the 替身 is out) and its max_target** (the rider is an arts AoE over the selected skill's
-//     attack@max_target); **S3's Thanatos also rides the skill's own 攻击速度 +45 (talent@attack_speed, S3-only)**;
+//     attack@max_target); **S3's Thanatos clauses — the 攻击速度 +45 (talent@attack_speed), the 4 targets and the
+//     200 % 弱点伤害 rider — are Thanatos's alone** (PRTS puts them in the Thanatos sentence; Orpheus keeps only her own
+//     attack plus her own clauses — 阻挡 +2 / the aura / the pulse — while S1's Orpheus does carry her 210 % rider);
 //     the 替身 model is the persona's own (Doll_Skill_N_* clip sets in her skeleton — the client's FORMS, S3's P1→P2
 //     switch plays P1toP2; see the FORMS entry in public/js/render/units.js); S1's Orpheus heals the most-wounded ally in
 //     her range attack@heal_scale (50 %) when no enemy is in it (as 玛露西尔 S1); S3's Orpheus: 阻挡数 +2 and the allies
@@ -125,7 +127,8 @@ export default {
             // have no such key). aspd is a flat add on the persona buff, so the buff is rebuilt when the persona (and
             // with it the bonus) changes.
             const aspd = unit.skill?.id === S3 && unit.mem.makotoPersona === 'thanatos' ? num(s3?.bb?.['talent@attack_speed'], 0) : 0;
-            const mt = Math.max(0, num(skillRec(chess, unit.skill?.id)?.bb?.['attack@max_target'], 1) - 1);   // the rider's targets − the base 1
+            const mt = unit.skill?.id === S3 && unit.mem.makotoPersona === 'orpheus' ? 0   // the 4 targets are Thanatos's clause
+              : Math.max(0, num(skillRec(chess, unit.skill?.id)?.bb?.['attack@max_target'], 1) - 1);
             if (want && (!has || num(has.mods?.aspd, 0) !== aspd || num(has.mods?.maxTargets, 0) !== mt)) {
               if (has) battle.removeBuff(unit, 'makoto:persona');
               battle.addBuff(unit, { key: 'makoto:persona', tags: ['trait'], mods: {
@@ -148,8 +151,12 @@ export default {
               }
               if (battle.rng.chance(num(s2?.bb?.['attack@prob'], 0.35))) battle.applyStatus(c.target, 'fear', { duration: num(s2?.bb?.['attack@fear'], 1.5), source: unit });
             }
-            const scale = num(skillRec(chess, sid)?.bb?.['attack@atk_scale'], 2.1);
-            if (c.target.alive) battle.dealDamage(unit, c.target, { amount: unit.s.atk * scale, type: 'arts', tags: ['skill', 'makoto:persona'] });
+            // S3's rider (4 targets × 200 % 弱点伤害 — the clause PRTS puts in the Thanatos sentence) is Thanatos's:
+            // Orpheus keeps only her own attack (she still attacks — S1 is Orpheus attacking, 210 %) plus her own
+            // clauses (阻挡 +2 / the aura / the pulse). S1 / S2 are single-persona, no gate needed.
+            const thanatos = sid !== S3 || unit.mem.makotoPersona !== 'orpheus';
+            const scale = thanatos ? num(skillRec(chess, sid)?.bb?.['attack@atk_scale'], 2.1) : 0;
+            if (scale > 0 && c.target.alive) battle.dealDamage(unit, c.target, { amount: unit.s.atk * scale, type: 'arts', tags: ['skill', 'makoto:persona'] });
           }, { owner: unit });
           battle.every(1.0, () => {   // S1's Orpheus: a wounded ally in range heals when no enemy is in hers
             if (!up(unit) || !unit.trait.doll || unit.skill?.id !== S1) return;

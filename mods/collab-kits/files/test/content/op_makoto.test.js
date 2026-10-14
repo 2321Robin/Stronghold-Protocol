@@ -224,6 +224,10 @@ test('S3: a lethal hit while Thanatos is out brings Orpheus in her place — the
   approx(u.s.aspd, u.base.aspd, 'the aspd bonus falls off with Thanatos');
   assert.equal(u.s.blockCnt, u.base.blockCnt, 'Orpheus 阻挡数 +2 on the lethal switch');
   assert.ok(h.eventsOf('fx').some((e) => e[4]?.form === 'doll3p2'), 'the P1toP2 form fx on the lethal switch');
+  // the S3 rider (4 targets x 200 % 弱点伤害) is Thanatos's clause: Orpheus keeps only her own attack
+  assert.equal(u.s.maxTargets, 0, 'the 4 targets are Thanatos\'s clause');
+  const riders = tagged(h, u, 'makoto:persona').length;
+  assert.ok(h.runUntil(() => tagged(h, u, 'makoto:persona').length > riders, 6) === false, 'no rider as Orpheus (only her own attack)');
   assert.ok(h.runUntil(() => ally.hp > hp0, 3), 'the heal pulse');
   // Orpheus herself falls to a lethal hit (the switch clause is Thanatos-with-S3 only; the archetype knocks her out)
   assert.ok(h.runUntil(() => !u.findBuff('trait:dollSwitching'), 2), 'the switch animation ends');
