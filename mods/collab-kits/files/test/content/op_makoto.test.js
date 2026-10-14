@@ -143,6 +143,16 @@ test('the persona stat shape: T0 ATK / HP / the interval +0.4 s flat, and S3 Tha
     // the interval: (bat + 0.4 s) × 100 / (aspd + 45) — +45 wins over the +0.4 s in the end
     approx(u.s.interval, ((bat0 + 0.4) * 100) / (aspd0 + spd), 'the attack interval as Thanatos');
     assert.equal(u.s.blockCnt, 0, 'the 替身 blocks none as Thanatos (trait)');
+    // the 替身 fights at range (the skill's x-1), hits flyers, and the client draws the P1 model
+    approx(u.s.maxTargets, spd === 0 ? t0.atk * 0 + 3 : 3, 'attack@max_target 4 = the base 1 + 3');
+    assert.ok(u.rangeKeySet.has(10 * 21 + 7), 'the x-1 grid reaches 2 tiles front');
+    assert.equal(u.profile.canHitFly, true, 'the 替身 hits flyers');
+    assert.ok(h.eventsOf('fx').some((e) => e[4]?.form === 'doll3'), 'the S3 P1 form fx');
+    // the 替身 window rides the SP fraction (the SP bar has no clock of its own for an instant skill)
+    const sub = u.findBuff('trait:substitute');
+    const snap = h.b.snapshot().units.find((t) => t[0] === u.id);
+    approx(snap[6], sub.duration, 'the window length on the SP bar max');
+    approx(snap[5], sub.timeLeft, 'the remaining window on the SP fraction');
     done(h);
   }
   { // S1 (Orpheus): no 攻击速度 key → no aspd add, the interval is only the T0 +0.4 s
