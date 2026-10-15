@@ -2,7 +2,9 @@
 // /media/… → pack-entry mapping, and the per-URL "may the pack still serve this file" decision.
 //
 // Three consumers import it:
-//   * public/sw.js (module service worker) — decides, per intercepted request, runtime cache → pack → network;
+//   * public/sw.js (classic service worker) — decides, per intercepted request, imported cache → runtime cache →
+//     pack → network; as a classic script it carries hand-inlined copies of the constants and pure helpers below
+//     (keep them in sync by hand — upstream's assetCache.js does the same for its worker twin);
 //   * public/pack.html — writes the pack into Cache Storage and shows installed-vs-server status;
 //   * test/ui/pack*.test.js under Node — the pure helpers are tested directly.
 //
