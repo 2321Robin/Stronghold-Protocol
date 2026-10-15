@@ -5342,23 +5342,23 @@
                 51,
                 0,
                 51,
-                16636,
-                35547
+                16672,
+                35587
               ],
               "enemy_1283_sgkill": [
                 18,
                 0,
                 18,
-                26525,
-                13381
+                26488,
+                13341
               ]
             },
             "hooks": [
               1,
               140,
               6043,
-              242,
-              242,
+              247,
+              247,
               1942,
               1942,
               17,
@@ -5367,7 +5367,7 @@
               5,
               5,
               0,
-              8667,
+              8682,
               0,
               10,
               114,
@@ -5379,7 +5379,7 @@
               0
             ],
             "events": {
-              "atk": 242,
+              "atk": 240,
               "deploy": 26,
               "die": 24,
               "dmg": 1942,
@@ -5390,7 +5390,7 @@
               "spawn": 126
             },
             "fx": {},
-            "snaps": "e8e9dd29 ac7dac16 e48e3ed0 3ad0dbcb 3922e8e1 f16280fd 1bf1e676 246588c4 a0b919ba e97ae8ea c72b3516 c5ff816a 551ec7d9 d996ca5e 093327e8 f2557a0d e52d8008 11ffeb62 32f651c1 bfeaa4b8 f5db277a"
+            "snaps": "e8e9dd29 30c9851d b62a0829 3c014b3e d528a6a6 ba07e786 cead2c14 690b54ef ede645eb 6deefde2 214e737c 52a18f14 aee099a2 2124eb93 e96ed7fc 44b81a8e 193ba26d b5739939 01844376 b98e7887 a704f7bd"
           },
           "diy-149": {
             "about": "5_diy1_a=acfend 5_diy2_b=acfend 5_diy1_a=acpion 5_diy2_b=acpion 5_diy1_a=acguad 5_diy2_b=acguad 5_diy1_a=acnipe 5_diy2_b=acnipe 5_diy1_a=accast 5_diy2_b=accast 5_diy1_a=acmedc 5_diy2_b=acmedc",
