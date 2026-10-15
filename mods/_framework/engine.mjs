@@ -23,6 +23,18 @@ export const MODS_DIR = 'mods';
 /** Inside `mods/` on purpose: the state is machine-local, and `mods/.gitignore` keeps it out of git. */
 export const STATE_FILE = 'mods/.state.json';
 const FILES_DIR = 'files';
+/**
+ * A mod's own tests live here instead of `files/test/`.
+ *
+ * `node --test` with no paths discovers every file named `*.test.js` / `*.test.mjs` anywhere, and
+ * every `.js` file sitting inside a directory named `test`. A test held in `files/test/` therefore
+ * runs *on the framework branch* — where its mod is not applied and the code it drives is missing —
+ * and then fails (the imported path, the op registration, the SW...). CI turns red on pushes that
+ * changed nothing of the kind. So the source sits in `checks/` named `*.check.js`, which neither
+ * pattern can reach, and apply writes it to `test/`, where normal discovery picks it up again and
+ * runs it against really applied code. Revert removes it like any new file.
+ */
+const CHECKS_DIR = 'checks';
 
 export const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -411,6 +423,12 @@ export async function loadMods(root) {
       from: f,
       to: relative(filesDir, f).split(sep).join('/'),
     }));
+    // `checks/` mirrors what the test file will be *called* once applied, under `test/`.
+    const checksDir = join(dir, CHECKS_DIR);
+    const checks = (await walk(checksDir)).map((f) => ({
+      from: f,
+      to: `test/${relative(checksDir, f).split(sep).join('/')}`,
+    }));
     // A mod upstream has since shipped natively: replaying it would fight the native code.
     const retiredIn = manifest.retiredIn || null;
     const retired = !!(retiredIn && version && cmpVersion(version, retiredIn) >= 0);
@@ -423,7 +441,7 @@ export async function loadMods(root) {
       relDir: relPosix(root, dir),
       manifest,
       patches,
-      files,
+      files: [...files, ...checks],
       dependsOn,
       retiredIn,
       retired,
