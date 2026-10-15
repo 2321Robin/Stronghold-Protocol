@@ -12,7 +12,7 @@
     },
     {
       "id": "captured-2",
-      "anchor": "${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || collapsed}",
+      "anchor": "${phase === PHASE.PREP && priv?.shop?.rewardOffer ? html`<${RewardOverlay} priv=${priv} minimized=${rewardMin || barCollapsed}",
       "op": "insert-before",
       "new": [
         "<${DevPanel} hidden=${watchingOther} />",
