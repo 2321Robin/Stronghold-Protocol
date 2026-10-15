@@ -33,6 +33,7 @@ mods/
   <mod-id>/
     mod.json             manifest
     files/               new files, copied verbatim — paths mirror the repo
+    checks/              the mod's own tests, applied under test/ (see below)
     patches/*.json       patch declarations, one file per target file
 ```
 
@@ -78,7 +79,16 @@ mods/
 - **json-merge** merges key by key (`config.json`, the i18n packs). Upstream editing other keys
   never collides — this is what takes `public/i18n/en.json` off the conflict list for good.
 - **files/** — anything placed there is copied to the same relative path. New files can never
-  conflict; this is where a mod's tests belong.
+  conflict. A mod's *own tests* are the one exception — they go in **checks/**, see below.
+- **checks/** — the mod's own tests, named `*.check.js`. Do **not** put them in `files/test/`:
+  `node --test` with no paths globs every `*.test.js` anywhere and every `.js` inside a directory
+  named `test`, so a test held in `files/test/` would run *on the framework branch* too — where its
+  mod is not applied and the code it drives is missing — and fail, turning CI red on every push.
+  `checks/` beats both patterns; `apply` writes its contents to `test/` (same sub-path, name
+  unchanged: `checks/ui/pack.check.js` → `test/ui/pack.check.js`), where normal discovery picks it
+  up again and runs it against really applied code. `revert` removes them like any other new file.
+  Write imports relative to the applied location, not to `checks/`. `capture` writes new files into
+  `files/`, so a captured test file has to be moved into `checks/` by hand.
 
 `replace` on a JSDoc block is deliberately a separate patch from the code it documents: if upstream
 rewords the comment, the doc patch drifts and the code patch still applies.
