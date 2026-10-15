@@ -5,13 +5,17 @@
       "id": "import-extraChessOf",
       "anchor": "import { PHASE } from '../../../shared/constants.js';",
       "op": "insert-after",
-      "new": ["import { extraChessOf } from '../../../shared/protocol.js';"]
+      "new": [
+        "import { extraChessOf } from '../../../shared/protocol.js';"
+      ]
     },
     {
       "id": "roster-includes-extra",
       "anchor": "const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale()]); // (names follow a language switch)",
       "op": "replace",
-      "old": ["const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale()]); // (names follow a language switch)"],
+      "old": [
+        "const roster = useMemo(() => rosterOf(data.list('chess')), [ready, data.locale()]); // (names follow a language switch)"
+      ],
       "new": [
         "const extraChess = extraChessOf(useStore((s) => s.room?.extras || s.match?.public?.extras || null));",
         "const roster = useMemo(() => rosterOf(data.list('chess'), extraChess), [ready, data.locale(), extraChess.join(',')]); // (names follow a language switch)"
@@ -21,7 +25,9 @@
       "id": "import-keeps-extra-entry",
       "anchor": "const r = applyLoadoutEntries(res.entries, getChess, res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {});",
       "op": "replace",
-      "old": ["const r = applyLoadoutEntries(res.entries, getChess, res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {});"],
+      "old": [
+        "const r = applyLoadoutEntries(res.entries, getChess, res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {});"
+      ],
       "new": [
         "const r = applyLoadoutEntries(res.entries, getChess, {",
         "  ...(res.ops ? { ops: res.ops, isOperator: (id) => opIds.has(id) } : {}),",
@@ -32,10 +38,14 @@
     },
     {
       "id": "arrow-nav-includes-extra",
-      "anchor": "const ids = filterRoster(rosterOf(data.list('chess')), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops).map((c) => c.chessId);",
+      "anchor": "const ids = filterRoster(rosterOf(data.list('chess')), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops, potentialEditable).map((c) => c.chessId);",
       "op": "replace",
-      "old": ["const ids = filterRoster(rosterOf(data.list('chess')), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops).map((c) => c.chessId);"],
-      "new": ["const ids = filterRoster(rosterOf(data.list('chess'), extraChess), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops).map((c) => c.chessId);"]
+      "old": [
+        "const ids = filterRoster(rosterOf(data.list('chess')), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops, potentialEditable).map((c) => c.chessId);"
+      ],
+      "new": [
+        "const ids = filterRoster(rosterOf(data.list('chess'), extraChess), loadoutStore.get().filters, loadoutStore.get().entries, getChess, getBond, loadoutStore.get().ops, potentialEditable).map((c) => c.chessId);"
+      ]
     }
   ]
 }

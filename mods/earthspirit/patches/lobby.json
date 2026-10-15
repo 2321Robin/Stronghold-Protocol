@@ -3,10 +3,14 @@
   "patches": [
     {
       "id": "import-extraChessOf",
-      "anchor": "import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks } from '../shared/protocol.js';",
+      "anchor": "import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges } from '../shared/protocol.js';",
       "op": "replace",
-      "old": ["import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks } from '../shared/protocol.js';"],
-      "new": ["import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, extraChessOf } from '../shared/protocol.js';"]
+      "old": [
+        "import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges } from '../shared/protocol.js';"
+      ],
+      "new": [
+        "import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, extraChessOf } from '../shared/protocol.js';"
+      ]
     },
     {
       "id": "room-extras-field",
@@ -21,7 +25,9 @@
       "id": "room-state-extras",
       "anchor": "aiPicksLast: this.aiPicksLast,",
       "op": "insert-after",
-      "new": ["extras: { ...this.extras },"]
+      "new": [
+        "extras: { ...this.extras },"
+      ]
     },
     {
       "id": "dispatch-setExtras",
@@ -59,31 +65,20 @@
       "id": "startMatch-extras",
       "anchor": "aiPicksLast: room.mode !== 'solo' && room.aiPicksLast === true,",
       "op": "insert-after",
-      "new": ["extras: { ...room.extras },"]
+      "new": [
+        "extras: { ...room.extras },"
+      ]
     },
     {
       "id": "loadout-allows-extra",
       "anchor": "const res = checkLoadout(entries, (id) => lookup('chess', id, data));",
       "op": "replace",
-      "old": ["const res = checkLoadout(entries, (id) => lookup('chess', id, data));"],
-      "new": [
-        "const room = this.roomOf(session);",
-        "// local mod (room.setExtras 地灵): a room with the option on accepts a loadout for the hidden operator too",
-        "const res = checkLoadout(entries, (id) => lookup('chess', id, data), extraChessOf(room?.extras));"
-      ]
-    },
-    {
-      "id": "loadout-hoists-room",
-      "anchor": "session.ops = opsSet;",
-      "op": "replace",
       "old": [
-        "session.ops = opsSet;",
-        "const room = this.roomOf(session);",
-        "if (!room) return OK;"
+        "const res = checkLoadout(entries, (id) => lookup('chess', id, data));"
       ],
       "new": [
-        "session.ops = opsSet;",
-        "if (!room) return OK;"
+        "// local mod (room.setExtras 地灵): a room with the option on accepts a loadout for the hidden operator too",
+        "const res = checkLoadout(entries, (id) => lookup('chess', id, data), extraChessOf(room?.extras));"
       ]
     }
   ]
