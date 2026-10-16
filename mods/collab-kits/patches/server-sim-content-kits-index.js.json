@@ -1,0 +1,20 @@
+{
+  "file": "server/sim/content/kits/index.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "  'op-clemnt.js',",
+      "op": "insert-after",
+      "new": [
+        "// local-preview (playtest #21): the collab 6★ re-included by the SP_DIY_COLLAB build ride here, after the upstream picks",
+        "'op-oblvns.js',",
+        "'op-ash.js',",
+        "'op-yato2.js',",
+        "'op-orchd2.js',",
+        "'op-marcil.js',",
+        "'op-ela.js',",
+        "'op-makoto.js',"
+      ]
+    }
+  ]
+}

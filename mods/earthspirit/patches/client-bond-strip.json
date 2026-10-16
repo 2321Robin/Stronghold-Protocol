@@ -1,0 +1,19 @@
+{
+  "file": "public/js/ui/bondStrip.js",
+  "patches": [
+    {
+      "id": "bondPopup-signature",
+      "anchor": "export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {",
+      "op": "replace",
+      "old": ["export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {"],
+      "new": ["export function BondPopup({ bondId, entry, priv, banned = [], extraMembers = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {"]
+    },
+    {
+      "id": "bondPopup-passes-extra",
+      "anchor": "const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord);",
+      "op": "replace",
+      "old": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord);"],
+      "new": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord, extraMembers);"]
+    }
+  ]
+}

@@ -1,10 +1,13 @@
 // Active effects list (m.private.effects: band / 机变 / team / item / garrison effects with counters):
 // compact icon column at the right edge, rich-text tooltip per effect. `counterText` (a 悬赏's "还剩 N 场作战", user
-// playtest #6 item 4) replaces the bare counter in the tooltip's kind line.
+// playtest #6 item 4) replaces the bare counter in the tooltip's kind line. The band entry takes its counter / line
+// from the cumulative strategies' progress (bandProgress over m.private.counters, user playtest #16) when the caller
+// passes them (`bandId` — the entry's own id is the effect id, not the bandId).
 
 import { html, Tooltip, MicroLabel } from './components.js';
 import { Img, RichText, GIcon } from './gameComponents.js';
 import { effectIconUrl } from './assetUrls.js';
+import { bandProgress } from './bandProgress.js';
 import { data } from '../data.js';
 import { t, tName, N_ } from '../../../shared/i18n.js';
 import { sentText } from './lang.js';
@@ -43,21 +46,30 @@ export function effectDesc(e) {
   return desc;
 }
 
-/** @param {{ effects: any[] }} props */
-export function EffectsList({ effects }) {
+/**
+ * @param {{ effects: any[], bandId?: string|null, counters?: Object|null, round?: number|null }} props
+ *   bandId / counters / round: the player's own band and m.private.counters (m.public.round) — decorate the band entry
+ *   with its progress; a scouted board (no counters of ours) passes null and shows the plain entry
+ */
+export function EffectsList({ effects, bandId = null, counters = null, round = null }) {
   const list = (Array.isArray(effects) ? effects : []).filter((e) => e && (e.name || e.desc));
   if (!list.length) return null;
   const m = data.get('assets');
   return html`<div class="effects" aria-label=${t('生效中的效果')}>
     <${MicroLabel}>EFFECTS</${MicroLabel}>
-    ${list.slice(0, 10).map((e, i) => html`<${Tooltip} key=${e.id ?? i} placement="bottom" text=${html`<div class="efftip">
-        <b>${tName(e.name) || t('效果')}</b><span class="efftip__kind">${t(KIND[e.iconKind] || '')}${e.counterText ? ` · ${bountyCounterText(e)}` : e.counter != null ? ` · ${e.counter}` : ''}</span>
+    ${list.slice(0, 10).map((e, i) => {
+      const bp = e.iconKind === 'band' && bandId && counters ? bandProgress(bandId, counters, round) : null;
+      const counter = bp ? bp.badge : e.counter;
+      const counterText = bp ? bp.tip : (e.counterText ? bountyCounterText(e) : null);
+      return html`<${Tooltip} key=${e.id ?? i} placement="bottom" text=${html`<div class="efftip">
+        <b>${tName(e.name) || t('效果')}</b><span class="efftip__kind">${t(KIND[e.iconKind] || '')}${counterText ? ` · ${counterText}` : counter != null ? ` · ${counter}` : ''}</span>
         <${RichText} as="p" text=${effectDesc(e)} />
       </div>`}>
       <span class=${`effect effect--${e.iconKind || 'x'}`}>
         <${Img} src=${effectIconUrl(m, e)} fallback=${html`<${GIcon} name="bolt" />`} />
-        ${e.counter != null && e.counter !== '' ? html`<b class="effect__n num">${e.counter}</b>` : null}
+        ${counter != null && counter !== '' ? html`<b class="effect__n num">${counter}</b>` : null}
       </span>
-    <//>`)}
+    <//>`;
+    })}
   </div>`;
 }

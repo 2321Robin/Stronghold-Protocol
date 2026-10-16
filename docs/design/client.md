@@ -226,6 +226,27 @@ A bond the mode never activates (标准: official `inactiveBondIdList`) reads �
 The strategy draft enables skip only on the viewer's turn, with quota left and another unpicked player to pass to.
 The order list retains finished players for display; they do not keep the last player's skip button enabled.
 
+累计型策略与「商业包装方案」的进度显示（playtest #16）：服务器把 `band:*` 计数（含懒重置回合计数的 `:<key>:r` 回合戳）与 `pack:<道具uid>` 的按副本计数随 `m.private.counters` 下发（PlayerState.progressCounters，其余计数留在服务器侧，META.md）。`ui/bandProgress.js` 是唯一把计数变成文案的模块（阈值读 bands.json / items.json 的 params，不写死），三个表面：本局信息策略块的进度行（观战队友的策略不显示——拿到的是对方的场，不是计数）、效果条 band 条目的徽标与 tooltip 行（同悬赏的 counterText 机制）、商业包装方案的道具卡与携带者装备行「已售 X/N」（按道具副本 uid，商店/奖励卡不显示）。
+
+首战资源预热（playtest #28,本地线）：页面在标题/大厅空闲时按优先级把首战要拉的大头提前取进 HTTP 缓存
+——本回合 BGM → 通用 UI/战斗音效 → 全自选池干员的头像与立绘 → 首领 BGM → 逐干员音效库
+（`ui/warmup.js` 的 `warmupQueue`，去重、并发 2、`fetch` 低优先级、失败静默——真用到时照旧按需加载）。
+路由进对局（点开始）才停，房间等待期继续预热（用户实测裁定），停后回到大厅从游标续跑；`navigator.connection.saveData` 下不启动。
+spine 刻意不预热：备战棋盘和敌波预览拉的正是战斗要用的模型，而已解析的 skeleton 是内存不是缓存
+（assets.js 按内存预算逐出，预取会和它打架）。静态服务对 `/assets/**` 发 `max-age=86400` + 强 ETag，
+预热一次当日命中磁盘缓存。
+
+资源包预导入（playtest #33,本地线）：玩家把 `tools/pack-assets.mjs` 打出的资源包 zip（默认
+`dist/stronghold-assets.zip`，store-only，首条 `_pack.json` 是逐 URL 大小表）在游戏内**设置 →「资源包」**
+（`ui/packPanel.js` 的状态表 / 选择 zip / 导入进度 / 失败清单 / 清空；独立页 `/pack.html` 保留给还没进
+游戏的冷浏览器）一次导入——本地磁盘 → 浏览器，不吃服务器带宽。`public/sw.js` 是 module 型 Service Worker，
+拦 GET `/assets/**`、`/fonts/**`、`/media/**`：运行时缓存 → 包（`ui/pack.js` 的 `packUsableFor` 按部署态
+尺寸表 `data/asset-sizes.json` 逐 URL 比对尺寸，不符就绕开包，保正确性）→ 回源；新 URL 自动回源、零操作。
+包覆盖 `data/assets.json` 主清单**加上** `data/local-assets.json`（`--no-local` 可关）——后者是 §13 的
+本地客户端美术（官方棋盘 map/mesh、UI 贴图、图鉴页、表情，1,475 个文件约 63 MiB），此前每次首访都由
+服务器下发。注册在 `ui/packInstall.js`（空闲调度；`navigator.webdriver` 下跳过，e2e 照旧走网络）；
+导入先清空旧包、逐条 CRC 校验、最后写 meta 作提交标记（半途而废 = 无包，自动全回源）。
+
 Interactions (research 09 §1.2 / §5, which supersede the first draft): shop card, upgrade and 机变 card are two-tap (select → confirm, §18.2) — a tap anywhere on the card, its confirm strip included, is the card's tap (shop cards have no ⓘ corner; the armed bar sits above the detail card; a shop card that cannot be bought right now opens its detail on tap, §20.7); a press / drop goes by the tile under the pointer (§18.1); drag bench↔board — over a legal tile the dragged unit stands on it, as in the official deploy drag, held under the pointer elsewhere (§27.62); a legal board drop (also onto the piece's own tile) opens the 4-direction deploy wheel (swipe UP/RIGHT/DOWN/LEFT with the rotated range striped orange; release in the centre, ✕ 点击取消 or Esc cancels); tap a unit's tile ⇒ underframe with **出售 +N** (and **撤退** on the board; items/Arts in the hand / temp: **销毁** — equipped items are locked, §6.2) plus its rotated range — the range follows the open detail card (`screens/game/range.js inspectRange`, GitHub PR #281): an own board piece in prep, and in battle or on a scouted board any ally operator / summon on the field with its current range (the live stats' `range` and `dir`, the snapshot's tile), never an enemy or a bench unit (UnitInfo `area` hand / temp); drag, the wheel and the pen hide it; no drag-to-sell; drag an item onto a unit's tile ⇒ equip that unit (both slots used ⇒ the replace dialog `ui/equipReplace.js` shows the incoming and the two equipped items; the player picks the one to replace — it is destroyed — `g.equip replaceUid`; cancel changes nothing); Arts are dropped on a tile and get the direction step; right-click or long-press ⇒ detail (or a tap on a shop card while the bar is locked); keyboard shortcuts — the defaults, which each player rebinds in 设置 → 快捷键 (`ui/gameLogic/shortcuts.js`, saved with the settings; §25.15) — `W` buy the hovered shop card directly (operators and items, no click; empty/sold slots and reward choices do nothing; existing funds/bench checks apply; §32.14.22), `R` refresh, `F` freeze, `D` level-up, `Q` retreat / `X` sell the own operator under the pointer, without clicking first or falling back to an old selection (board operators can retreat; board, bench and temporary-bench operators can be sold; blank tiles, HUD, items and summons do nothing; §32.14.22), `Space` ready (in a solo battle: pause / resume, §14 Solo pause); `Esc` closes (fixed); none acts while a text field has the focus or a dialog is open, nor while spectating, eliminated, watching another board, or on AI autopilot (暂离 or the server's autoplay). While a promotion reward or a special refresh replaces the shop row, W buys only a visible shop card and never a hidden slot or a reward card (§32.14.22). All actions optimistic-free: UI waits for server state (latency is small).
 
 The owner's `prepMapChars` (外勤医疗's 预备干员-医疗, or another displayed map-character variant) are read-only

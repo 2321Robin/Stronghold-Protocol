@@ -1,0 +1,47 @@
+{
+  "file": "public/i18n/en.json",
+  "patches": [
+    {
+      "id": "i18n-asset-pack-en",
+      "op": "json-merge",
+      "merge": {
+        "资源包": "Asset pack",
+        "把资源包 zip 一次性写进本浏览器（本地磁盘 → 浏览器，不吃服务器带宽）。之后游戏内的资源请求由本地缓存直接应答，新资源自动回源；需要 HTTPS（或 localhost）与支持 Service Worker 的桌面浏览器。": "Write an asset-pack zip into this browser once (local disk → browser, no server bandwidth). After that the game's asset requests are answered straight from the local cache, and new files still come from the server; needs HTTPS (or localhost) and a desktop browser with Service Worker support.",
+        "服务器清单": "Server manifest",
+        "部署尺寸表": "Deployed size table",
+        "本机资源包": "Local pack",
+        "对比结论": "Verdict",
+        "存储占用 / 配额": "Storage / quota",
+        "加载中…": "Loading…",
+        "未取得": "unavailable",
+        "加载失败（需要本站服务）": "load failed (needs this site's server)",
+        "已部署": "deployed",
+        "未部署（可选）": "not deployed (optional)",
+        "未安装 —— 游戏照常从服务器加载": "not installed — the game keeps loading from the server",
+        "无法对比（服务器清单未取得）": "cannot compare (no server manifest)",
+        "✓ 包与服务器清单一致": "✓ pack matches the server manifest",
+        "⚠ 包基于旧清单 {old}，服务器已是 {hash}": "⚠ pack is based on the older manifest {old}; the server is now {hash}",
+        "已安装 {count} 个文件 · {bytes} · 清单 {manifest} · 构建于 {built}": "{count} files installed · {bytes} · manifest {manifest} · built {built}",
+        "持久存储已授予": "persistent storage granted",
+        "持久存储未授予": "persistent storage not granted",
+        "浏览器未提供 estimate()": "the browser does not provide estimate()",
+        "选择资源包 zip": "Choose an asset-pack zip",
+        "清空本机资源包？之后的资源全部由服务器下发。": "Clear the local asset pack? Everything will come from the server afterwards.",
+        "已选择 {name}（{size}）": "Selected {name} ({size})",
+        "读取压缩包…": "Reading the archive…",
+        "写入本地缓存…": "Writing to the local cache…",
+        "导入完成 ✓ {written} 个文件，{bytes}": "Done ✓ {written} files, {bytes}",
+        "导入完成，{written} 条成功、{failed} 条失败/跳过（失败条目照常回源）": "Done: {written} written, {failed} failed/skipped (failed entries still come from the server)",
+        "已清空 ✓": "Cleared ✓",
+        "清空失败：{error}": "Clear failed: {error}",
+        "这不是资源包：缺少 _pack.json": "Not an asset pack: _pack.json is missing",
+        "_pack.json 缺少 files 大小表": "_pack.json has no files size table",
+        "不在资源目录内，已跳过": "outside the asset directories, skipped",
+        "不在清单中，已跳过": "not in the manifest, skipped",
+        "大小与清单不符，已跳过": "size does not match the manifest, skipped",
+        "{n} 条失败/跳过：": "{n} failed/skipped:",
+        "{done}/{total} 个文件 · {bytes}/{totalBytes} · {rate}/s": "{done}/{total} files · {bytes}/{totalBytes} · {rate}/s"
+      }
+    }
+  ]
+}

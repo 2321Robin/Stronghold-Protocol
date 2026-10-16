@@ -1,0 +1,20 @@
+{
+  "file": "server/sim/snapshot.js",
+  "patches": [
+    {
+      "id": "makoto-doll-window-on-sp-bar",
+      "anchor": "  let sp = sk && !sk.noSkill ? sk.sp : 0;",
+      "op": "insert-after",
+      "new": [
+        "  // local mod (#39): 结城理's 替身 has no SP bar of its own (an instant skill switched her in) — her window's",
+        "  // remaining time rides the SP fraction instead (the trait:substitute buff's clock, display only).",
+        "  // The gate is her charId alone: every other 傀儡师 (归溟幽灵鲨, 风丸 — upstream) keeps the stock snapshot",
+        "  // (their golden digests must not move for a local collab mod).",
+        "  if (u.trait && u.trait.doll && u.def?.charId === 'char_4217_makoto') {",
+        "    const sub = u.buffs.find((b) => b.key === 'trait:substitute');",
+        "    if (sub && sub.duration > 0) { spMax = sub.duration; sp = spMax * Math.max(0, Math.min(1, sub.timeLeft / sub.duration)); }",
+        "  }"
+      ]
+    }
+  ]
+}

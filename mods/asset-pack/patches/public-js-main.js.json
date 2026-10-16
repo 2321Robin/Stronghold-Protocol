@@ -1,0 +1,24 @@
+{
+  "file": "public/js/main.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "import { initLang, useLang, tickerText } from './ui/lang.js';",
+      "op": "insert-after",
+      "new": [
+        "import { installPack } from './ui/packInstall.js';"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "  data.load('assets').catch(() => {});",
+      "op": "insert-after",
+      "new": [
+        "// Asset-pack service worker (ui/packInstall.js, playtest #33, local line): serves /assets/** /fonts/** /media/**",
+        "// from a Cache Storage the player fills once via /pack.html, with the network as fallback — the pack is the",
+        "// durable first-pull, warmup above stays the fallback for packless browsers.",
+        "installPack();"
+      ]
+    }
+  ]
+}

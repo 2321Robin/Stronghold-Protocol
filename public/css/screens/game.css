@@ -670,6 +670,24 @@
   white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto;
 }
 .set-diag__text:focus { border-color: var(--mint-700); }
+/* 设置 →「资源包」(playtest #33, local line): the status rows, the import bar and the failure list (ui/packPanel.js). */
+.set-pack { display: flex; flex-direction: column; gap: .08rem; padding-top: .1rem; border-top: 1px solid var(--line); }
+.set-pack__rows { display: flex; flex-direction: column; gap: .04rem; }
+.set-pack__row { display: flex; gap: .12rem; align-items: baseline; font-size: calc(.14 * var(--t)); }
+.set-pack__k { flex: 0 0 6.4em; color: var(--text-dim); }
+.set-pack__v { min-width: 0; color: var(--text-md); overflow-wrap: anywhere; }
+.set-pack__v.is-ok { color: var(--mint-400); }
+.set-pack__v.is-warn { color: var(--amber); }
+.set-pack__file { display: none; }
+.set-pack__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem; }
+.set-pack__picked { min-width: 0; font-size: calc(.13 * var(--t)); color: var(--text-lo); overflow-wrap: anywhere; }
+.set-pack__bar { height: .08rem; background: rgba(0, 0, 0, .35); border: 1px solid var(--line-2); overflow: hidden; }
+.set-pack__bar > i { display: block; height: 100%; width: 0; background: var(--mint-500); transition: width .2s; }
+.set-pack__fails { max-height: 2.4rem; margin: 0; overflow: auto; font-family: var(--font-num); font-size: max(.12rem, 11px); line-height: 1.6; color: var(--red-premium); white-space: pre-wrap; overflow-wrap: anywhere; }
+.set-pack__note { min-height: 1.5em; font-size: calc(.14 * var(--t)); line-height: 1.5; color: var(--text-md); }
+.set-pack__note.is-ok { color: var(--mint-400); }
+.set-pack__note.is-warn { color: var(--amber); }
+.set-pack__note.is-err { color: var(--red-premium); }
 /* touch: 16 px, below which iOS zooms into the focused box (as 干员调配's 导出 box and ui/clipboard.js) */
 .sp-coarse .set-diag__text { font-size: 16px; }
 @media (max-width: 767px) { .set-keys__list { grid-template-columns: minmax(0, 1fr); } }

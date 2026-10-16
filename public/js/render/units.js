@@ -383,6 +383,16 @@ export const FORMS = Object.freeze({
   char_4016_kazema: Object.freeze({
     doll: Object.freeze({ change: 'Start_B', leave: 'Start', roles: dollRoles('Idle_B', 'Die_B', 'Attack_B') }),
   }),
+  // local-preview (playtest #21 / #38): 结城理's 替身 forms — the persona clip sets inside her own skeleton
+  // (Doll_Skill_N_*; S3 = P1 Thanatos / P2 Orpheus, the lethal switch plays P1toP2). The sim sends the form as an
+  // fx ('substitute' with form: doll1 / doll2 / doll3 / doll3p2, professions' archetype keeps 'doll' for others).
+    char_4217_makoto: Object.freeze({
+      doll1: Object.freeze({ change: 'Doll_Skill_1_SwitchIn', leave: 'Doll_Skill_1_SwitchOut', roles: dollRoles('Doll_Skill_1_Idle', 'Doll_Skill_1_Die', 'Doll_Skill_1_Attack') }),
+      doll2: Object.freeze({ change: 'Doll_Skill_2_SwitchIn', leave: 'Doll_Skill_2_SwitchOut', roles: dollRoles('Doll_Skill_2_Loop', 'Doll_Skill_2_Die', null) }),
+      // S3 P1 (Thanatos) rides Attack_A [ASSUMED: no Die clip of her own — a lethal hit switches to P2 instead]
+      doll3: Object.freeze({ change: 'Doll_Skill_3_P1_SwitchIn', leave: 'Doll_Skill_3_P1_SwitchOut', roles: dollRoles('Doll_Skill_3_P1_Idle', 'Doll_Skill_2_Die', 'Doll_Skill_3_P1_Attack_A') }),
+      doll3p2: Object.freeze({ change: 'Doll_Skill_3_P1toP2_ChangeBegin', leave: 'Doll_Skill_3_P2_SwitchOut', roles: dollRoles('Doll_Skill_3_P2_Loop', 'Doll_Skill_3_P2_Die', null) }),
+    }),
   enemy_1040_bombd: Object.freeze({
     bombed: Object.freeze({
       roles: Object.freeze({
@@ -1753,6 +1763,10 @@ export class UnitView {
       this.spBg.position.set(x0 - 1, sy); this.spBg.width = bw + 2; this.spBg.height = spH + 2;
       this.spFill.position.set(x0, sy); this.spFill.width = bw * k; this.spFill.height = spH;
       this.spFill.tint = ammo ? COLORS.ammo : active ? COLORS.spActive : ready ? COLORS.spReady : COLORS.sp;
+      // local mod (#40): a 傀儡师's 替身 window rides the SP bar as its countdown (snapshot.js) — drain it in
+      // the active colour (as a timed skill's drain), not the idle cyan (she has no UF.SKILL: an instant
+      // skill switched her in)
+      if (this.form) this.spFill.tint = COLORS.spActive;
       this._spY = sy;
     }
     this._updateAmmoCuts(showSp && !!ammo, ammo, x0, sy, bw, spH);

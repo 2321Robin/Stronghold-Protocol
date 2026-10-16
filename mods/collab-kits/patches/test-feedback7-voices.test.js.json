@@ -1,0 +1,43 @@
+{
+  "file": "test/feedback7-voices.test.js",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (192 operators, 2688 files); stand-ins, 盟约·辅助干员 and summons have neither', () => {",
+      "op": "replace",
+      "old": [
+        "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (192 operators, 2688 files); stand-ins, 盟约·辅助干员 and summons have neither', () => {"
+      ],
+      "new": [
+        "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (194 operators, 2716 files; 192 upstream incl. Clementia + the local collab 麒麟R夜刀 / 焰狐龙梓兰, whose CN dub the mirror carries — playtest #21); stand-ins, 盟约·辅助干员 and summons have neither', () => {"
+      ]
+    },
+    {
+      "id": "captured-2",
+      "anchor": "  assert.equal(m.stats.voiceChars, Object.keys(cn).length);",
+      "op": "replace",
+      "old": [
+        "assert.equal(m.stats.voiceChars, Object.keys(cn).length);",
+        "assert.equal(Object.keys(jp).length, 192);",
+        "// the JP tree is the Chinese one with the folder swapped: same slots, same lines in the same order, same file names",
+        "assert.deepEqual(JSON.parse(JSON.stringify(cn).replaceAll('/assets/audio/voice/cn/', '/assets/audio/voice/jp/')), jp);",
+        "const lines = [];",
+        "const walk = (x) => { if (typeof x === 'string') lines.push(x); else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') Object.values(x).forEach(walk); };",
+        "walk(jp);",
+        "assert.equal(lines.length, 2688);"
+      ],
+      "new": [
+        "assert.equal(m.stats.voiceChars, Object.keys(cn).length);",
+        "// 194 = 192 upstream in 0.2.3 (incl. Clementia) + the two local collab picks whose CN dub the mirror carries (14 lines each, their JP twin",
+        "// rides along; the other five collab 6★ have neither dub in the dumps and stay voiceless, as on the 0.2.1 line)",
+        "assert.equal(Object.keys(jp).length, 194);",
+        "// the JP tree is the Chinese one with the folder swapped: same slots, same lines in the same order, same file names",
+        "assert.deepEqual(JSON.parse(JSON.stringify(cn).replaceAll('/assets/audio/voice/cn/', '/assets/audio/voice/jp/')), jp);",
+        "const lines = [];",
+        "const walk = (x) => { if (typeof x === 'string') lines.push(x); else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') Object.values(x).forEach(walk); };",
+        "walk(jp);",
+        "assert.equal(lines.length, 2716);"
+      ]
+    }
+  ]
+}

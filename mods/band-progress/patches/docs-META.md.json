@@ -1,0 +1,20 @@
+{
+  "file": "docs/META.md",
+  "patches": [
+    {
+      "id": "captured-1",
+      "anchor": "first manual refresh that copy witnesses (player feedback after 0.1.0: \"获得该干员后该回合的首次刷新\" also stacks; a copy",
+      "op": "replace",
+      "old": [
+        "first manual refresh that copy witnesses (player feedback after 0.1.0: \"获得该干员后该回合的首次刷新\" also stacks; a copy",
+        "bought after selling one this round is a new copy and fires on its own first refresh [ASSUMED])."
+      ],
+      "new": [
+        "first manual refresh that copy witnesses (player feedback after 0.1.0: \"获得该干员后该回合的首次刷新\" also stacks; a copy",
+        "bought after selling one this round is a new copy and fires on its own first refresh [ASSUMED]). `band:*` counters (the",
+        "per-round ones' `:<key>:r` round stamp included) and `pack:<item uid>` counters reach the client on `m.private.counters`",
+        "for the strategies' progress display (DESIGN §10) — anything else stays server-side."
+      ]
+    }
+  ]
+}

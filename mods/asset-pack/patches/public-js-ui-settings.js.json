@@ -1,0 +1,22 @@
+{
+  "file": "public/js/ui/settings.js",
+  "patches": [
+    {
+      "id": "import-pack-section",
+      "anchor": "import { copyText } from './clipboard.js';",
+      "op": "insert-after",
+      "new": [
+        "// playtest #33 (local line, never upstream): 设置 →「资源包」— the /pack.html import folded into this modal",
+        "import { PackSection } from './packPanel.js';"
+      ]
+    },
+    {
+      "id": "render-pack-section",
+      "anchor": "<${DiagSection} />",
+      "op": "insert-after",
+      "new": [
+        "<${PackSection} />"
+      ]
+    }
+  ]
+}

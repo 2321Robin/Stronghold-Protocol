@@ -1,0 +1,20 @@
+{
+  "file": "test/ui/asset-import.test.js",
+  "patches": [
+    {
+      "id": "sw-runtime-layer-writes",
+      "anchor": "  assert.equal(sw.includes('.put('), false);",
+      "op": "replace",
+      "old": [
+        "  assert.equal(sw.includes('.put('), false);"
+      ],
+      "new": [
+        "  // local mod (asset-pack): this worker also keeps a runtime cache for packless browsers and writes network",
+        "  // responses into it — the ONLY cache it writes; the imported-assets cache above is only ever read (the page",
+        "  // import writes it, see ui/assetPack.js). The fake put() below throws and storeRuntime swallows it, which",
+        "  // also proves a write failure never takes a request down.",
+        "  assert.ok(!/IMPORTED_ASSET_CACHE\\)[^)]*\\.put\\(/.test(sw), 'the worker never writes the imported cache');"
+      ]
+    }
+  ]
+}

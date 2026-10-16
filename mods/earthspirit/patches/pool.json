@@ -1,0 +1,64 @@
+{
+  "file": "server/match/pool.js",
+  "patches": [
+    {
+      "id": "drawDisabledBonds-jsdoc",
+      "anchor": " * @param {Function} rng seeded rng (createRng)",
+      "op": "insert-after",
+      "new": [" * @param {string[]} [extraChess] hidden base chess a match option adds to the pool — ban-checked with the visible ones"]
+    },
+    {
+      "id": "drawDisabledBonds-signature",
+      "anchor": "export function drawDisabledBonds(gd, rng) {",
+      "op": "replace",
+      "old": ["export function drawDisabledBonds(gd, rng) {"],
+      "new": ["export function drawDisabledBonds(gd, rng, extraChess = []) {"]
+    },
+    {
+      "id": "bans-cover-extra",
+      "anchor": "const banned = [];",
+      "op": "replace",
+      "old": [
+        "const banned = [];",
+        "for (const id of gd.visibleChess) {"
+      ],
+      "new": [
+        "const banned = [];",
+        "for (const id of [...gd.visibleChess, ...extraChess]) {"
+      ]
+    },
+    {
+      "id": "sharedpool-jsdoc",
+      "anchor": " * @param {{ banned?: Iterable<string> }} [opts]",
+      "op": "replace",
+      "old": [" * @param {{ banned?: Iterable<string> }} [opts]"],
+      "new": [
+        " * @param {{ banned?: Iterable<string>, extraChess?: Iterable<string> }} [opts] extraChess: hidden base chess a",
+        " *   match option adds to the pool (local mod: 地灵 via room.setExtras) — ban-checked like visible chess."
+      ]
+    },
+    {
+      "id": "sharedpool-signature",
+      "anchor": "constructor(gd, { banned = [] } = {}) {",
+      "op": "replace",
+      "old": ["constructor(gd, { banned = [] } = {}) {"],
+      "new": ["constructor(gd, { banned = [], extraChess = [] } = {}) {"]
+    },
+    {
+      "id": "sharedpool-covers-extra",
+      "anchor": "this.entries = new Map();",
+      "op": "replace",
+      "old": [
+        "this.entries = new Map();",
+        "for (const id of gd.visibleChess) {"
+      ],
+      "new": [
+        "this.entries = new Map();",
+        "const seen = new Set();",
+        "for (const id of [...gd.visibleChess, ...extraChess]) {",
+        "  if (seen.has(id)) continue;",
+        "  seen.add(id);"
+      ]
+    }
+  ]
+}

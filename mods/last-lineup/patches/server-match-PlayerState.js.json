@@ -1,0 +1,16 @@
+{
+  "file": "server/match/PlayerState.js",
+  "patches": [
+    {
+      "id": "state-lastLineup-field",
+      "anchor": "    this.eliminatedRound = null;",
+      "op": "insert-after",
+      "new": [
+        "/** the last deployed lineup, snapshotted at elimination (results.js buildResult reads it: the board is",
+        " *  cleared right after, and the result row would otherwise lose its 阵容 entirely — user request via the",
+        " *  #18 stats replay, which serves these same rows) */",
+        "this.lastLineup = [];"
+      ]
+    }
+  ]
+}

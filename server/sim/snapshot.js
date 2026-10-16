@@ -107,6 +107,14 @@ export function unitTuple(u, t) {
   const sk = u.skill;
   let spMax = sk && !sk.noSkill ? sk.spCost : 0;
   let sp = sk && !sk.noSkill ? sk.sp : 0;
+  // local mod (#39): 结城理's 替身 has no SP bar of its own (an instant skill switched her in) — her window's
+  // remaining time rides the SP fraction instead (the trait:substitute buff's clock, display only).
+  // The gate is her charId alone: every other 傀儡师 (归溟幽灵鲨, 风丸 — upstream) keeps the stock snapshot
+  // (their golden digests must not move for a local collab mod).
+  if (u.trait && u.trait.doll && u.def?.charId === 'char_4217_makoto') {
+    const sub = u.buffs.find((b) => b.key === 'trait:substitute');
+    if (sub && sub.duration > 0) { spMax = sub.duration; sp = spMax * Math.max(0, Math.min(1, sub.timeLeft / sub.duration)); }
+  }
   if (sk && sk.active && sk.isTimed) {
     // show remaining duration/ammo as a draining bar — ammo out of the activation's real total (base + bullets added:
     // 拉特兰, 逃犯引渡手续, refills; community report #35), so every bullet shortens it

@@ -1,0 +1,29 @@
+{
+  "file": "server/match/results.js",
+  "patches": [
+    {
+      "id": "results-boardLineup-rename",
+      "anchor": "    const roundsPassed = !ps.alive && ps.eliminatedRound != null ? Math.max(0, ps.eliminatedRound - 1) : teamRounds;",
+      "op": "replace",
+      "old": [
+        "const roundsPassed = !ps.alive && ps.eliminatedRound != null ? Math.max(0, ps.eliminatedRound - 1) : teamRounds;",
+        "const lineup = boardOrder(ps.board).filter((x) => x.piece.kind === 'chess').map(({ r, c, piece }) => {"
+      ],
+      "new": [
+        "const roundsPassed = !ps.alive && ps.eliminatedRound != null ? Math.max(0, ps.eliminatedRound - 1) : teamRounds;",
+        "const boardLineup = boardOrder(ps.board).filter((x) => x.piece.kind === 'chess').map(({ r, c, piece }) => {"
+      ]
+    },
+    {
+      "id": "results-lineup-fallback",
+      "anchor": "// the team's clear counts for the players still in; an eliminated / departed teammate did not pass the boss round",
+      "op": "insert-before",
+      "new": [
+        "// an eliminated / departed player's board was cleared at elimination (PlayerState.eliminate): fall back to",
+        "// the last deployed lineup kept there, so the result row still shows what they had (阵容已撤离 only when",
+        "// they truly had nothing deployed)",
+        "const lineup = boardLineup.length ? boardLineup : (Array.isArray(ps.lastLineup) ? ps.lastLineup : []);"
+      ]
+    }
+  ]
+}

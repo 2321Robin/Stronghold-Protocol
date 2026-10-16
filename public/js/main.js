@@ -58,7 +58,9 @@ import { installRehearsal } from './battle/rehearsal.js';
 import { recordResult, installStatsRecorder } from './ui/stats.js';
 import { installLoadoutSync, installOwnershipSync, installDiySync } from './ui/loadoutSync.js';
 import { startBuildGuard } from './ui/buildGuard.js';
+import { installWarmup } from './ui/warmup.js';
 import { initLang, useLang, tickerText } from './ui/lang.js';
+import { installPack } from './ui/packInstall.js';
 import { t, N_, translateWire } from '../../shared/i18n.js';
 import { recordError, installTrafficMeter } from './diag.js';
 import { installContent, installContentSet } from './content.js';
@@ -412,7 +414,15 @@ async function boot() {
     onFailed: (url) => cosmetics.fail(url) });
   // …and the music follows the art: the screen's track again when the cosmetic layers change its URLs
   cosmetics.subscribe(() => audio.refreshBgm());
+  // Idle-time HTTP-cache warmup (ui/warmup.js): title / lobby / room fetch the first battle's BGM, SFX and portraits
+  // so a cold browser's first fight does not start with a minute of downloads on a slow pipe; the match screen (点开始)
+  // hands the pipe back.
+  installWarmup({ getManifest: () => data.get('assets'), subscribe: store.subscribe, getState: store.get, selectRoute });
   data.load('assets').catch(() => {});
+  // Asset-pack service worker (ui/packInstall.js, playtest #33, local line): serves /assets/** /fonts/** /media/**
+  // from a Cache Storage the player fills once via /pack.html, with the network as fallback — the pack is the
+  // durable first-pull, warmup above stays the fallback for packless browsers.
+  installPack();
   // Warm the data cache in the background (missing files are tolerated).
   data.loadAll('config').catch(() => {});
   // Optional local-client art manifest (emotes, tutorial pages, official UI sprites; DESIGN §13).
