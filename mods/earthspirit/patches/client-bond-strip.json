@@ -3,17 +3,17 @@
   "patches": [
     {
       "id": "bondPopup-signature",
-      "anchor": "export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {",
+      "anchor": "export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false, morphMode = 'official' }) {",
       "op": "replace",
-      "old": ["export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {"],
-      "new": ["export function BondPopup({ bondId, entry, priv, banned = [], extraMembers = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false }) {"]
+      "old": ["export function BondPopup({ bondId, entry, priv, banned = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false, morphMode = 'official' }) {"],
+      "new": ["export function BondPopup({ bondId, entry, priv, banned = [], extraMembers = [], onClose, onMember, place = null, over = false, beside = null, owner = null, off = false, morphMode = 'official' }) {"]
     },
     {
       "id": "bondPopup-passes-extra",
-      "anchor": "const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord);",
+      "anchor": "const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord, morphMode);",
       "op": "replace",
-      "old": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord);"],
-      "new": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord, extraMembers);"]
+      "old": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord, morphMode);"],
+      "new": ["const members = bondMembers(b, priv, banned, getChess, (id) => data.lookup('items', id), pieceRecord, morphMode, extraMembers);"]
     }
   ]
 }

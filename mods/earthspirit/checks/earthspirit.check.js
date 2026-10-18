@@ -45,7 +45,8 @@ describe('地灵 room option: client pure helpers', () => {
   test('bondMembers shows 地灵 in 奇迹 / 远见 exactly when she is an extra member', () => {
     for (const bondId of ['miraShip', 'visiShip']) {
       const bond = Object.values(DATA.bonds).find((b) => b && b.bondId === bondId);
-      const rows = bondMembers(bond, null, [], (id) => DATA.chess[id], () => null, null, [ES]);
+      // 0.3.1 put `mode` (变形同构体 morphPairing) between pieceRecord and the mod's extraMembers
+      const rows = bondMembers(bond, null, [], (id) => DATA.chess[id], () => null, null, 'official', [ES]);
       const hers = rows.find((r) => r.id === ES);
       assert.ok(hers, `${bondId}: 地灵 in the member rows with extras`);
       assert.equal(hers.name, '地灵');
@@ -58,7 +59,7 @@ describe('地灵 room option: client pure helpers', () => {
     const extras = [ES];
     for (const bond of Object.values(DATA.bonds)) {
       if (!bond || bond.bondId === 'miraShip' || bond.bondId === 'visiShip') continue;
-      const rows = bondMembers(bond, null, [], (id) => DATA.chess[id], () => null, null, extras);
+      const rows = bondMembers(bond, null, [], (id) => DATA.chess[id], () => null, null, 'official', extras);
       assert.ok(!rows.some((r) => r.id === ES), `${bond.bondId}: 地灵 must not appear`);
     }
   });
