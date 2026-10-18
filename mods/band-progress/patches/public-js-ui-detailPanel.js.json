@@ -15,11 +15,12 @@
       "op": "replace",
       "old": [
         "/** An equipped item of the card: icon, name, effect — and for 变形同构体 / a bond item its pairing (`carried`: the wearer's items). */",
-        "function ItemRow({ itemId, carried = null, off = null }) {",
+        "function ItemRow({ itemId, carried = null, off = null, mode = 'official', onUnequip = null, uid = null }) {",
         "  const it = data.lookup('items', itemId);",
+        "  const free = mode === 'plus' && !!it?.canGiveBond;",
         "  return html`<div class=\"ditem\">",
         "    <${UnitThumb} kind=\"item\" id=${itemId} size=\"sm\" />",
-        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b><${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />"
+        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b>${free ? html`<span class=\"dtag\" data-testid=\"morph-free\">${t('不占装备格')}</span>` : null}<${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />"
       ],
       "new": [
         "/**",
@@ -27,49 +28,49 @@
         " * items). A copy with its own rolling counter (the 商业包装方案, playtest #16) shows 已售 X/N (`uid` + `counters`: the",
         " * wearer's m.private.counters and the item piece's uid — the counter is per copy, packProgress).",
         " */",
-        "function ItemRow({ itemId, uid = null, carried = null, off = null, counters = null }) {",
+        "function ItemRow({ itemId, carried = null, off = null, mode = 'official', onUnequip = null, uid = null, counters = null }) {",
         "  const it = data.lookup('items', itemId);",
+        "  const free = mode === 'plus' && !!it?.canGiveBond;",
         "  const pack = packProgress(it, uid, counters);",
         "  return html`<div class=\"ditem\">",
         "    <${UnitThumb} kind=\"item\" id=${itemId} size=\"sm\" />",
-        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b><${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />",
-        "      ${pack ? html`<span class=\"dpack num\">${pack.text}</span>` : null}"
+        "    <div class=\"ditem__text\"><b>${it?.name || itemId}</b>${free ? html`<span class=\"dtag\" data-testid=\"morph-free\">${t('不占装备格')}</span>` : null}<${RichText} text=${it?.descRaw || it?.desc || ''} class=\"ditem__desc\" />${pack ? html`<span class=\"dpack num\">${pack.text}</span>` : null}"
       ]
     },
     {
       "id": "chessdetail-counters-prop",
-      "anchor": "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null }) {",
+      "anchor": "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null, morphMode = 'official', onUnequip = null }) {",
       "op": "replace",
       "old": [
-        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null }) {"
+        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null, morphMode = 'official', onUnequip = null }) {"
       ],
       "new": [
-        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null, counters = null }) {"
+        "export function ChessDetail({ chess, piece, unit, snapHp, editable, onSell, bonds, offBonds = null, loadout, onBond, live = null, hint = null, unitItems = null, standIn = null, diy = null, cultOpts = null, morphMode = 'official', onUnequip = null, counters = null }) {"
       ]
     },
     {
       "id": "captured-4",
-      "anchor": "  blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
+      "anchor": "  blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${slotPolicy.slotsUsed(items)}/${slotPolicy.slotCap(2)}`} class=\"dsec--equip\">",
       "op": "replace",
       "old": [
-        "blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
-        "    ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} carried=${items} off=${offBonds} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
+        "  blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${slotPolicy.slotsUsed(items)}/${slotPolicy.slotCap(2)}`} class=\"dsec--equip\">",
+        "      ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} carried=${items} off=${offBonds} mode=${morphMode} uid=${it.uid} onUnequip=${onUnequip} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
       ],
       "new": [
-        "blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${items.length}/2`} class=\"dsec--equip\">",
-        "    ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} uid=${it.uid} counters=${counters} carried=${items} off=${offBonds} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
+        "  blocks.equip = piece?.kind === 'chess' ? html`<${Section} key=\"equip\" title=${t('装备')} micro=${`EQUIP ${slotPolicy.slotsUsed(items)}/${slotPolicy.slotCap(2)}`} class=\"dsec--equip\">",
+        "      ${items.length ? items.map((it) => html`<${ItemRow} key=${it.uid} itemId=${it.id} counters=${counters} carried=${items} off=${offBonds} mode=${morphMode} uid=${it.uid} onUnequip=${onUnequip} />`) : html`<p class=\"t-dim dempty\">${t('拖拽装备至该干员以配发（最多 2 件）')}</p>`}"
       ]
     },
     {
       "id": "captured-5",
-      "anchor": "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null }) {",
+      "anchor": "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null, morphMode = 'official', unequipAllowed = false }) {",
       "op": "replace",
       "old": [
-        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null }) {",
+        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null, morphMode = 'official', unequipAllowed = false }) {",
         "  const m = data.get('assets');"
       ],
       "new": [
-        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null, counters = null }) {",
+        "export function ItemDetail({ item, piece, editable, onDestroy, offBonds = null, morphMode = 'official', unequipAllowed = false, counters = null }) {",
         "  const m = data.get('assets');",
         "  // a copy with its own rolling counter (the 商业包装方案, playtest #16): 已售 X/N next to the effect text — the",
         "  // counter is per item piece (`pack:<uid>`), so only the player's own copies show it (a shop / reward card has no uid)",
@@ -94,14 +95,14 @@
       "old": [
         " *   for this line only; [ASSUMED] the official prep tap says 选中干员 like the battle's FOCUS_CHAR)",
         " */",
-        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false }) {"
+        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false, morphMode = 'official', onUnequip = null, unequipAllowed = false }) {"
       ],
       "new": [
         " *   for this line only; [ASSUMED] the official prep tap says 选中干员 like the battle's FOCUS_CHAR)",
         " *   counters: the player's own m.private.counters — an equipped/hand 商业包装方案's 已售 X/N on the item and wearer",
         " *   cards (packProgress); a scouted board passes null (the watched player's counters are not in our m.private)",
         " */",
-        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false, counters = null }) {"
+        "export function DetailPanel({ detail, editable, snapHp, onClose, onSell, onDestroy, bonds = [], offBonds = null, loadout = null, ops = null, onBond = null, side = 'left', shopOpen = false, live = null, voice = false, morphMode = 'official', onUnequip = null, unequipAllowed = false, counters = null }) {"
       ]
     },
     {
@@ -109,14 +110,14 @@
       "anchor": "        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
       "op": "replace",
       "old": [
-        "  bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
-        "  standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} />` : null}",
-        "${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} />` : null}"
+        "        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
+        "        standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} morphMode=${morphMode} onUnequip=${onUnequip} />` : null}",
+        "      ${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} morphMode=${morphMode} unequipAllowed=${unequipAllowed} />` : null}"
       ],
       "new": [
-        "  bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
-        "  standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} counters=${counters} />` : null}",
-        "${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} counters=${counters} />` : null}"
+        "        bonds=${bonds} offBonds=${offBonds} loadout=${loadout} onBond=${onBond} live=${liveNow} hint=${detail.hint || null} unitItems=${detail.unitItems || null}",
+        "        standIn=${detail.standIn || null} diy=${detail.diy || null} cultOpts=${detail.cultOpts || { ops }} morphMode=${morphMode} onUnequip=${onUnequip} counters=${counters} />` : null}",
+        "      ${detail.type === 'item' ? html`<${ItemDetail} item=${detail.item} piece=${detail.piece} editable=${editable} onDestroy=${destroyIt} offBonds=${offBonds} morphMode=${morphMode} unequipAllowed=${unequipAllowed} counters=${counters} />` : null}"
       ]
     }
   ]
