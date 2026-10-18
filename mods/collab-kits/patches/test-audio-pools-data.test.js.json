@@ -1,0 +1,24 @@
+{
+  "file": "test/audio-pools-data.test.js",
+  "patches": [
+    {
+      "id": "collab-units-have-no-official-pool",
+      "anchor": "test('every generated attack/hit reference resolves to a valid pool and its selected sound parameters', () => {",
+      "op": "insert-before",
+      "new": [
+        "// local mod (SP_DIY_COLLAB): the seven collab operators' sfx rows are hand-merged into data/assets.json, but the",
+        "// official audio banks behind audio.sfx.pools never name them (fetch-assets builds a pool per roster operator), so",
+        "// their attack / hit rows carry no pool id. Everything upstream generates is still checked below.",
+        "const LOCAL_NO_POOL = new Set(['char_1029_yato2', 'char_1048_orchd2', 'char_4123_ela', 'char_4141_marcil', 'char_4182_oblvns', 'char_4217_makoto', 'char_456_ash']);"
+      ]
+    },
+    {
+      "id": "skip-local-units",
+      "anchor": "  for (const [id, u] of Object.entries(units)) {",
+      "op": "insert-after",
+      "new": [
+        "    if (LOCAL_NO_POOL.has(id)) continue;"
+      ]
+    }
+  ]
+}
