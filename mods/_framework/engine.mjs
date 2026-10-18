@@ -419,10 +419,14 @@ export async function loadMods(root) {
       patches.push({ source: relPosix(root, f), file: doc.file, entries: doc.patches });
     }
     const filesDir = join(dir, FILES_DIR);
-    const files = (await walk(filesDir)).map((f) => ({
-      from: f,
-      to: relative(filesDir, f).split(sep).join('/'),
-    }));
+    // `replace` names the paths under files/ that intentionally shadow an upstream file (asset-pack's
+    // public/sw.js is a superset of upstream's worker). Without it a files/ entry only ever creates a
+    // new file: an existing, different target is reported target-differs and never overwritten.
+    const replaceSet = new Set(Array.isArray(manifest.replace) ? manifest.replace : []);
+    const files = (await walk(filesDir)).map((f) => {
+      const to = relative(filesDir, f).split(sep).join('/');
+      return { from: f, to, replace: replaceSet.has(to) };
+    });
     // `checks/` mirrors what the test file will be *called* once applied, under `test/`.
     const checksDir = join(dir, CHECKS_DIR);
     const checks = (await walk(checksDir)).map((f) => ({
@@ -530,12 +534,24 @@ export async function applyMod(root, mod, opts = {}) {
     if (current !== null) {
       // Already there: identical means this mod put it there, anything else is the user's file — never clobber it.
       const same = sha256(current) === sha256(await readFile(f.from, 'utf8'));
+      if (!same && f.replace) {
+        // An explicit replacement (mod.json `replace`): keep what was there so revert can hand it back.
+        report.push({ kind: 'file', to: f.to, status: 'ok', reason: 'replaced' });
+        touched.push({ action: 'replaced', path: f.to, previous: current });
+        if (!dryRun) await copyFile(f.from, target);
+        continue;
+      }
       report.push({
         kind: 'file',
         to: f.to,
         status: same ? 'already' : 'drift',
         reason: same ? undefined : 'target-differs',
       });
+      if (same && !dryRun && f.replace) {
+        // Already the mod's version (a replay, or a state file that lost the entry): still record it, so a
+        // later revert hands the upstream file back. `previous: null` means "restore from git".
+        touched.push({ action: 'replaced', path: f.to, previous: null });
+      }
       // Identical still counts as *ours*, so it has to be recorded as created even though this run
       // writes nothing. Otherwise the state loses track of it: revert then reports "not applied" and
       // leaves the file behind, and the next apply finds it already present and skips recording it
@@ -599,13 +615,25 @@ export async function applyMod(root, mod, opts = {}) {
     // Merge with what an earlier apply already recorded: a later `--force` replay that only rewrites
     // one file must not forget the fifteen the first apply touched, or revert restores just that one.
     const prev = state.mods[mod.id] || { created: [], modified: [], hashes: {} };
-    const created = [...new Set([...(prev.created || []), ...touched.filter((t) => t.action === 'created').map((t) => t.path)])];
+    // A replaced path keeps the content it shadowed (revert writes it back). It is never also "created":
+    // an older state may have listed it there, and deleting it on revert would drop an upstream file.
+    const replacedMap = new Map((Array.isArray(prev.replaced) ? prev.replaced : []).map((r) => [r.path, r.previous]));
+    for (const t of touched) {
+      if (t.action !== 'replaced') continue;
+      // A recorded copy of what we shadowed always beats the null a replay contributes.
+      if (t.previous !== null && t.previous !== undefined) replacedMap.set(t.path, t.previous);
+      else if (!replacedMap.has(t.path)) replacedMap.set(t.path, null);
+    }
+    const replaced = [...replacedMap].map(([path, previous]) => ({ path, previous }));
+    const replacedPaths = new Set(replaced.map((r) => r.path));
+    const created = [...new Set([...(prev.created || []), ...touched.filter((t) => t.action === 'created').map((t) => t.path)])]
+      .filter((p) => !replacedPaths.has(p));
     const modified = [...new Set([...(prev.modified || []), ...touched.filter((t) => t.action === 'modified').map((t) => t.path)])];
     const hashes = { ...(prev.hashes || {}) };
     for (const path of modified) {
       try { hashes[path] = sha256(await readFile(resolve(root, path), 'utf8')); } catch { /* left unhashed */ }
     }
-    state.mods[mod.id] = { appliedAt: new Date().toISOString(), created, modified, hashes };
+    state.mods[mod.id] = { appliedAt: new Date().toISOString(), created, modified, replaced, hashes };
     await writeState(root, state);
   }
   return { id: mod.id, report, touched };
@@ -660,6 +688,16 @@ export async function revertMod(root, mod, allMods = [], opts = {}) {
   }
   if (problems.length && !opts.force) return { id: mod.id, status: 'blocked', problems };
 
+  const replaced = Array.isArray(entry.replaced) ? entry.replaced : [];
+  for (const r of replaced) {
+    try {
+      // `previous: null` = the content was already gone when we recorded it (a replay): git has it.
+      if (r.previous == null) await git(root, ['checkout', '--', r.path]);
+      else await writeFile(resolve(root, r.path), r.previous, 'utf8');
+    } catch (e) {
+      return { id: mod.id, status: 'failed', error: `could not restore ${r.path}: ${String(e && e.message)}` };
+    }
+  }
   for (const p of entry.created || []) {
     try { await rm(resolve(root, p)); } catch { /* already gone */ }
   }
@@ -724,7 +762,7 @@ export async function revertMod(root, mod, allMods = [], opts = {}) {
     id: mod.id,
     status: 'reverted',
     removed: (entry.created || []).length,
-    restored: modified.length,
+    restored: modified.length + replaced.length,
     rebuilt,
     lost,
   };
