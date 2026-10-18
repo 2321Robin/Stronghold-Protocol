@@ -12,18 +12,24 @@
     },
     {
       "id": "bondMembers-signature",
-      "anchor": "export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null) {",
+      "anchor": "export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, mode = 'official') {",
       "op": "replace",
-      "old": ["export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null) {"],
-      "new": ["export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, extraMembers = []) {"]
+      "old": [
+        "export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, mode = 'official') {"
+      ],
+      "new": [
+        "export function bondMembers(bond, priv, banned = [], getChess = () => null, getItem = () => null, pieceRecord = null, mode = 'official', extraMembers = []) {"
+      ]
     },
     {
       "id": "bondMembers-unions-extra",
-      "anchor": "const members = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);",
+      "anchor": "const members = Array.isArray(bond?.visibleMembers) ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);",
       "op": "replace",
-      "old": ["const members = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);"],
+      "old": [
+        "const members = Array.isArray(bond?.visibleMembers) ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);"
+      ],
       "new": [
-        "const visible = Array.isArray(bond?.visibleMembers) && bond.visibleMembers.length ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);",
+        "const visible = Array.isArray(bond?.visibleMembers) ? bond.visibleMembers : (Array.isArray(bond?.members) ? bond.members : []);",
         "// an extra member joins THIS bond only when the record's full member list has them (地灵: 奇迹 / 远见 alone)",
         "const extra = (Array.isArray(extraMembers) ? extraMembers : []).filter((id) => Array.isArray(bond?.members) && bond.members.includes(id) && !visible.includes(id));",
         "const members = [...visible, ...extra];"
@@ -33,14 +39,20 @@
       "id": "bannedPerBond-jsdoc",
       "anchor": " * @param {string[]} bannedChess",
       "op": "insert-after",
-      "new": [" * @param {string[]} [extraChess] hidden chess a match option made pool-visible (local mod 地灵)"]
+      "new": [
+        " * @param {string[]} [extraChess] hidden chess a match option made pool-visible (local mod 地灵)"
+      ]
     },
     {
       "id": "bannedPerBond-signature",
       "anchor": "export function bannedPerBond(bonds, bannedChess) {",
       "op": "replace",
-      "old": ["export function bannedPerBond(bonds, bannedChess) {"],
-      "new": ["export function bannedPerBond(bonds, bannedChess, extraChess = []) {"]
+      "old": [
+        "export function bannedPerBond(bonds, bannedChess) {"
+      ],
+      "new": [
+        "export function bannedPerBond(bonds, bannedChess, extraChess = []) {"
+      ]
     },
     {
       "id": "bannedPerBond-covers-extra",
