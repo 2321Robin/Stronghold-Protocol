@@ -21,7 +21,9 @@ const DATA = { chess, backups };
 const { ownedPool, prototypes } = backups.diy;
 const ELITES = ['char_608_acpion', 'char_609_acguad', 'char_610_acfend', 'char_611_acnipe', 'char_612_accast', 'char_613_acmedc', 'char_614_acsupo', 'char_615_acspec', 'char_617_sharp2'];
 const RESERVES5 = ['char_601_cguard', 'char_602_cdfend', 'char_603_csnipe', 'char_604_ccast', 'char_605_cmedic', 'char_606_csuppo'];
-const COLLAB = ['char_456_ash', 'char_1029_yato2', 'char_4123_ela', 'char_4141_marcil', 'char_4182_oblvns', 'char_4217_makoto'];
+// the collab 6★ are all in the pool on this server (the local SP_DIY_COLLAB build, playtest #21 re-includes all 7;
+// upstream keeps them out by the owner's copyright decision of 2026-10-05)
+const COLLAB = [];
 const SIEGE = 'char_112_siege';
 const T5 = 'chess_char_5_diy1_a', T5B = 'chess_char_5_diy2_a', T6 = 'chess_char_6_diy1_a', T6B = 'chess_char_6_diy2_a';
 
@@ -35,11 +37,11 @@ test('slots: two per tier (5, 6), each with its elite twin', () => {
   assert.equal(diyTokenOwner(SIEGE, chess.chess_char_6_diy1_b.status), 'char_112_siege@2/60/7/3');
 });
 
-test('diyPool: tier 5 = 15 prototypes + 72 owned 6★, tier 6 = 9 + 72; no preset, no collab; with the kit registry only kitted operators', () => {
+test('diyPool: tier 5 = 15 prototypes + 79 owned 6★, tier 6 = 9 + 79 (72 upstream incl. Clementia + all 7 local collab picks, playtest #21); no preset; with the kit registry only kitted operators', () => {
   const p5 = diyPool(5, { data: DATA }), p6 = diyPool(6, { data: DATA });
   assert.deepEqual(p5, [...RESERVES5, ...ELITES, ...ownedPool]);
   assert.deepEqual(p6, [...ELITES, ...ownedPool]);
-  assert.deepEqual([p5.length, p6.length], [87, 81]);
+  assert.deepEqual([p5.length, p6.length], [94, 88]);
   const roster = new Set(Object.values(chess).map((c) => c.charId).filter(Boolean));
   for (const id of p5) assert.ok(!roster.has(id) && !COLLAB.includes(id), id);
   assert.deepEqual(diyPool(4, { data: DATA }), [], 'no 自选 slot at tier 4');
@@ -95,7 +97,7 @@ test('checkDiyPick: an owned 6★ chooses any of its 3 skills and any module of 
     [T5, { charId: 'char_607_cspec' }, /not a tier-5/],
     [T5, { charId: 'char_102_texas', skillIndex: 0 }, /not a tier-5/],
     [T6, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-6/],
-    [T5, { charId: 'char_456_ash', skillIndex: 0 }, /not a tier-5/],
+    [T5, { charId: 'char_1012_skadi2', skillIndex: 0 }, /not a tier-5/],   // a roster 6★ is never a pick (ash, a collab pick, IS one now — playtest #21)
     [T5, null, /bad pick/],
     [T5, { charId: 42 }, /bad pick/],
     ['chess_char_5_01_a', { charId: SIEGE, skillIndex: 0 }, /not a 自选 slot/],

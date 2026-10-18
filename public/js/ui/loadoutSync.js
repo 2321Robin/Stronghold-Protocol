@@ -29,6 +29,7 @@ import { data } from '../data.js';
 import { contentSet as appContentSet } from '../content.js';
 import { LOADOUT_PREF, parseStored, parseStoredOps, toStored, sanitizeEntries, sanitizeOps } from './loadoutModel.js';
 import { cultivationCharIds, charPotentialChanges, loadoutOptions } from '../../../shared/protocol.js';
+import { extraChessOf } from '../../../shared/protocol.js';
 import { PHASE } from '../../../shared/constants.js';
 import { POTENTIAL_DEFAULT, CULTIVATE_DEFAULT } from '../../../shared/potential.js';
 import { ruleOption } from '../../../shared/plugins/rules.js';
@@ -98,9 +99,9 @@ export function setOpsMap(ops) {
  * @returns {{ applied: number, dropped: number, ops?: number }} entries kept / entries (and settings) not imported / settings
  *   kept (only with `ops`)
  */
-export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null } = {}) {
+export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null, extraChess = null } = {}) {
   const asked = Object.keys(entries || {}).length;
-  const clean = sanitizeEntries(entries, lookup);
+  const clean = sanitizeEntries(entries, lookup, extraChess);
   const applied = Object.keys(clean).length;
   const cleanOps = ops && isOperator ? sanitizeOps(ops, isOperator) : null;
   const nOps = cleanOps ? Object.keys(cleanOps).length : 0;
@@ -304,7 +305,9 @@ export function installLoadoutSync({ net, getChessReady, getBackupsReady, lookup
       if ((!current || Object.keys(current).length === 0) && !Object.keys(live?.loadout || {}).length && !hasOps) return { entries: {}, ops: {} };
       const loaded = await ready();
       if (loaded == null) return null;
-      const entries = sanitizeEntries(target.get().entries, lookup);
+      // local mod (room.setExtras 地灵): keep the opted-in operator's entry when the room/match option is on
+      const extras = extraChessOf(store.get().room?.extras || store.get().match?.public?.extras || null);
+      const entries = sanitizeEntries(target.get().entries, lookup, extras);
       // A prep submission merges by name. Send explicit defaults for removed choices so restoring defaults works.
       if (live) for (const id of Object.keys(live.loadout || {})) {
         if (Object.hasOwn(entries, id)) continue;

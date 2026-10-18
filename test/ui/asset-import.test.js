@@ -515,7 +515,11 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
   assert.ok(sw.includes(`const IMPORTED_ASSET_CACHE = '${IMPORTED_ASSET_CACHE}';`));
   assert.ok(sw.includes(`const IMPORTED_ASSET_CACHE_PREFIX = '${IMPORTED_ASSET_CACHE_PREFIX}';`));
   assert.ok(sw.includes(`const IMPORTED_ASSET_PATH = ${IMPORTED_ASSET_PATH};`));
-  assert.equal(sw.includes('.put('), false);
+  // local mod (asset-pack): this worker also keeps a runtime cache for packless browsers and writes network
+  // responses into it — the ONLY cache it writes; the imported-assets cache above is only ever read (the page
+  // import writes it, see ui/assetPack.js). The fake put() below throws and storeRuntime swallows it, which
+  // also proves a write failure never takes a request down.
+  assert.ok(!/IMPORTED_ASSET_CACHE\)[^)]*\.put\(/.test(sw), 'the worker never writes the imported cache');
 
   const origin = 'http://127.0.0.1:9';
   const deleted = [];
