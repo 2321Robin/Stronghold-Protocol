@@ -3,10 +3,9 @@
   "patches": [
     {
       "id": "imports",
-      "anchor": "import { t, N_ } from '../../../shared/i18n.js';",
+      "anchor": "import { cultivationCharIds, charPotentialChanges, loadoutOptions } from '../../../shared/protocol.js';",
       "op": "insert-after",
       "new": [
-        "import { store } from '../store.js';",
         "import { extraChessOf } from '../../../shared/protocol.js';"
       ]
     },
@@ -14,21 +13,31 @@
       "id": "applyLoadoutEntries-signature",
       "anchor": "export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null } = {}) {",
       "op": "replace",
-      "old": ["export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null } = {}) {"],
-      "new": ["export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null, extraChess = null } = {}) {"]
+      "old": [
+        "export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null } = {}) {"
+      ],
+      "new": [
+        "export function applyLoadoutEntries(entries, lookup, { ops = null, isOperator = null, extraChess = null } = {}) {"
+      ]
     },
     {
       "id": "applyLoadoutEntries-sanitize",
       "anchor": "const clean = sanitizeEntries(entries, lookup);",
       "op": "replace",
-      "old": ["const clean = sanitizeEntries(entries, lookup);"],
-      "new": ["const clean = sanitizeEntries(entries, lookup, extraChess);"]
+      "old": [
+        "const clean = sanitizeEntries(entries, lookup);"
+      ],
+      "new": [
+        "const clean = sanitizeEntries(entries, lookup, extraChess);"
+      ]
     },
     {
       "id": "sync-reads-room-option",
       "anchor": "const entries = sanitizeEntries(target.get().entries, lookup);",
       "op": "replace",
-      "old": ["const entries = sanitizeEntries(target.get().entries, lookup);"],
+      "old": [
+        "const entries = sanitizeEntries(target.get().entries, lookup);"
+      ],
       "new": [
         "// local mod (room.setExtras 地灵): keep the opted-in operator's entry when the room/match option is on",
         "const extras = extraChessOf(store.get().room?.extras || store.get().match?.public?.extras || null);",
