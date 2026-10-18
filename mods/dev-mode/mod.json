@@ -1,7 +1,0 @@
-{
-  "id": "dev-mode",
-  "name": "#24 开发者模式（房主把本局标记为 dev）",
-  "upstream": false,
-  "dependsOn": ["earthspirit"],
-  "retiredIn": "0.3.1"
-}
