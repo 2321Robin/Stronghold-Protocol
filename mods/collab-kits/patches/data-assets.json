@@ -1860,7 +1860,9 @@
           "spineModels": 730,
           "skills": 578,
           "modules": 132,
-          "sfxUnits": 517
+          "sfxUnits": 517,
+          "voiceChars": 213,
+          "voiceJpChars": 213
         }
       }
     }

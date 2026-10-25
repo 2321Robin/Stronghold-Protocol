@@ -9,7 +9,7 @@
         "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (192 operators, 2688 files); stand-ins, 盟约·辅助干员 and summons have neither', () => {"
       ],
       "new": [
-        "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (194 operators, 2716 files; 192 upstream incl. Clementia + the local collab 麒麟R夜刀 / 焰狐龙梓兰, whose CN dub the mirror carries — playtest #21); stand-ins, 盟约·辅助干员 and summons have neither', () => {"
+        "test('data/assets.json: voiceJp gives every voiced operator the JP twin of each Chinese line (213 operators, 2981 files; 192 upstream in 0.3.3 incl. Clementia + the local collab 麒麟R夜刀 / 焰狐龙梓兰, whose CN dub the mirror carries, +19 official operators the refreshed charword carries — playtest #21); stand-ins, 盟约·辅助干员 and summons have neither', () => {"
       ]
     },
     {
@@ -28,15 +28,28 @@
       ],
       "new": [
         "assert.equal(m.stats.voiceChars, Object.keys(cn).length);",
-        "// 194 = 192 upstream in 0.2.3 (incl. Clementia) + the two local collab picks whose CN dub the mirror carries (14 lines each, their JP twin",
-        "// rides along; the other five collab 6★ have neither dub in the dumps and stay voiceless, as on the 0.2.1 line)",
-        "assert.equal(Object.keys(jp).length, 194);",
+        "  // 213 = 192 upstream in 0.3.3 (incl. Clementia) + the two local collab picks whose CN dub the mirror carries (14 lines each,",
+        "  // their JP twin rides along; the other five collab 6★ have neither dub in the dumps and stay voiceless) + 19 official",
+        "  // operators the refreshed charword_table carries (2026-10-25 regen)",
+        "assert.equal(Object.keys(jp).length, 213);",
         "// the JP tree is the Chinese one with the folder swapped: same slots, same lines in the same order, same file names",
         "assert.deepEqual(JSON.parse(JSON.stringify(cn).replaceAll('/assets/audio/voice/cn/', '/assets/audio/voice/jp/')), jp);",
         "const lines = [];",
         "const walk = (x) => { if (typeof x === 'string') lines.push(x); else if (Array.isArray(x)) x.forEach(walk); else if (x && typeof x === 'object') Object.values(x).forEach(walk); };",
         "walk(jp);",
         "assert.equal(lines.length, 2716);"
+      ]
+    },
+    {
+      "id": "voicejp-lines-count",
+      "anchor": "  assert.equal(lines.length, 2716);",
+      "op": "replace",
+      "old": [
+        "  assert.equal(lines.length, 2716);"
+      ],
+      "new": [
+        "  // the refreshed charword adds the 19 official operators' lines on top of the 0.3.3-era 2716",
+        "  assert.equal(lines.length, 2981);"
       ]
     }
   ]

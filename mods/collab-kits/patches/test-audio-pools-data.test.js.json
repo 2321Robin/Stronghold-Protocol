@@ -29,10 +29,10 @@
         "  assert.equal(Object.keys(pools).length, 1013);"
       ],
       "new": [
-        "  // local regen with --refresh-index (2026-10-25): the official audio_data carries banks the 0.3.3 freeze predates,",
-        "  // so the regenerated manifest resolves 32 more references into 26 more pools",
-        "  assert.equal(refs, 1019);",
-        "  assert.equal(Object.keys(pools).length, 1039);"
+        "  // local regen with the refreshed official audio index (2026-10-25): banks the 0.3.3 freeze predates resolve",
+        "  // 37 more references the collab rows stay pool-less by design (see above)",
+        "  assert.equal(refs, 1024);",
+        "  assert.equal(Object.keys(pools).length, 1013);"
       ]
     }
   ]
