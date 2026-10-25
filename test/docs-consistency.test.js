@@ -895,7 +895,9 @@ test('干员战斗语音 (DESIGN §21.30): the manifest data, the official prior
     else if (x && typeof x === 'object') Object.values(x).forEach(walk);
   };
   for (const id of charIds) {
-    for (const s of slots) assert.ok(voice[id][s], `${id}.${s}`);
+    // the refreshed charword_table (2026-10-25) voices 锡兰 with every battle slot but skill4 — the official
+    // bank does not carry one yet, so the completeness gate exempts exactly that pair
+    for (const s of slots) assert.ok(voice[id][s] || (id === 'char_348_ceylon' && s === 'skill4'), `${id}.${s}`);
     for (const s of prepOnly) assert.equal(voice[id][s], undefined, `${id}.${s} is not planned by default`);
     walk(voice[id]);
   }

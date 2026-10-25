@@ -60,7 +60,10 @@ test('the base against itself has no finding; a code-named buff key the version 
   const data = getData({ log: QUIET });
   const reads = codeReads();
   const keys = codeBuffKeys();
-  assert.deepEqual(audit(data, data, { reads, keys, names: NAMES }), { findings: [], missingBuffKeys: [], unknownTriggerRules: [], versionOnlyKeys: [], versionOnlyFields: [] });
+  // local mod (SP_DIY_COLLAB): marcil's S2 documents its official trigger condition under the kit-owned rule name
+  // MARCILS2 — the kit code implements it, the engine's rule registry does not know it, so the audit lists it
+  const marcilRule = { owners: ['char_4141_marcil'], rule: 'MARCILS2', skillId: 'skchr_marcil_2', table: 'backups' };
+  assert.deepEqual(audit(data, data, { reads, keys, names: NAMES }), { findings: [], missingBuffKeys: [], unknownTriggerRules: [marcilRule], versionOnlyKeys: [], versionOnlyFields: [] });
   assert.ok(reads.get('no_attack_duration')?.some((r) => r.file === 'server/sim/content/bonds/addon/battle.js'));
   assert.ok(keys.has('act2autochess_equip_acarm055_global_buff'), 'items/battle.js names it');
   const items = Object.fromEntries(Object.entries(data.items).filter(([, r]) => r.effectId !== 'eff_acarm055' && r.effectId !== 'eff_acgarm055'));
@@ -80,7 +83,8 @@ test('unknown trigger rules: a rule outside TRIGGER_RULES is listed once per rul
     { rule: 'UNKNOWN_RULE', table: 'backups', skillId: 'sk_t', owners: ['char_t'] },
     { rule: 'UNKNOWN_RULE', table: 'chess', skillId: 'sk_t', owners: ['c1_a', 'c2_a'] },
   ]);
-  assert.deepEqual(unknownTriggerRules(getData({ log: QUIET })), [], 'the default data uses only implemented rules');
+  // local mod: the one unknown rule in the default data is the collab kit's own MARCILS2 (see above)
+  assert.deepEqual(unknownTriggerRules(getData({ log: QUIET })), [{ owners: ['char_4141_marcil'], rule: 'MARCILS2', skillId: 'skchr_marcil_2', table: 'backups' }], 'the default data uses only implemented rules plus the collab kit own rule');
 });
 
 test('version-only keys: a buff key / bbStr.key or garrison key the base lacks and no code names is listed with its records', () => {

@@ -13,7 +13,10 @@ const assets = JSON.parse(readFileSync(path.join(root, 'data/assets.json'), 'utf
 test('every official version declares comparable pictures, models, clips, icons and scenes without installed art', () => {
   const result = assetCoverage({ root, local: { groups: {} } });
   assert.equal(result.versions.length, 4);
-  assert.deepEqual(result.missing.map((r) => `${r.version} ${r.id}: ${r.missing}`), []);
+  // local mod (SP_DIY_COLLAB): Ela's grzmot mine joins the union through the collab backups and is avatar-only
+  // (the official token model is not in the plugin-art extraction), so the audit reports exactly that one gap
+  assert.deepEqual(result.missing.map((r) => `${r.version} ${r.id}: ${r.missing}`),
+    ['act2autochess token_10033_ela_grzmot: model']);
 });
 
 test('coverage fails for missing earlier-version pictures, model, skill icon, enemy and strategy art', () => {
@@ -27,17 +30,19 @@ test('coverage fails for missing earlier-version pictures, model, skill icon, en
     else delete broken[kind][id];
     const result = assetCoverage({ root, assets: broken, local: { groups: {} } });
     assert.ok(result.missing.some((r) => r.version === 'act1autochess'), `${kind}.${id}.${field}`);
-    assert.equal(result.versions[0].missing, 0, 'the default roster alone would not detect this regression');
+    // local mod: the default's one known gap is the collab token above, not this regression's kind
+    assert.equal(result.versions[0].missing, 1, 'the default roster alone would not detect this regression');
   }
 });
 
 test('presentation union retains the operators behind reused chess ids and their skills', () => {
   const sets = versionAssetData(root), all = presentationUnion(sets);
-  assert.equal(Object.keys(all.operators).length, 229);
+  // local mod: the seven collab operators join the union
+  assert.equal(Object.keys(all.operators).length, 236);
   assert.ok(all.operators.char_198_blackd.skills.some((s) => s.skillId === 'skchr_blackd_2'));
   assert.ok(all.enemies.enemy_1254_lypa);
   assert.ok(all.bands.band_zumama);
-  assert.equal(Object.keys(all.tokens).length, 60, 'including enemy/char-backed summons');
+  assert.equal(Object.keys(all.tokens).length, 61, 'including enemy/char-backed summons and the collab token');
 });
 
 test('add-only keeps existing nested values, arrays and null while admitting new identities', () => {

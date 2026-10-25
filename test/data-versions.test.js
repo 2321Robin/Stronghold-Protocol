@@ -294,12 +294,16 @@ test('data/versions/act2autochess-v2_1: the same-id records that differ from tod
   // the 自选 pools: the 9 operators released after 03-14 are absent (怒潮凛冬 among them); 银灰, 空弦, 卡涅利安 and 伺夜 are
   // V2_1-only 自选 picks (pending: the kitted gate drops them); 焰狐龙梓兰 and 结城理 are not excluded yet
   const minus = (a, b) => a.filter((c) => !b.includes(c)).sort();
-  const later = ['char_1015_aglna2', 'char_1051_headb2', 'char_1052_kalts2', 'char_4226_veen', 'char_4228_closur', 'char_4229_aphris',
-    'char_4230_mcnist', 'char_4231_clemnt', 'char_4235_thumpy'];
+  // local mod (SP_DIY_COLLAB): the seven collab picks join today's diy operators and owned pool, so they join the diff
+  const later = ['char_1015_aglna2', 'char_1029_yato2', 'char_1048_orchd2', 'char_1051_headb2', 'char_1052_kalts2', 'char_4123_ela',
+    'char_4141_marcil', 'char_4182_oblvns', 'char_4217_makoto', 'char_4226_veen', 'char_4228_closur', 'char_4229_aphris',
+    'char_4230_mcnist', 'char_4231_clemnt', 'char_4235_thumpy', 'char_456_ash'];
   const own = ['char_172_svrash', 'char_332_archet', 'char_426_billro', 'char_427_vigil'];
   assert.deepEqual([minus(Object.keys(today.diy.operators), Object.keys(v21b.diy.operators)), minus(Object.keys(v21b.diy.operators), Object.keys(today.diy.operators))], [later, own]);
   assert.deepEqual([minus(today.diy.ownedPool, v21b.diy.ownedPool), minus(v21b.diy.ownedPool, today.diy.ownedPool), v21b.diy.ownedPool.length], [later, own, 67]);
-  assert.deepEqual([minus(today.diy.excluded, v21b.diy.excluded), minus(v21b.diy.excluded, today.diy.excluded)], [['char_1048_orchd2', 'char_4217_makoto'], []]);
+  // local mod: the SP_DIY_COLLAB build re-includes every collab pick, so today excludes nothing; V2_1's own
+  // backups still excludes the five collab picks that period never offered
+  assert.deepEqual([minus(today.diy.excluded, v21b.diy.excluded), minus(v21b.diy.excluded, today.diy.excluded)], [[], ['char_1029_yato2', 'char_4123_ela', 'char_4141_marcil', 'char_4182_oblvns', 'char_456_ash']]);
   const v21 = read('versions/act2autochess-v2_1', 'enemies');
   assert.deepEqual([v21.enemy_2085_skzjxd.rank, v21.enemy_10040_cnvbln.notCountInTotal], ['NORMAL', true]);
 });

@@ -57,7 +57,10 @@ export function deepFreeze(root) {
 
 /** data/*.json files the server never reads, so never loads: the official effects' file list (data/local-fx.json, written
  * by tools/local-extract/fx.py, DESIGN §33 — ~1 MB the browser alone fetches, through its served view). */
-export const UNLOADED_DATA = Object.freeze(['local-fx.json']);
+// local mod (asset-pack): the deployment size table (tools/pack-assets.mjs --sizes) is a browser-only fetch, like
+ // local-fx.json — loading it would list it in the /cs/ index, where a data file name with a hyphen breaks the
+ // upstream URL shape
+export const UNLOADED_DATA = Object.freeze(['local-fx.json', 'asset-sizes.json']);
 
 /**
  * Read every `*.json` in `dir` into `{ [basename]: parsed }`, deep-frozen (but UNLOADED_DATA).
