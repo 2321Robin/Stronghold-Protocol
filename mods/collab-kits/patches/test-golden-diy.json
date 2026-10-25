@@ -355,6 +355,7 @@
               "engage": 12,
               "fx": 365,
               "leak": 111,
+              "rate": 139,
               "skill": 48,
               "spawn": 138,
               "status": 66
@@ -666,6 +667,7 @@
               "die": 157,
               "dmg": 4225,
               "engage": 9,
+              "rate": 278,
               "skill": 419,
               "spawn": 159,
               "status": 147
@@ -970,6 +972,7 @@
               "dmg": 433,
               "engage": 12,
               "leak": 105,
+              "rate": 37,
               "skill": 22,
               "spawn": 126,
               "status": 13
@@ -1309,6 +1312,7 @@
               "engage": 12,
               "fx": 8,
               "leak": 107,
+              "rate": 42,
               "skill": 42,
               "spawn": 131,
               "status": 188
@@ -1610,6 +1614,7 @@
               "dmg": 771,
               "engage": 11,
               "leak": 60,
+              "rate": 4,
               "skill": 78,
               "spawn": 71
             },
@@ -1947,6 +1952,7 @@
               "dmg": 3493,
               "engage": 10,
               "leak": 95,
+              "rate": 192,
               "skill": 80,
               "spawn": 127
             },
@@ -2971,7 +2977,7 @@
               511,
               511,
               1443,
-              1383,
+              1443,
               58,
               87,
               178,
@@ -3004,7 +3010,7 @@
             "fx": {
               "shieldBreak": 60
             },
-            "snaps": "5f8451a1 ec45efcd 2f31d24f 79784264 da855591 c9090a27 4aece1e1 231ebbc0 af6d71fe 897fbedd 180fafe7 78868412 152d6bc0 8540365b 48912897 421e9c84 3cacff9f 3c8ff789 c0521951 a6f0daf5 3613f695 15f3c58d"
+            "snaps": "f48c2990 253327ce 1eb33677 10054b94 bffc770f 34a832bb f67b3921 6a300917 59d40ee4 590cfafd e8e305bc 05956791 3dcd1a7e 62d99d5a dfd836ee aa8a0021 f1fb211a e730087b aaef8631 32e9cfcc f8947600 09759810"
           },
           "diy-145": {
             "about": "5_diy1_a=ela/S1 5_diy2_a=ela/S2 5_diy1_a=ela/S3 5_diy2_b=ela/S1 5_diy1_b=ela/S2 5_diy2_b=ela/S3 5_diy1_b=ela/S1/002_ela 5_diy2_b=ela/S2/002_ela 5_diy1_b=ela/S3/002_ela 6_diy1_a=ela/S1 6_diy2_a=ela/S2 6_diy1_a=ela/S3",
@@ -3836,7 +3842,7 @@
               1395,
               1395,
               2281,
-              2140,
+              2248,
               0,
               95,
               180,
@@ -3862,6 +3868,7 @@
               "engage": 28,
               "fx": 58,
               "leak": 64,
+              "rate": 9,
               "skill": 109,
               "spawn": 179,
               "status": 75
@@ -3873,7 +3880,7 @@
               "summon": 22,
               "telegraph": 7
             },
-            "snaps": "f7e3a34a 4d65f054 98776560 cc576fa1 ced32842 8f10058d 796d00da f256b9ab be2a7c6f 69d55269 a7cde439 d87d12ee 452d72e5 56d5711e 906f8784 8d8b4c4c d4850623 c145557a 3f8af644 b7d811ec 4eac3811"
+            "snaps": "f7e3a34a 4d65f054 23ee797e de004e27 659e661a c8a10b6e 0e0fcbb1 9dd3c3d4 1791df18 de32f456 8a8ee196 9521248d fe182692 3db95b59 c372fe4a 7836b673 162fa038 a3c8a6e5 f974c2ff 88781bb3 f3189fca"
           },
           "diy-146": {
             "about": "5_diy1_a=makoto/S1 5_diy2_a=makoto/S2 5_diy1_a=makoto/S3 5_diy2_b=makoto/S1 5_diy1_b=makoto/S2 5_diy2_b=makoto/S3 6_diy1_b=ela/S1 6_diy2_b=ela/S2 6_diy1_b=ela/S3 6_diy2_b=ela/S1/002_ela 6_diy1_b=ela/S2/002_ela 6_diy2_b=ela/S3/002_ela",
@@ -4598,6 +4605,7 @@
               "engage": 18,
               "fx": 105,
               "leak": 46,
+              "rate": 67,
               "skill": 99,
               "spawn": 171,
               "status": 576
@@ -4959,6 +4967,7 @@
               "engage": 10,
               "fx": 142,
               "heal": 8,
+              "rate": 111,
               "skill": 76,
               "spawn": 138,
               "status": 196
@@ -5268,6 +5277,7 @@
               "engage": 5,
               "heal": 17,
               "leak": 114,
+              "rate": 229,
               "skill": 10,
               "spawn": 126
             },
@@ -5573,6 +5583,7 @@
               "fx": 291,
               "heal": 187,
               "leak": 46,
+              "rate": 20,
               "skill": 73,
               "spawn": 126,
               "status": 42
@@ -5918,6 +5929,7 @@
               "engage": 12,
               "fx": 125,
               "leak": 78,
+              "rate": 62,
               "skill": 54,
               "spawn": 125,
               "status": 554
@@ -6231,6 +6243,7 @@
               "fx": 69,
               "heal": 17,
               "leak": 98,
+              "rate": 23,
               "skill": 61,
               "spawn": 114,
               "status": 326
