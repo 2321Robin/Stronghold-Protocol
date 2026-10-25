@@ -1854,22 +1854,13 @@
       "op": "json-merge",
       "merge": {
         "stats": {
-          "files": 11132,
-          "bytes": 603460643,
-          "chars": 217,
-          "charsWithBack": 214,
-          "enemies": 252,
-          "enemiesWithSpine": 251,
+          "chars": 236,
+          "charsWithBack": 232,
           "tokens": 59,
-          "tokensWithSpine": 13,
-          "spineModels": 687,
-          "bonds": 23,
-          "items": 59,
-          "bands": 40,
-          "skills": 546,
+          "spineModels": 724,
+          "skills": 578,
           "modules": 132,
-          "ui": 602,
-          "sfxUnits": 492,
+          "sfxUnits": 517,
           "voiceChars": 194,
           "voiceJpChars": 194
         }
