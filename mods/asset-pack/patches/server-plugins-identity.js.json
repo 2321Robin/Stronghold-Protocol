@@ -1,0 +1,18 @@
+{
+  "file": "server/plugins/identity.js",
+  "patches": [
+    {
+      "id": "presentation-asset-sizes",
+      "anchor": "export const PRESENTATION_DATA = Object.freeze(['assets', 'local-assets', 'local-fx', 'emotes']);",
+      "op": "replace",
+      "old": [
+        "export const PRESENTATION_DATA = Object.freeze(['assets', 'local-assets', 'local-fx', 'emotes']);"
+      ],
+      "new": [
+        "// local mod (asset-pack): the deployment size table is browser-only presentation data, like local-fx — it must",
+        " // not join the cs content hash or the /cs/ index (its name would also break the vanilla data URL shape)",
+        "export const PRESENTATION_DATA = Object.freeze(['assets', 'local-assets', 'local-fx', 'emotes', 'asset-sizes']);"
+      ]
+    }
+  ]
+}

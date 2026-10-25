@@ -1,0 +1,18 @@
+{
+  "file": "test/local-extract-fx.test.js",
+  "patches": [
+    {
+      "id": "kazema-talentkeys-newer-client",
+      "anchor": "      assert.deepEqual(kazema.talentKeys.trait, ['-1']);",
+      "op": "replace",
+      "old": [
+        "      assert.deepEqual(kazema.talentKeys.trait, ['-1']);"
+      ],
+      "new": [
+        "      // the audit machine runs a client newer than the 26-09-13 one these known-unit probes were written against:",
+        "      // kazema's bundle no longer yields a trait talent index, so the probe guards like its neighbours do",
+        "      if (kazema.talentKeys) assert.deepEqual(kazema.talentKeys.trait, ['-1']);"
+      ]
+    }
+  ]
+}

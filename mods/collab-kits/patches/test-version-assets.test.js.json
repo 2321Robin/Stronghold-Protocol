@@ -1,0 +1,54 @@
+{
+  "file": "test/version-assets.test.js",
+  "patches": [
+    {
+      "id": "collab-token-avatar-only",
+      "anchor": "  assert.deepEqual(result.missing.map((r) => `${r.version} ${r.id}: ${r.missing}`), []);",
+      "op": "replace",
+      "old": [
+        "  assert.deepEqual(result.missing.map((r) => `${r.version} ${r.id}: ${r.missing}`), []);"
+      ],
+      "new": [
+        "  // local mod (SP_DIY_COLLAB): Ela's grzmot mine joins the union through the collab backups and is avatar-only",
+        "  // (the official token model is not in the plugin-art extraction), so the audit reports exactly that one gap",
+        "  assert.deepEqual(result.missing.map((r) => `${r.version} ${r.id}: ${r.missing}`),",
+        "    ['act2autochess token_10033_ela_grzmot: model']);"
+      ]
+    },
+    {
+      "id": "collab-default-missing-count",
+      "anchor": "  assert.equal(result.versions[0].missing, 0, 'the default roster alone would not detect this regression');",
+      "op": "replace",
+      "old": [
+        "  assert.equal(result.versions[0].missing, 0, 'the default roster alone would not detect this regression');"
+      ],
+      "new": [
+        "  // local mod: the default's one known gap is the collab token above, not this regression's kind",
+        "  assert.equal(result.versions[0].missing, 1, 'the default roster alone would not detect this regression');"
+      ]
+    },
+    {
+      "id": "collab-union-counts",
+      "anchor": "  assert.equal(Object.keys(all.operators).length, 229);",
+      "op": "replace",
+      "old": [
+        "  assert.equal(Object.keys(all.operators).length, 229);"
+      ],
+      "new": [
+        "  // local mod: the seven collab operators join the union",
+        "  assert.equal(Object.keys(all.operators).length, 236);"
+      ]
+    },
+    {
+      "id": "collab-union-tokens",
+      "anchor": "  assert.equal(Object.keys(all.tokens).length, 60, 'including enemy/char-backed summons');",
+      "op": "replace",
+      "old": [
+        "  assert.equal(Object.keys(all.tokens).length, 60, 'including enemy/char-backed summons');"
+      ],
+      "new": [
+        "  assert.equal(Object.keys(all.tokens).length, 61, 'including enemy/char-backed summons and the collab token');"
+      ]
+    }
+  ]
+}

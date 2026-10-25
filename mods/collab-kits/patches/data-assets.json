@@ -1857,12 +1857,10 @@
           "chars": 236,
           "charsWithBack": 232,
           "tokens": 59,
-          "spineModels": 724,
+          "spineModels": 730,
           "skills": 578,
           "modules": 132,
-          "sfxUnits": 517,
-          "voiceChars": 194,
-          "voiceJpChars": 194
+          "sfxUnits": 517
         }
       }
     }

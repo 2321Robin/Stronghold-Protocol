@@ -1,0 +1,17 @@
+{
+  "file": "test/versions-keying.test.js",
+  "patches": [
+    {
+      "id": "collab-diy-kitted-split",
+      "anchor": "    kits: { own: 129, tier: 0, op: 0, pending: 0 }, diy: { kitted: 81, generic: 6, pending: 0 }, standIns: { kitted: 82, generic: 28 },",
+      "op": "replace",
+      "old": [
+        "    kits: { own: 129, tier: 0, op: 0, pending: 0 }, diy: { kitted: 81, generic: 6, pending: 0 }, standIns: { kitted: 82, generic: 28 },"
+      ],
+      "new": [
+        "    // local mod (SP_DIY_COLLAB): the seven collab picks are kitted 自选, so the default split is 81 + 7",
+        "    kits: { own: 129, tier: 0, op: 0, pending: 0 }, diy: { kitted: 88, generic: 6, pending: 0 }, standIns: { kitted: 82, generic: 28 },"
+      ]
+    }
+  ]
+}

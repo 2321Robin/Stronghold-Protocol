@@ -19,6 +19,21 @@
       "new": [
         "    if (LOCAL_NO_POOL.has(id)) continue;"
       ]
+    },
+    {
+      "id": "refreshed-audio-index-counts",
+      "anchor": "  assert.equal(refs, 987);",
+      "op": "replace",
+      "old": [
+        "  assert.equal(refs, 987);",
+        "  assert.equal(Object.keys(pools).length, 1013);"
+      ],
+      "new": [
+        "  // local regen with --refresh-index (2026-10-25): the official audio_data carries banks the 0.3.3 freeze predates,",
+        "  // so the regenerated manifest resolves 32 more references into 26 more pools",
+        "  assert.equal(refs, 1019);",
+        "  assert.equal(Object.keys(pools).length, 1039);"
+      ]
     }
   ]
 }

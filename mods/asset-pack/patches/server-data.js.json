@@ -1,0 +1,19 @@
+{
+  "file": "server/data.js",
+  "patches": [
+    {
+      "id": "unloaded-asset-sizes",
+      "anchor": "export const UNLOADED_DATA = Object.freeze(['local-fx.json']);",
+      "op": "replace",
+      "old": [
+        "export const UNLOADED_DATA = Object.freeze(['local-fx.json']);"
+      ],
+      "new": [
+        "// local mod (asset-pack): the deployment size table (tools/pack-assets.mjs --sizes) is a browser-only fetch, like",
+        " // local-fx.json — loading it would list it in the /cs/ index, where a data file name with a hyphen breaks the",
+        " // upstream URL shape",
+        "export const UNLOADED_DATA = Object.freeze(['local-fx.json', 'asset-sizes.json']);"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "file": "test/versions-bb-audit.test.js",
+  "patches": [
+    {
+      "id": "collab-marcil-trigger-rule",
+      "anchor": "  assert.deepEqual(audit(data, data, { reads, keys, names: NAMES }), { findings: [], missingBuffKeys: [], unknownTriggerRules: [], versionOnlyKeys: [], versionOnlyFields: [] });",
+      "op": "replace",
+      "old": [
+        "  assert.deepEqual(audit(data, data, { reads, keys, names: NAMES }), { findings: [], missingBuffKeys: [], unknownTriggerRules: [], versionOnlyKeys: [], versionOnlyFields: [] });"
+      ],
+      "new": [
+        "  // local mod (SP_DIY_COLLAB): marcil's S2 documents its official trigger condition under the kit-owned rule name",
+        "  // MARCILS2 — the kit code implements it, the engine's rule registry does not know it, so the audit lists it",
+        "  const marcilRule = { owners: ['char_4141_marcil'], rule: 'MARCILS2', skillId: 'skchr_marcil_2', table: 'backups' };",
+        "  assert.deepEqual(audit(data, data, { reads, keys, names: NAMES }), { findings: [], missingBuffKeys: [], unknownTriggerRules: [marcilRule], versionOnlyKeys: [], versionOnlyFields: [] });"
+      ]
+    },
+    {
+      "id": "collab-marcil-rule-default-data",
+      "anchor": "  assert.deepEqual(unknownTriggerRules(getData({ log: QUIET })), [], 'the default data uses only implemented rules');",
+      "op": "replace",
+      "old": [
+        "  assert.deepEqual(unknownTriggerRules(getData({ log: QUIET })), [], 'the default data uses only implemented rules');"
+      ],
+      "new": [
+        "  // local mod: the one unknown rule in the default data is the collab kit's own MARCILS2 (see above)",
+        "  assert.deepEqual(unknownTriggerRules(getData({ log: QUIET })), [{ owners: ['char_4141_marcil'], rule: 'MARCILS2', skillId: 'skchr_marcil_2', table: 'backups' }], 'the default data uses only implemented rules plus the collab kit own rule');"
+      ]
+    }
+  ]
+}
