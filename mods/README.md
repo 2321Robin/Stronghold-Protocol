@@ -144,10 +144,10 @@ anywhere in the file, so `apply` never inserts the same block twice.
 
 ## Depending on another mod
 
-`"dependsOn": ["earthspirit"]` in `mod.json` — a dev-mode hook that drives `room.setExtras` has to
-see that flag exist before its own anchors are searched. Apply runs deps first, revert runs them
-last. A dep that is not under `mods/` is reported at startup (`depends on "x", which is not under
-mods/`) and does not stop the run — a retired mod you deleted is the usual reason.
+`"dependsOn": ["<other-mod>"]` in `mod.json` — a mod whose patch reads a flag another mod defines
+has to see that flag exist before its own anchors are searched. Apply runs deps first, revert runs
+them last. A dep that is not under `mods/` is reported at startup (`depends on "x", which is not
+under mods/`) and does not stop the run — a retired mod you deleted is the usual reason.
 
 ## Rules
 

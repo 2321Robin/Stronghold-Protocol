@@ -1,8 +1,0 @@
-{
-  "id": "earthspirit",
-  "name": "地灵：房主可把隐藏干员加入本局招募池（room.setExtras）",
-  "base": "v0.2.3",
-  "upstream": false,
-  "playtest": "#17",
-  "verify": ["node --test test/earthspirit.test.js"]
-}
