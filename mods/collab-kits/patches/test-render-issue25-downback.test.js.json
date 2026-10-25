@@ -7,13 +7,13 @@
       "op": "replace",
       "old": [
         "assert.ok(backs.length >= 130, `${backs.length} Back skeletons`);",
-        "assert.deepEqual(withFall, ['char_322_lmlee', 'char_388_mint', 'char_4064_mlynar', 'char_440_pinecn', 'char_602_cdfend'], '老鲤 (a 自选 pick, 0.2.0) too');"
+        "assert.deepEqual(withFall, ['char_271_spikes', 'char_322_lmlee', 'char_388_mint', 'char_4064_mlynar', 'char_440_pinecn', 'char_602_cdfend'], 'including 芳汀 from the earlier-version union');"
       ],
       "new": [
         "assert.ok(backs.length >= 130, `${backs.length} Back skeletons`);",
         "// 丰川祥子 (char_4182_oblvns, the local SP_DIY_COLLAB pick, playtest #21): the mirror's Back skeleton carries a",
         "// Die clip of its own — the \"a Back skeleton with a fall keeps it\" branch, exactly like 老鲤",
-        "assert.deepEqual(withFall, ['char_322_lmlee', 'char_388_mint', 'char_4064_mlynar', 'char_4182_oblvns', 'char_440_pinecn', 'char_602_cdfend'], '老鲤 (a 自选 pick, 0.2.0) too');"
+        "assert.deepEqual(withFall, ['char_271_spikes', 'char_322_lmlee', 'char_388_mint', 'char_4064_mlynar', 'char_4182_oblvns', 'char_440_pinecn', 'char_602_cdfend'], 'including 芳汀 from the earlier-version union');"
       ]
     }
   ]
