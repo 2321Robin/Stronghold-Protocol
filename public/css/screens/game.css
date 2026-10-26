@@ -1066,9 +1066,12 @@
 .ff-board--pen .ff-pen__enemy .ff-unit__art { border-color: rgba(255, 90, 60, .7); }
 .ff-pen__empty { position: absolute; left: 0; right: 0; top: 45%; text-align: center; color: var(--text-lo); font-size: .16rem; }
 
-/* enemy preview pen view (research 09 §2): the bond strip and the effects column step aside for the pen */
-.gm__bonds, .gm__effects { transition: opacity var(--t-med) var(--ease-out); }
-.gm.is-pen .gm__bonds, .gm.is-pen .gm__effects { opacity: 0; pointer-events: none; }
+/* enemy preview pen view (research 09 §2): the bond strip and the effects column step aside for the pen.
+   visibility, not only pointer-events: Chromium can still hit-test pe:none descendants of an absolutely-positioned,
+   opacity-faded layer, so an invisible disc opened the bond popup over the pen (#892) — hidden flips at the
+   end of the fade-out and at the start of the fade-in, so the strip stays clickable exactly while it is on screen */
+.gm__bonds, .gm__effects { transition: opacity var(--t-med) var(--ease-out), visibility var(--t-med); }
+.gm.is-pen .gm__bonds, .gm.is-pen .gm__effects { opacity: 0; visibility: hidden; pointer-events: none; }
 .gm.is-pen .gm__bonds > *, .gm.is-pen .gm__effects > *, .gm.is-pen .gm__bonds .bslot, .gm.is-pen .gm__bonds .bstrip__more { pointer-events: none; }
 
 /* solo pause overlay (screens/game.js PausedOverlay; m.public.paused): the field dims under an official matte plate */

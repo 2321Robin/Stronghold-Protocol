@@ -145,6 +145,19 @@ describe('8: the detail card never covers the selected unit\'s underframe', () =
     assert.match(panels, /\.uframe__label\s*\{[^}]*white-space:\s*nowrap\s*;/, 'shortcut labels stay on one line');
   });
 
+  // the pen view's hidden strip still took clicks (#892): an invisible disc opened the bond popup over the enemy
+  // preview. pointer-events: none alone loses to a Chromium hit-test quirk under the absolutely-positioned,
+  // opacity-faded layer, so the pen rule must hide the strip for hit-testing too (visibility: hidden), with the
+  // transition carrying visibility so the fade-out keeps the strip clickable exactly while it is on screen
+  test('css: the pen hides the bond strip / effects column from hit-testing (visibility), not only from the pointer', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync(new URL('../../public/css/screens/game.css', import.meta.url), 'utf8');
+    assert.match(css, /\.gm__bonds, \.gm__effects \{ transition: opacity var\(--t-med\) var\(--ease-out\), visibility var\(--t-med\); \}/,
+      'the fade carries visibility: hidden flips at the fade-out\'s end and the fade-in\'s start');
+    assert.match(css, /\.gm\.is-pen \.gm__bonds, \.gm\.is-pen \.gm__effects \{ opacity: 0; visibility: hidden; pointer-events: none; \}/,
+      'an invisible strip must not be hit-tested: a click on the pen rows must reach the board, never a disc');
+  });
+
   // a finger's tap near a disc: the browser's touch adjustment moved it onto the nearest element that responds to clicks
   // (the canvas's pointer listeners do not count), so with PR #149's 收起 toggle pushing the discs over the back row a tap
   // on the row-12 unit at 844×390 opened the bond popup (test/render/models.browser.test.js #4.1 touch)
